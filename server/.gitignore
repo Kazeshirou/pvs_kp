@@ -1,0 +1,10 @@
+docs
+bin
+dot
+doxygen
+*.pdf
+*.elf
+checkoptn.h
+checkoptn.c
+server-fsm.h
+server-fsm.c
