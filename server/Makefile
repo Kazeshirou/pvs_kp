@@ -107,7 +107,11 @@ $(PROG): $(OBJS)
 # Отчёт. PDFLATEX вызывается дважды для нормального 
 # создания ссылок, это НЕ опечатка.
 $(REPORT): $(TEXS) doxygen $(addprefix $(TEXINCDIR)/, server_def_dot.pdf Makefile_1_dot.pdf re_cmd_quit_re.tex re_cmd_user_re.tex cflow01_dot.pdf cflow02_dot.pdf checkoptn.def.tex)
-	cd $(TEXDIR) && $(PDFLATEX) report.tex && $(PDFLATEX) report.tex && cp $(REPORT) ..
+	cp $(DOXDIR)/latex/*.sty ~/texmf/tex/latex/
+	texhash ~/texmf 
+	cd $(TEXDIR) && echo `$(PDFLATEX) report.tex` 
+	cd $(TEXDIR) && echo `$(PDFLATEX) report.tex` 
+	cp $(TEXDIR)/$(REPORT) ./
 
 # Это сокращённый файл параметров программы дял отчёта, 
 # берутся строки, начиная с восьмой, строки с descrip -- удаляются.
@@ -118,7 +122,7 @@ $(TEXINCDIR)/checkoptn.def.tex: $(CDIR)/checkoptn.def
 simplest.mk: Makefile
 	sed 's/$$(INCLUDES)//'  Makefile | $(MAKESIMPLE)  > simplest.mk
 
-$(DOTDIR)/cflow01.dot: $(addprefix $(CDIR)/, server_main.c server-state.c server-parse.c server-run.c server-fsm.c server-cmd.c)
+$(DOTDIR)/cflow01.dot: $(addprefix $(CDIR)/, server_main.c echo_server.c create_server_socket.c msg.c poll_fd_storage.c)
 	$(CFLOW) $^ | $(SIMPLECFLOW) | $(CFLOW2DOT) > $@
 
 $(DOTDIR)/cflow02.dot: $(addprefix $(CDIR)/, server-cmd.c server-parse.c server-fsm.c)
