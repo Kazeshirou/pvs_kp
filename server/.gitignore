@@ -6,5 +6,3 @@ doxygen
 *.elf
 checkoptn.h
 checkoptn.c
-server-fsm.h
-server-fsm.c

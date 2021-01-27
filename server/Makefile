@@ -160,7 +160,7 @@ doxygen: doxygen.cfg $(CSRC) $(INCLUDES)
 
 .PHONY: clean
 clean:
-	rm -rf $(CDIR)/checkoptn.c $(IDIR)/checkoptn.h  $(CDIR)/server-fsm.c $(IDIR)/server-fsm.h \
+	rm -rf $(CDIR)/checkoptn.c $(IDIR)/checkoptn.h \
 	rm -rf $(ODIR)/*.o $(CDIR)/*~ $(IDIR)/*~ $(TEXINCDIR)/* $(DOXDIR)/* $(DOTDIR)/*.dot; \
 	rm simplest.mk *~; \
 	rm *.elf \
