@@ -89,7 +89,7 @@ $(DOTDIR)/%_def.dot: $(CDIR)/%.def
 
 # .dot -> _dot.tex
 $(TEXINCDIR)/%_dot.tex: $(DOTDIR)/%.dot
-	dot2tex -ftikz --autosize --crop  $< > $@
+	utils/dot2tex -ftikz --autosize --crop  $< > $@
 
 # _dot.tex -> _dot.pdf
 $(TEXINCDIR)/%_dot.pdf: $(TEXINCDIR)/%_dot.tex
@@ -118,7 +118,7 @@ $(TEXINCDIR)/checkoptn.def.tex: $(CDIR)/checkoptn.def
 simplest.mk: Makefile
 	sed 's/$$(INCLUDES)//'  Makefile | $(MAKESIMPLE)  > simplest.mk
 
-$(DOTDIR)/cflow01.dot: $(addprefix $(CDIR)/, server.c server-state.c server-parse.c server-run.c server-fsm.c server-cmd.c)
+$(DOTDIR)/cflow01.dot: $(addprefix $(CDIR)/, server_main.c server-state.c server-parse.c server-run.c server-fsm.c server-cmd.c)
 	$(CFLOW) $^ | $(SIMPLECFLOW) | $(CFLOW2DOT) > $@
 
 $(DOTDIR)/cflow02.dot: $(addprefix $(CDIR)/, server-cmd.c server-parse.c server-fsm.c)
@@ -155,15 +155,15 @@ report:  $(REPORT)
 
 .PHONY: doxygen
 doxygen: doxygen.cfg $(CSRC) $(INCLUDES)
-	doxygen doxygen.cfg
+	/usr/bin/doxygen doxygen.cfg
 	cp $(DOXDIR)/latex/*.tex $(TEXINCDIR)
 
 .PHONY: clean
 clean:
-	rm -rf $(CDIR)/checkoptn.c $(IDIR)/checkoptn.h \
+	rm -rf $(CDIR)/checkoptn.c $(IDIR)/checkoptn.h ;\
 	rm -rf $(ODIR)/*.o $(CDIR)/*~ $(IDIR)/*~ $(TEXINCDIR)/* $(DOXDIR)/* $(DOTDIR)/*.dot; \
 	rm simplest.mk *~; \
-	rm *.elf \
-	find $(TEXDIR)/ -type f ! -name "*.tex" -exec rm -f {} \;
+	rm *.elf *.pdf; \
+	rm -r `find $(TEXDIR)/ -type f ! -name "*.tex"` 
 
 
