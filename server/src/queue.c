@@ -4,46 +4,42 @@
 #include <stdlib.h>
 #include <string.h>
 
-int queue_init(struct queue_t* queue) {
+error_code_t queue_init(struct queue_t* queue) {
     queue->front    = NULL;
     queue->back     = NULL;
     queue->size     = 0;
     queue->max_size = QUEUE_DEFAULT_MAX_SIZE;
     if (mtx_init(&queue->mtx, mtx_plain) == thrd_success) {
-        return -3;
+        return CE_INIT_3RD;
     }
     if (cnd_init(&queue->cnd) == thrd_success) {
         mtx_destroy(&queue->mtx);
-        return -3;
+        return CE_INIT_3RD;
     }
-    return 0;
+    return CE_SUCCESS;
 }
 
-int queue_push_back(struct queue_t* queue, const void* value,
-                    const size_t size) {
+error_code_t queue_push_back(struct queue_t* queue, const void* value,
+                             const size_t size) {
     if (mtx_lock(&queue->mtx) != thrd_success) {
-        return -3;
+        return CE_LOCK;
     }
     if (queue->size == queue->max_size) {
         mtx_unlock(&queue->mtx);
-        return -2;
+        return CE_MAX_SIZE;
     }
 
-    struct node_t* new_node = (struct node_t*)malloc(sizeof(struct node_t*));
+    node_t* new_node = (node_t*)malloc(sizeof(node_t*));
     if (!new_node) {
         mtx_unlock(&queue->mtx);
-        return -1;
+        return CE_ALLOC;
     }
 
-    new_node->value = malloc(size);
-    if (!new_node->value) {
+    error_code_t err = node_init_with_value(new_node, value, size);
+    if (err != CE_SUCCESS) {
         mtx_unlock(&queue->mtx);
-        return -1;
+        return err;
     }
-
-    memcpy(new_node->value, value, size);
-    new_node->size = size;
-    new_node->next = NULL;
 
     if (queue->back) {
         queue->back->next = new_node;
@@ -55,77 +51,74 @@ int queue_push_back(struct queue_t* queue, const void* value,
 
     cnd_signal(&queue->cnd);
     mtx_unlock(&queue->mtx);
-    return 0;
+    return CE_SUCCESS;
 }
 
-int queue_try_pop_front(struct queue_t* queue, void* value, const size_t size) {
+error_code_t queue_try_pop_front(struct queue_t* queue, void* value,
+                                 const size_t size) {
     if (mtx_lock(&queue->mtx) != thrd_success) {
-        return -3;
+        return CE_LOCK;
     }
     if (!queue->size) {
         mtx_unlock(&queue->mtx);
-        return -1;
+        return CE_COMMON;
     }
 
-    struct node_t* front_node = queue->front;
-    if (front_node->size != size) {
+    node_t*      front_node = queue->front;
+    error_code_t err        = node_get_value(front_node, value, size);
+    if (err != CE_SUCCESS) {
         mtx_unlock(&queue->mtx);
-        return -2;
+        return err;
     }
 
-    memcpy(value, front_node->value, size);
-    free(front_node->value);
-
-    if (--queue->size) {
+    if (--(queue->size)) {
         queue->front = front_node->next;
     } else {
         queue->front = queue->back = NULL;
     }
 
+    node_destroy(front_node, NULL);
     free(front_node);
     mtx_unlock(&queue->mtx);
-    return 0;
+    return CE_SUCCESS;
 }
 
-int queue_pop_front(struct queue_t* queue, void* value, const size_t size) {
+error_code_t queue_pop_front(struct queue_t* queue, void* value,
+                             const size_t size) {
     if (mtx_lock(&queue->mtx) != thrd_success) {
-        return -3;
+        return CE_LOCK;
     }
 
     while (!queue->size) {
         cnd_wait(&queue->cnd, &queue->mtx);
     }
 
-    struct node_t* front_node = queue->front;
-    if (front_node->size != size) {
+    node_t*      front_node = queue->front;
+    error_code_t err        = node_get_value(front_node, value, size);
+    if (err != CE_SUCCESS) {
         mtx_unlock(&queue->mtx);
-        return -2;
+        return err;
     }
 
-    memcpy(value, front_node->value, size);
-    free(front_node->value);
-
-    if (--queue->size) {
+    if (--(queue->size)) {
         queue->front = front_node->next;
     } else {
         queue->front = queue->back = NULL;
     }
 
+    node_destroy(front_node, NULL);
     free(front_node);
     mtx_unlock(&queue->mtx);
-    return 0;
+    return CE_SUCCESS;
 }
 
 void queue_destroy(struct queue_t* queue, void (*destroy_value)(void*)) {
     mtx_lock(&queue->mtx);
-    struct node_t* front_node = queue->front;
-    struct node_t* next_node;
+    node_t* front_node = queue->front;
+    node_t* next_node;
     while (front_node) {
         next_node = front_node->next;
-        if (destroy_value) {
-            destroy_value(front_node->value);
-        }
-        free(front_node->value);
+        node_destroy(front_node, destroy_value);
         free(front_node);
         front_node = next_node;
         queue->size--;
@@ -133,5 +126,7 @@ void queue_destroy(struct queue_t* queue, void (*destroy_value)(void*)) {
     cnd_destroy(&queue->cnd);
     mtx_unlock(&queue->mtx);
     mtx_destroy(&queue->mtx);
+    queue->front = NULL;
+    queue->back  = NULL;
     assert(!queue->size);
 }

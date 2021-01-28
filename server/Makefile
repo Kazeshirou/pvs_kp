@@ -15,7 +15,7 @@ RE2TEX = $(UDIR)/re2tex
 FSM2DOT = $(UDIR)/fsm2dot
 CFLOW=cflow --level "0= "
 CFLOW2DOT=$(UDIR)/cflow2dot
-# Файл cflow.ignore содержит список функций,
+# Файл cflow.ignore содержит список функций,front
 # исключаемых из графов вызовов.
 SIMPLECFLOW=grep -v -f cflow.ignore
 SRC2TEX=$(UDIR)/src2tex
@@ -29,10 +29,10 @@ REPORT = report.pdf
 # Компилятор С
 CC = gcc
 # Флаги компиляции
-CFLAGS = -I$(IDIR) -Wall -Werror -pedantic
+CFLAGS =  -I$(IDIR) -Wall -Werror -pedantic
 # -Werror
 # Флаги сборки
-LDFLAGS += $(shell autoopts-config ldflags)
+LDFLAGS +=  $(shell autoopts-config ldflags)
 LDFLAGS += -lpthread
 
 # latex -> pdf
@@ -45,7 +45,7 @@ Makefile_1.dot = $(DOTDIR)/Makefile_1.dot
 
 # По-умолчанию и по make all собираем и отчёт и программу.
 # Отдельно отчёт собирается как make report
-all: $(PROG) $(REPORT)
+all: $(PROG)
 
 # Добавляются имена сгенерённых файлов.
 # GENINCLUDES = $(IDIR)/checkoptn.h $(IDIR)/server-fsm.h
