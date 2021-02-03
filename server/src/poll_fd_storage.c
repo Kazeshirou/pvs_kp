@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct poll_fd_storage create_poll_fd_storage(const size_t max_size) {
-    struct poll_fd_storage storage = {
+server_info_t create_poll_fd_storage(const size_t max_size) {
+    server_info_t storage = {
         .fds      = NULL,
         .msgs     = NULL,
         .size     = 0,
@@ -44,8 +44,8 @@ struct poll_fd_storage create_poll_fd_storage(const size_t max_size) {
     return storage;
 }
 
-int recreate_poll_fd_storage(struct poll_fd_storage* storage,
-                             const size_t            new_max_size) {
+int recreate_poll_fd_storage(server_info_t* storage,
+                             const size_t   new_max_size) {
     if (new_max_size <= storage->max_size) {
         return 0;
     }
@@ -91,8 +91,7 @@ int recreate_poll_fd_storage(struct poll_fd_storage* storage,
     return 1;
 }
 
-int add_poll_fd_to_storage(struct poll_fd_storage* storage,
-                           const struct pollfd     fd) {
+int add_poll_fd_to_storage(server_info_t* storage, const struct pollfd fd) {
     size_t new_size = storage->size + 1;
     if (new_size > storage->max_size) {
         if (recreate_poll_fd_storage(storage, new_size + 50) < 0) {
@@ -105,7 +104,7 @@ int add_poll_fd_to_storage(struct poll_fd_storage* storage,
     return storage->size;
 }
 
-void free_poll_fd_storage(struct poll_fd_storage* storage) {
+void free_poll_fd_storage(server_info_t* storage) {
     free(storage->fds);
     for (size_t i = 0; i < storage->max_size; i++) {
         free_msg(storage->msgs + i);
@@ -113,7 +112,7 @@ void free_poll_fd_storage(struct poll_fd_storage* storage) {
     free(storage->msgs);
 }
 
-void compress_poll_fd_storage(struct poll_fd_storage* storage) {
+void compress_poll_fd_storage(server_info_t* storage) {
     for (size_t i = 0; i < storage->size; i++) {
         if (storage->fds[i].fd == -1) {
             free_msg(storage->msgs + i);

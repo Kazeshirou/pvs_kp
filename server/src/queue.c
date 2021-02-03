@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-error_code_t queue_init(struct queue_t* queue) {
+error_code_t queue_init(queue_t* queue) {
     queue->front    = NULL;
     queue->back     = NULL;
     queue->size     = 0;
@@ -19,7 +19,7 @@ error_code_t queue_init(struct queue_t* queue) {
     return CE_SUCCESS;
 }
 
-error_code_t queue_push_back(struct queue_t* queue, const void* value,
+error_code_t queue_push_back(queue_t* queue, const void* value,
                              const size_t size) {
     if (mtx_lock(&queue->mtx) != thrd_success) {
         return CE_LOCK;
@@ -54,7 +54,7 @@ error_code_t queue_push_back(struct queue_t* queue, const void* value,
     return CE_SUCCESS;
 }
 
-error_code_t queue_try_pop_front(struct queue_t* queue, void* value,
+error_code_t queue_try_pop_front(queue_t* queue, void* value,
                                  const size_t size) {
     if (mtx_lock(&queue->mtx) != thrd_success) {
         return CE_LOCK;
@@ -83,8 +83,7 @@ error_code_t queue_try_pop_front(struct queue_t* queue, void* value,
     return CE_SUCCESS;
 }
 
-error_code_t queue_pop_front(struct queue_t* queue, void* value,
-                             const size_t size) {
+error_code_t queue_pop_front(queue_t* queue, void* value, const size_t size) {
     if (mtx_lock(&queue->mtx) != thrd_success) {
         return CE_LOCK;
     }
@@ -112,13 +111,13 @@ error_code_t queue_pop_front(struct queue_t* queue, void* value,
     return CE_SUCCESS;
 }
 
-void queue_destroy(struct queue_t* queue, void (*destroy_value)(void*)) {
+void queue_destroy(queue_t* queue, destructor_t value_destructor) {
     mtx_lock(&queue->mtx);
     node_t* front_node = queue->front;
     node_t* next_node;
     while (front_node) {
         next_node = front_node->next;
-        node_destroy(front_node, destroy_value);
+        node_destroy(front_node, value_destructor);
         free(front_node);
         front_node = next_node;
         queue->size--;

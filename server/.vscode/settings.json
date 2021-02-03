@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "while_true.h": "c",
+        "threads.h": "c",
+        "features.h": "c",
+        "mutex": "c",
+        "thread-shared-types.h": "c"
+    }
+}

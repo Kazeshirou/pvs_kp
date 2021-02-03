@@ -54,9 +54,9 @@ error_code_t node_get_value(const node_t* node, void* value, size_t size) {
     return CE_SUCCESS;
 }
 
-void node_destroy(node_t* node, void (*destroy_value)(void*)) {
-    if (destroy_value) {
-        destroy_value(node->value);
+void node_destroy(node_t* node, destructor_t value_destructor) {
+    if (value_destructor) {
+        value_destructor(node->value);
     }
     if (node->value) {
         free(node->value);

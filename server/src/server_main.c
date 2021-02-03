@@ -9,6 +9,8 @@
 #include "end_program_handler.h"
 #include "while_true.h"
 
+#include "threads.h"
+
 #define DEFAULT_PORT          49001
 #define CONNECTION_QUEUE_SIZE 100
 
@@ -19,7 +21,6 @@ int main(int argc, char* argv[]) {
     int optct = optionProcess(&serverOptions, argc, argv);
     argc -= optct;
     argv += optct;
-
     if (set_end_program_handler() < 0) {
         return 0;
     }

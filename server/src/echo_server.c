@@ -10,7 +10,7 @@
 #include "msg.h"
 #include "while_true.h"
 
-int process_listener(const int listener_fd, struct poll_fd_storage* storage) {
+int process_listener(const int listener_fd, server_info_t* storage) {
     int client_fd;
     WHILE_TRUE() {
         client_fd = accept(listener_fd, NULL, NULL);
@@ -42,7 +42,7 @@ int process_listener(const int listener_fd, struct poll_fd_storage* storage) {
     return 1;
 }
 
-int process_client(struct poll_fd_storage* storage, const size_t i) {
+int process_client(server_info_t* storage, const size_t i) {
     struct msg msg = recv_one_message(storage->fds[i].fd);
     if (!msg.size) {
         free_msg(&msg);
@@ -77,7 +77,7 @@ int process_client(struct poll_fd_storage* storage, const size_t i) {
     return 1;
 }
 
-int process_poll_fds(struct poll_fd_storage* storage) {
+int process_poll_fds(server_info_t* storage) {
     // Есть сокеты, готовые к чтению.
     int current_size = storage->size;
     int compress     = 0;
@@ -120,7 +120,7 @@ int process_poll_fds(struct poll_fd_storage* storage) {
 }
 
 void echo_server(const int listener_fd) {
-    struct poll_fd_storage storage = create_poll_fd_storage(50);
+    server_info_t storage = create_poll_fd_storage(50);
     if (!storage.fds) {
         return;
     }
