@@ -29,7 +29,7 @@ REPORT = report.pdf
 # Компилятор С
 CC = gcc
 # Флаги компиляции
-CFLAGS =  -I$(IDIR) -Wall -Werror -pedantic
+CFLAGS = -std=c99  -I$(IDIR) -Wall -Werror -pedantic
 # -Werror
 # Флаги сборки
 LDFLAGS +=  $(shell autoopts-config ldflags)
