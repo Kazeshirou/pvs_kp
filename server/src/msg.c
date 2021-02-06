@@ -7,7 +7,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "end_marker.h"
 #include "while_true.h"
 
 struct msg create_msg(const size_t max_size) {
@@ -95,38 +94,14 @@ struct msg recv_one_message(int fd) {
 
 
 char* get_msg(struct msg* const msg) {
-    const size_t end_marker_size = strlen(end_marker);
-    if (msg->size < end_marker_size) {
-        return NULL;
-    }
-
-    int    flag = 0;
-    size_t i    = 0;
-    for (; i <= msg->size - end_marker_size; i++) {
-        if (!memcmp(msg->text + i, end_marker, end_marker_size)) {
-            flag = 1;
-            break;
-        }
-    }
-
-    if (!flag) {
-        // Нет готового сообщения.
-        return NULL;
-    }
-
-    size_t msg_size = i + end_marker_size;
-    char*  output   = malloc(msg_size + 1);
+    char* output = malloc(msg->size + 1);
     if (!output) {
         //  Не удалось выделить буфер под сообщение.
         return NULL;
     }
 
-    memcpy(output, msg->text, msg_size);
-    output[msg_size]    = 0;
-    size_t new_msg_size = msg->size - msg_size;
-    if (msg->size > msg_size) {
-        memmove(msg->text, msg->text + msg_size, new_msg_size);
-    }
-    msg->size = new_msg_size;
+    memcpy(output, msg->text, msg->size);
+    output[msg->size] = 0;
+    msg->size         = 0;
     return output;
 }

@@ -3,42 +3,37 @@
 
 #include "checkoptn.h"
 
-#include "create_server_socket.h"
-#include "echo_server.h"
-#include "end_marker.h"
 #include "end_program_handler.h"
+#include "smtp_server.h"
 #include "while_true.h"
 
-#include "threads.h"
+#define DEFAULT_PORT               49001
+#define DEFAULT_BACKLOG_QUEUE_SIZE 100
 
-#define DEFAULT_PORT          49001
-#define CONNECTION_QUEUE_SIZE 100
-
-int         while_true = 1;
-const char* end_marker = "123";
+volatile sig_atomic_t while_true = 1;
 
 int main(int argc, char* argv[]) {
+    //  Обработка аргументов командной строки, сбор конфигурации серевера в
+    //  структуру.
     int optct = optionProcess(&serverOptions, argc, argv);
     argc -= optct;
     argv += optct;
+
+    smtp_server_cfg_t cfg = {
+        .port               = DEFAULT_PORT,
+        .backlog_queue_size = DEFAULT_BACKLOG_QUEUE_SIZE,
+    };
+
+    if (COUNT_OPT(PORT)) {
+        cfg.port = OPT_VALUE_PORT;
+    }
+
+    // Установка обработчика сигнала для gracefull shutdown
     if (set_end_program_handler() < 0) {
         return 0;
     }
 
-    int port = DEFAULT_PORT;
-    if (COUNT_OPT(PORT)) {
-        port = OPT_VALUE_PORT;
-    }
-    printf("port = %d\n", port);
-
-    int listener_fd = create_server_socket(port, CONNECTION_QUEUE_SIZE);
-    if (listener_fd < 0) {
-        return 0;
-    }
-
-    echo_server(listener_fd);
-
-    close(listener_fd);
-
+    // Запуск сервера.
+    smtp_server(cfg);
     return 0;
 }

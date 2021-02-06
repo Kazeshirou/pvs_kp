@@ -7,7 +7,7 @@
 static int main_worker_func(void* worker_ptr) {
     worker_t* worker = worker_ptr;
     job_t     current_job;
-    WHILE_TRUE() {
+    while (!worker->end_flag) {
         error_code_t error = queue_pop_front(worker->job_queue, &current_job,
                                              sizeof(current_job));
         if (error != CE_SUCCESS) {
@@ -21,24 +21,32 @@ static int main_worker_func(void* worker_ptr) {
 }
 
 error_code_t thread_pool_init(thread_pool_t* tp) {
-    int err;
-    for (size_t i = 0; i < WORKERS_COUNT; i++) {
-        err = thrd_create(&(tp->workers[i].td), &main_worker_func,
-                          tp->workers + i);
+    error_code_t cerr = queue_init(&tp->job_queue);
+    if (cerr != CE_SUCCESS) {
+        printf("Не удалось проинициализировать очередь работ для пула потоков");
+        return cerr;
+    }
+    int    err;
+    size_t i = 0;
+    for (; i < WORKERS_COUNT; i++) {
+        tp->workers[i].end_flag = 0;
+        if (!tp->main_func) {
+            tp->main_func = &main_worker_func;
+        }
+        err = thrd_create(&(tp->workers[i].td), tp->main_func, tp->workers + i);
         if (err != thrd_success) {
             printf("Не удалось создать пул потоков");
-            return CE_INIT_3RD;
+            break;
         }
         err = thrd_detach(tp->workers[i].td);
         if (err != thrd_success) {
             printf("Не удалось выполнить detach при создании пула потоков");
-            return CE_INIT_3RD;
+            break;
         }
     }
-    error_code_t cerr = queue_init(&tp->job_queue);
-    if (cerr != CE_SUCCESS) {
-        printf("Не удалось проинициализировать очередь работ для пула потокв");
-        return cerr;
+    if (i != WORKERS_COUNT) {
+        thread_pool_destroy(tp);
+        return CE_INIT_3RD;
     }
     return CE_SUCCESS;
 }
@@ -48,5 +56,8 @@ error_code_t thread_pool_push_job(thread_pool_t* tp, job_t job) {
 }
 
 void thread_pool_destroy(thread_pool_t* tp) {
+    for (size_t i = 0; i < WORKERS_COUNT; i++) {
+        tp->workers[i].end_flag = 1;
+    }
     queue_destroy(&tp->job_queue, (destructor_t)&job_destroy);
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <signal.h>
 #include <threads.h>
 
 #include "job.h"
@@ -8,14 +9,18 @@
 #define WORKERS_COUNT 10
 
 typedef struct {
-    thrd_t   td;
-    size_t   id;
-    queue_t* job_queue;
+    thrd_t                td;
+    size_t                id;
+    queue_t*              job_queue;
+    volatile sig_atomic_t end_flag;
 } worker_t;
 
+typedef int (*main_worker_func_t)(void*);
+
 typedef struct {
-    queue_t  job_queue;
-    worker_t workers[WORKERS_COUNT];
+    main_worker_func_t main_func;
+    queue_t            job_queue;
+    worker_t           workers[WORKERS_COUNT];
 } thread_pool_t;
 
 error_code_t thread_pool_init(thread_pool_t* tp);
