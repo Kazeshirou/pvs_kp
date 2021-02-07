@@ -30,6 +30,15 @@ REPORT = report.pdf
 CC = gcc
 # Флаги компиляции
 CFLAGS = -std=c99  -I$(IDIR) -Wall -Werror -pedantic
+
+ifdef DEBUG
+CFLAGS += -g
+endif
+
+ifdef OPT
+CFLAGS += -O0
+endif
+
 # -Werror
 # Флаги сборки
 LDFLAGS +=  $(shell autoopts-config ldflags)

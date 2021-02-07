@@ -8,22 +8,26 @@
 
 #define WORKERS_COUNT 10
 
+struct thread_pool__t;
+
 typedef struct {
-    thrd_t                td;
-    size_t                id;
-    queue_t*              job_queue;
-    volatile sig_atomic_t end_flag;
+    thrd_t                 td;
+    size_t                 id;
+    queue_t*               job_queue;
+    volatile sig_atomic_t  end_flag;
+    struct thread_pool__t* tp;
 } worker_t;
 
 typedef int (*main_worker_func_t)(void*);
 
-typedef struct {
-    main_worker_func_t main_func;
-    queue_t            job_queue;
-    worker_t           workers[WORKERS_COUNT];
+typedef struct thread_pool__t {
+    main_worker_func_t    main_func;
+    queue_t               job_queue;
+    worker_t              workers[WORKERS_COUNT];
+    volatile sig_atomic_t is_ended;
 } thread_pool_t;
 
-error_code_t thread_pool_init(thread_pool_t* tp);
+error_code_t thread_pool_init(thread_pool_t* tp, main_worker_func_t main_func);
 
 error_code_t thread_pool_push_job(thread_pool_t* tp, job_t job);
 

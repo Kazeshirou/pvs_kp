@@ -1,18 +1,21 @@
 #include "queue.h"
 
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "while_true.h"
 
 error_code_t queue_init(queue_t* queue) {
     queue->front    = NULL;
     queue->back     = NULL;
     queue->size     = 0;
     queue->max_size = QUEUE_DEFAULT_MAX_SIZE;
-    if (mtx_init(&queue->mtx, mtx_plain) == thrd_success) {
+    if (mtx_init(&queue->mtx, mtx_plain) != thrd_success) {
         return CE_INIT_3RD;
     }
-    if (cnd_init(&queue->cnd) == thrd_success) {
+    if (cnd_init(&queue->cnd) != thrd_success) {
         mtx_destroy(&queue->mtx);
         return CE_INIT_3RD;
     }
@@ -88,8 +91,12 @@ error_code_t queue_pop_front(queue_t* queue, void* value, const size_t size) {
         return CE_LOCK;
     }
 
-    while (!queue->size) {
+    if (!queue->size) {
         cnd_wait(&queue->cnd, &queue->mtx);
+        if (!queue->size) {
+            mtx_unlock(&queue->mtx);
+            return CE_COMMON;
+        }
     }
 
     node_t*      front_node = queue->front;
@@ -113,6 +120,7 @@ error_code_t queue_pop_front(queue_t* queue, void* value, const size_t size) {
 
 void queue_destroy(queue_t* queue, destructor_t value_destructor) {
     mtx_lock(&queue->mtx);
+
     node_t* front_node = queue->front;
     node_t* next_node;
     while (front_node) {
@@ -122,6 +130,7 @@ void queue_destroy(queue_t* queue, destructor_t value_destructor) {
         front_node = next_node;
         queue->size--;
     }
+    cnd_broadcast(&queue->cnd);
     cnd_destroy(&queue->cnd);
     mtx_unlock(&queue->mtx);
     mtx_destroy(&queue->mtx);

@@ -6,10 +6,10 @@
 #include <string.h>
 #include <sys/fcntl.h>
 #include <sys/socket.h>
-// #include <sys/types.h>
 #include <unistd.h>
 
 #include "msg.h"
+#include "thread_pool.h"
 #include "while_true.h"
 
 void set_socket_unblock(const int fd) {
@@ -144,10 +144,34 @@ error_code_t process_poll_fds(server_info_t* storage) {
     return 1;
 }
 
+static int main_worker_func(void* worker_ptr) {
+    worker_t* worker = worker_ptr;
+    int       new_client_fd;
+    while (!worker->end_flag) {
+        error_code_t error = queue_pop_front(worker->job_queue, &new_client_fd,
+                                             sizeof(new_client_fd));
+        if (error != CE_SUCCESS) {
+            continue;
+        }
+        printf("new_client_fd = %d on thread %ld %ld\n", new_client_fd,
+               worker->id, worker->td);
+        close(new_client_fd);
+    }
+    worker->tp->is_ended++;
+    printf("thread %ld %ld finished\n", worker->id, worker->td);
+    return 0;
+}
+
 void smtp_server(const smtp_server_cfg_t cfg) {
     int          listener_fd;
     error_code_t cerr =
         create_server_socket(cfg.port, cfg.backlog_queue_size, &listener_fd);
+    if (cerr != CE_SUCCESS) {
+        return;
+    }
+
+    thread_pool_t tp;
+    cerr = thread_pool_init(&tp, main_worker_func);
     if (cerr != CE_SUCCESS) {
         return;
     }
@@ -183,6 +207,8 @@ void smtp_server(const smtp_server_cfg_t cfg) {
             continue;
         }
 
-        // push client to client queue
+        queue_push_back(&tp.job_queue, &new_client_fd, sizeof(new_client_fd));
     }
+    printf("smtp server stop\n");
+    thread_pool_destroy(&tp);
 }
