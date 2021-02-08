@@ -1,0 +1,42 @@
+AutoGen Definitions options;
+prog-name     = client;
+prog-title    = "Client";
+long-opts;
+
+flag = {
+    name      = interval;	/* Минимальное время между попытками отправить письмо (мс) */
+    value     = i;              /* Краткий флаг (-i) */
+    arg-type  = number;
+    arg-range = 1;
+    max       = 1;           	/* Не более одного раза */
+    min       = 0;           	/* Обязательный параметр */
+    descrip   = "Minimum time between attempts to send an email (mc)";
+};
+
+flag = {
+    name      = total_time;	/* Общее время на попытки отправить письмо */
+    value     = t;              /* Краткий флаг (-t) */
+    arg-type  = number;
+    arg-range = 1;
+    max       = 1;           	/* Не более одного раза */
+    min       = 0;           	/* Обязательный параметр */
+    descrip   = "Total time for attempts to send an email (mc)";
+};
+
+flag = {
+    name      = queue_dir;  	/* Корневой каталог очередей сообщений */
+    value     = q;             	/* Краткий флаг (-q) */
+    arg-type  = string;
+    max       = 1;          	/* Не более одного раза */
+    min       = 0;         	/* Обязательный параметр */
+    descrip   = "Message queue directory";
+};
+
+flag = {
+    name      = log_name;     	/* Файл журнала */
+    value     = l;             	/* Краткий флаг (-l) */
+    arg-type  = string;
+    max       = 1;          	/* Не более одного раза */
+    min       = 0;         	/* Обязательный параметр */
+    descrip   = "Log file name";
+};

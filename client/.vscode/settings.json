@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "config.h": "c",
+        "type_traits": "cpp",
+        "fileparser.h": "c",
+        "tree.h": "c",
+        "master.h": "c",
+        "limits": "c"
+    }
+}

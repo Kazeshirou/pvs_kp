@@ -1,0 +1,6 @@
+autogen definitions fsm;
+
+method = case;
+type   = reentrant;
+prefix = client_fsm;
+
