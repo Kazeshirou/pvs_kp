@@ -2,4 +2,4 @@
 
 #include "config.h"
 
-void worker_main(int parent_pipe, struct config_t config);
+int worker_main(int parent_pipe, config_t config);

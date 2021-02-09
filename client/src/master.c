@@ -14,12 +14,12 @@
 
 /* private */
 
-struct worker_t pick_worker_by_rr(struct state_t *state, char *addr,
-                                  struct worker_t *workers, size_t workers_count)
+worker_t pick_worker_by_rr(state_t *state, const char *addr,
+                           const worker_t *workers, size_t workers_count)
 {
-    struct worker_t worker;
-    struct worker_time_t worker_time;
-    struct tree_t *addr_vs_worker = state->addr_vs_worker;
+    worker_t worker;
+    worker_time_t worker_time;
+    tree_t *addr_vs_worker = state->addr_vs_worker;
     int rr_index = state->rr_index;
 
     worker = workers[rr_index];
@@ -29,34 +29,34 @@ struct worker_t pick_worker_by_rr(struct state_t *state, char *addr,
 
     worker_time.worker = worker;
     worker_time.last_time_working = time(NULL);
-    tree_insert(addr_vs_worker, addr, &worker_time, sizeof(struct worker_t));
+    TREE_INSERT(addr_vs_worker, addr, worker_time);
     return worker;
 }
 
-int is_time_expired(struct worker_time_t worker_time, int min_interval_working_with_addr)
+int is_time_expired(const worker_time_t worker_time, int min_interval_working_with_addr)
 {
     return time(NULL) - worker_time.last_time_working > min_interval_working_with_addr;
 }
 
-void update_last_time_working(struct worker_time_t *worker_time)
+void update_last_time_working(worker_time_t *worker_time)
 {
     worker_time->last_time_working = time(NULL);
 }
 
-struct worker_t pick_worker(struct state_t *state, struct worker_t *workers,
-                            char *addr, struct config_t config)
+worker_t pick_worker(state_t *state, const worker_t *workers,
+                     const char *addr, config_t config)
 {
-    struct worker_t worker;
-    struct worker_time_t worker_time;
-    struct tree_t *addr_vs_worker = state->addr_vs_worker;
-    struct tree_node_t *node = tree_search(addr_vs_worker, addr);
+    worker_t worker;
+    worker_time_t worker_time;
+    tree_t *addr_vs_worker = state->addr_vs_worker;
+    tree_node_t *node = tree_search(addr_vs_worker, addr);
     if (!node)
     {
         worker = pick_worker_by_rr(state, addr, workers, config.workers_count);
     }
     else
     {
-        worker_time = *((struct worker_time_t*)node->value);
+        worker_time = *((worker_time_t*)node->value);
         if (is_time_expired(worker_time, config.min_interval_working_with_addr))
         {
             tree_delete(addr_vs_worker, addr);
@@ -71,16 +71,16 @@ struct worker_t pick_worker(struct state_t *state, struct worker_t *workers,
     return worker;
 }
 
-struct state_t* state_init()
+state_t* state_init()
 {
-    struct state_t *state = (struct state_t*) malloc(sizeof(struct state_t));
+    state_t *state = (state_t*) malloc(sizeof(state_t));
     state->rr_index = 0;
-    state->sended_files = tree_init();
-    state->addr_vs_worker = tree_init();
+    state->sended_files = TREE_INIT(NULL, NULL, NULL); //set
+    state->addr_vs_worker = TREE_INIT(worker_time_t, NULL, NULL);
     return state;
 }
 
-void state_clear(struct state_t *state)
+void state_clear(state_t *state)
 {
     tree_clear(state->addr_vs_worker);
     tree_clear(state->sended_files);
@@ -89,14 +89,15 @@ void state_clear(struct state_t *state)
 
 /* public */
 
-struct worker_t* init_workers(struct config_t *config)
+worker_t* init_workers(config_t *config)
 {
     int i;
     int pid;
+    int exit_code;
     int count = config->workers_count;
     int pipe_fds[count][2];
-    struct worker_t worker;
-    struct worker_t *workers = (struct worker_t*) malloc(sizeof(struct worker_t) * count);
+    worker_t worker;
+    worker_t *workers = (worker_t*) malloc(sizeof(worker_t) * count);
     for (i = 0; i < count; i++)
     {
         if (pipe(pipe_fds[i]) < 0)
@@ -117,7 +118,9 @@ struct worker_t* init_workers(struct config_t *config)
         if (pid == 0)
         {
             close(pipe_fds[i][1]); // child can't write
-            worker_main(pipe_fds[i][0], *config);
+            exit_code = worker_main(pipe_fds[i][0], *config);
+            close(pipe_fds[i][0]);
+            exit(exit_code);
         }
         // parent process
         else
@@ -131,7 +134,7 @@ struct worker_t* init_workers(struct config_t *config)
     return workers;
 }
 
-void clear_workers(struct worker_t *workers, int size)
+void clear_workers(worker_t *workers, int size)
 {
     int i;
     int status;
@@ -148,42 +151,43 @@ void clear_workers(struct worker_t *workers, int size)
     free(workers);
 }
 
-int add_filename_to_worker(struct worker_t *worker, char *filename)
+int add_filename_to_worker(worker_t *worker, const char *filename)
 {
-    struct message_t message;
-    message.data = filename;
-    message.size = strlen(filename);
-    return add_message(worker->peer_write, &message);
+    int ret;
+    string_t *message = string_init2(filename, strlen(filename));
+    ret = add_message(worker->peer_write, *message);
+    string_clear(message);
+    return ret;
 }
 
-void add_filenames_to_workers(struct state_t *state, struct queue_t *new_files,
-                              struct worker_t *workers, struct config_t config)
+void add_filenames_to_workers(state_t *state, const queue_t *new_files,
+                              worker_t *workers, config_t config)
 
 {
     char *addr;
-    char *filename;
-    struct worker_t worker;
-    struct tree_t *sended_files = state->sended_files;
-    struct queue_node_t *current_file = new_files->front;
+    const char *filename;
+    worker_t worker;
+    tree_t *sended_files = state->sended_files;
+    queue_node_t *current_file = new_files->front;
     while (current_file)
     {
-        filename = (char*)current_file->value;
+        filename = ((string_t*)current_file->value)->data;
         if (!tree_search(sended_files, filename))
         {
             // send file name
             addr = get_addr(filename);
             worker = pick_worker(state, workers, addr, config);
             add_filename_to_worker(&worker, filename);
-            tree_insert(sended_files, filename, NULL, 0);
+            tree_insert(sended_files, filename, NULL);
         }
         current_file = current_file->next;
     }
 }
 
-struct peer_t** get_peers_from_workers(struct worker_t *workers, size_t workers_count)
+peer_t** get_peers_from_workers(worker_t *workers, size_t workers_count)
 {
     int i;
-    struct peer_t **peers = (struct peer_t**) malloc(sizeof(struct peer_t*) * workers_count);
+    peer_t **peers = (peer_t**) malloc(sizeof(peer_t*) * workers_count);
     for (i = 0; i < workers_count; i++)
     {
         peers[i] = workers[i].peer_write;
@@ -192,13 +196,13 @@ struct peer_t** get_peers_from_workers(struct worker_t *workers, size_t workers_
 }
 
 
-void dispatch(struct worker_t *workers, struct config_t config)
+void dispatch(worker_t *workers, config_t config)
 {
     int i;
-    struct state_t *state = state_init();
-    struct queue_t *new_files = NULL;
-    struct select_fd_storage *storage = storage_init();
-    struct peer_t **peers = get_peers_from_workers(workers, config.workers_count);
+    state_t *state = state_init();
+    queue_t *new_files = NULL;
+    select_fd_storage_t *storage = storage_init();
+    peer_t **peers = get_peers_from_workers(workers, config.workers_count);
 
     WHILE_TRUE()
     {
@@ -206,7 +210,7 @@ void dispatch(struct worker_t *workers, struct config_t config)
         if (new_files)
         {
             add_filenames_to_workers(state, new_files, workers, config);
-            queue_clear(new_files, NULL);
+            queue_clear(new_files);
         }
 
         for (i = 0; i < config.workers_count; i++)
@@ -222,10 +226,12 @@ void dispatch(struct worker_t *workers, struct config_t config)
     free(peers);
 }
 
-void master_main(struct config_t config)
+void master_main(config_t config)
 {
-    struct worker_t *workers = init_workers(&config);
+    worker_t *workers = init_workers(&config);
     dispatch(workers, config);
     clear_workers(workers, config.workers_count);
+
+    printf("bye parent!\n");
 }
 

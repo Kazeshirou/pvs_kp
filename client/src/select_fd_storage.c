@@ -4,13 +4,13 @@
 #include "select_fd_storage.h"
 #include "queue.h"
 
-struct select_fd_storage* storage_init()
+select_fd_storage_t* storage_init()
 {
     fd_set *read_fds = (fd_set*)malloc(sizeof(fd_set));
     fd_set *write_fds = (fd_set*)malloc(sizeof(fd_set));
     fd_set *except_fds = (fd_set*)malloc(sizeof(fd_set));
 
-    struct select_fd_storage *storage = (struct select_fd_storage*) malloc(sizeof(struct select_fd_storage));
+    select_fd_storage_t *storage = (select_fd_storage_t*) malloc(sizeof(select_fd_storage_t));
     storage->read_fds = read_fds;
     storage->write_fds = write_fds;
     storage->except_fds = except_fds;
@@ -18,7 +18,7 @@ struct select_fd_storage* storage_init()
     return storage;
 }
 
-void storage_clear(struct select_fd_storage *storage)
+void storage_clear(select_fd_storage_t *storage)
 {
     free(storage->read_fds);
     free(storage->write_fds);
@@ -26,7 +26,7 @@ void storage_clear(struct select_fd_storage *storage)
     free(storage);
 }
 
-void build_storage(struct peer_t *server, struct select_fd_storage *storage) 
+void build_storage(peer_t *server, select_fd_storage_t *storage) 
 {
     FD_SET(server->fd, storage->read_fds);
     FD_SET(server->fd, storage->except_fds);
@@ -36,14 +36,14 @@ void build_storage(struct peer_t *server, struct select_fd_storage *storage)
         FD_SET(server->fd, storage->write_fds);
 }
 
-void zero_storage(struct select_fd_storage *storage)
+void zero_storage(select_fd_storage_t *storage)
 {
     FD_ZERO(storage->read_fds);
     FD_ZERO(storage->write_fds);
     FD_ZERO(storage->except_fds);
 }
 
-int get_max_fd(struct peer_t **peers, int size)
+int get_max_fd(peer_t **peers, int size)
 {
     int max_fd = -1; 
     int i;
@@ -58,7 +58,7 @@ int get_max_fd(struct peer_t **peers, int size)
     return max_fd;
 }
 
-int select_step(struct select_fd_storage *storage, struct peer_t **peers, int peers_count)
+int select_step(select_fd_storage_t *storage, peer_t **peers, int peers_count)
 {
     int i;
     int max_fd;

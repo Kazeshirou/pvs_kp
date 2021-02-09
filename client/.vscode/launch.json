@@ -9,6 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/client.elf",
+            "subProcess": true,
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

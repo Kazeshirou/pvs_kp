@@ -5,11 +5,13 @@
 
 #include "fileparser.h"
 
-struct queue_t* get_files_names(char *path_to_dir)
+queue_t* get_files_names(const char *path_to_dir)
 {
     DIR *dir = NULL;
     struct dirent* entry = NULL;
-    struct queue_t *files_names = queue_init();
+    queue_t *files_names = QUEUE_INIT(string_t, string_copy, string_clear);
+    string_t *filename;
+    int ret = 0;
     
     dir = opendir(path_to_dir);
     if (dir == NULL) 
@@ -22,16 +24,14 @@ struct queue_t* get_files_names(char *path_to_dir)
         {
             if (entry->d_type != DT_REG)
                 continue;
-            char *fullname = (char*) calloc(1, strlen(path_to_dir)+1);
-            fullname = strcpy(fullname, path_to_dir);
-            fullname = strcat(fullname, FILENAME_SEP_STR);
-            fullname = strcat(fullname, entry->d_name);
-            if (queue_push_back(files_names, fullname, strlen(fullname)+1) != 0)
+            filename = string_init2(entry->d_name, strlen(entry->d_name));
+            ret = QUEUE_PUSH_BACK(files_names, *filename);
+            string_clear(filename);
+            if (ret != 0)
             {
                 // todo log
                 break;
             }
-            free(fullname);
         }
 
         closedir(dir);
@@ -40,7 +40,7 @@ struct queue_t* get_files_names(char *path_to_dir)
     return files_names;
 }
 
-char* get_addr(char *filename)
+char* get_addr(const char *filename)
 {
     int i, j;
     int success = 0;
@@ -76,10 +76,9 @@ void free_addr(char *addr)
     free(addr);
 }
 
-struct message_t parse_message(char *filename)
+string_t* parse_message(char *filename)
 {
-    struct message_t message;
-    char *buf = NULL;
+    string_t *message;
     FILE *f = fopen(filename, "r");
     long fsize;
 
@@ -87,14 +86,10 @@ struct message_t parse_message(char *filename)
     fsize = ftell(f);
     fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
 
-    buf = malloc(fsize + 1);
-    fread(buf, 1, fsize, f);
+    message = string_init(fsize);
+    fread(message->data, 1, fsize, f);
     fclose(f);
 
-    buf[fsize] = 0;
-    
-    message.data = buf;
-    message.size = fsize;
     return message;
 }
 

@@ -5,6 +5,20 @@
         "fileparser.h": "c",
         "tree.h": "c",
         "master.h": "c",
-        "limits": "c"
+        "limits": "c",
+        "peer.h": "c",
+        "worker.h": "c",
+        "mstring.h": "c",
+        "destructor.h": "c",
+        "climits": "cpp",
+        "cmath": "cpp",
+        "cstdarg": "cpp",
+        "cstdint": "cpp",
+        "cstdio": "cpp",
+        "cstdlib": "cpp",
+        "*.tcc": "cpp",
+        "cstdbool": "cpp",
+        "typeinfo": "cpp",
+        "queue.h": "c"
     }
 }

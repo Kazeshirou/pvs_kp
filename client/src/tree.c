@@ -2,24 +2,23 @@
 #include <string.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include "tree.h"
 
 /* private */
 
-struct tree_node_t* create_node(const char *key, const void *value, const size_t value_size)
+tree_node_t* create_node(const tree_t *tree, const char *key, const void *value)
 {
-    struct tree_node_t *node;
+    tree_node_t *node;
 
-    node = malloc(sizeof(struct tree_node_t));
+    node = malloc(sizeof(tree_node_t));
 
     if (node)
     {
-        node->value = malloc(value_size);
-        if (node->value) 
+        node->value = copy(value, tree->value_size, tree->value_copy_constr);
+        if (node->value || !value) 
         {
-            memcpy(node->value, value, value_size);
-            node->value_size = value_size;
             strcpy(node->key, key);
             node->left = NULL;
             node->right = NULL;
@@ -34,30 +33,35 @@ struct tree_node_t* create_node(const char *key, const void *value, const size_t
     return node;
 }
 
-void free_node(struct tree_node_t *node)
+void free_node(const tree_t *tree, tree_node_t *node)
 {
-    free(node->value);
+    destruct(node->value, tree->value_destr);
     free(node);
 }
 
-struct tree_node_t* min_value_node(struct tree_node_t *node)
+tree_node_t* min_value_node(tree_node_t *node)
 {
-    struct tree_node_t *current = node;
+    tree_node_t *current = node;
     while (current && current->left != NULL)
         current = current->left;
     return current;
 }
 
-int tree_node_insert(struct tree_node_t **root, const char *key, const void *value, const size_t value_size)
+int tree_node_insert(tree_t *tree, tree_node_t **root,
+                     const char *key, const void *value)
 {
+    if (tree->size == tree->max_size)
+        return -2;
+
     int cmp;
 
     if (*root == NULL)
     {
-        struct tree_node_t *node = create_node(key, value, value_size);
+        tree_node_t *node = create_node(tree, key, value);
         if (!node)
             return -1;
         *root = node;
+        tree->size++;
         return 0;
     }
     
@@ -65,24 +69,23 @@ int tree_node_insert(struct tree_node_t **root, const char *key, const void *val
 
     if (cmp == 0)
     {
-        if ((*root)->value_size != value_size)
-            return -2;
         // update value
-        memcpy((*root)->value, value, value_size);
+        destruct((*root)->value, tree->value_destr);
+        copy((*root)->value, tree->value_size, tree->value_copy_constr);
         return 0;
     }
 
     if (cmp < 0)
-        return tree_node_insert(&((*root)->left), key, value, value_size);
-    return tree_node_insert(&((*root)->right), key, value, value_size);
+        return tree_node_insert(tree, &((*root)->left), key, value);
+    return tree_node_insert(tree, &((*root)->right), key, value);
 }
 
-int tree_node_insert_all(struct tree_t *dst, struct tree_node_t *root)
+int tree_node_insert_all(tree_t *dst, tree_node_t *root)
 {
     int ret = 0;
 
     // insert root
-    ret = tree_node_insert(&(dst->root), root->key, root->value, root->value_size);
+    ret = tree_node_insert(dst, &(dst->root), root->key, root->value);
 
     // insert left
     if (!ret && root->left != NULL)
@@ -95,8 +98,11 @@ int tree_node_insert_all(struct tree_t *dst, struct tree_node_t *root)
     return ret;
 }
 
-int tree_node_delete(struct tree_node_t **root, const char *key)
+int tree_node_delete(tree_t *tree, tree_node_t **root, const char *key)
 {
+    if (!tree->size)
+        return -2;
+
     int cmp;
 
     if (*root == NULL) 
@@ -107,36 +113,37 @@ int tree_node_delete(struct tree_node_t **root, const char *key)
     {
         if ((*root)->left == NULL)
         {
-            struct tree_node_t *temp = (*root)->right;
-            free_node(*root);
+            tree_node_t *temp = (*root)->right;
+            free_node(tree, *root);
             *root = temp;
+            tree->size--;
         }
         else if ((*root)->right == NULL)
         {
-            struct tree_node_t *temp = (*root)->left;
-            free_node(*root);
+            tree_node_t *temp = (*root)->left;
+            free_node(tree, *root);
             *root = temp;
+            tree->size--;
         }
         else
         {
-            struct tree_node_t *temp = min_value_node((*root)->right);
+            tree_node_t *temp = min_value_node((*root)->right);
             strcpy((*root)->key, temp->key);
-            if ((*root)->value_size != temp->value_size)
-                return -2;
             // update value
-            memcpy((*root)->value, temp->value, temp->value_size);
-            tree_node_delete(&((*root)->right), temp->key);
+            destruct((*root)->value, tree->value_destr);
+            copy((*root)->value, tree->value_size, tree->value_copy_constr);
+            tree_node_delete(tree, &((*root)->right), temp->key);
         }
     }
     else if (cmp < 0)
-        tree_node_delete(&((*root)->left), key);
+        tree_node_delete(tree, &((*root)->left), key);
     else
-        tree_node_delete(&((*root)->right), key);
+        tree_node_delete(tree, &((*root)->right), key);
 
    return 0;
 }
 
-void tree_node_apply_pre(struct tree_node_t *root, void (*f)(struct tree_node_t*, void*), void *arg)
+void tree_node_apply_pre(tree_node_t *root, void (*f)(tree_node_t*, void*), void *arg)
 {
     if (root == NULL)
         return;
@@ -147,38 +154,45 @@ void tree_node_apply_pre(struct tree_node_t *root, void (*f)(struct tree_node_t*
 
 /* public */
 
-struct tree_t* tree_init()
+tree_t* tree_init(size_t value_size, 
+                  copy_constructor_t value_copy_constr, 
+                  destructor_t value_destr)
 {
-    struct tree_t *tree = (struct tree_t*) malloc(sizeof(struct tree_t));
+    tree_t *tree = (tree_t*) malloc(sizeof(tree_t));
     tree->max_size = TREE_DEFAULT_MAX_SIZE;
     tree->root = NULL;
     tree->size = 0;
+
+    tree->value_size = value_size;
+    tree->value_copy_constr = value_copy_constr;
+    tree->value_destr = value_destr;
     return tree;
 }
 
-void tree_clear(struct tree_t *tree)
+void tree_clear(tree_t *tree)
 {
-
+    tree_node_t **nodes = tree_nodes_to_array(tree);
+    int i = 0;
+    for (i = 0; i < tree->size; i++)
+    {
+        free_node(tree, nodes[i]);
+    }
+    free(nodes);
+    free(tree);
 }
 
-int tree_insert(struct tree_t *tree, const char *key, const void *value, const size_t value_size)
+int tree_insert(tree_t *tree, const char *key, const void *value)
 {
-    int ret;
-    if (tree->size == tree->max_size)
-        return -1;
-    ret = tree_node_insert(&(tree->root), key, value, value_size);
-    if (ret == 0)
-        tree->size += 1;
-    return ret;
+    return tree_node_insert(tree, &(tree->root), key, value);
 }
 
-int tree_insert_all(struct tree_t *dst, struct tree_t *src)
+int tree_insert_all(tree_t *dst, tree_t *src)
 {
     int ret = 0;
-    struct tree_node_t *src_root = src->root;
+    tree_node_t *src_root = src->root;
 
     // insert root
-    ret = tree_insert(dst, src_root->key, src_root->value, src_root->value_size);
+    ret = tree_insert(dst, src_root->key, src_root->value);
 
     // insert left
     if (!ret && src_root->left != NULL)
@@ -191,10 +205,10 @@ int tree_insert_all(struct tree_t *dst, struct tree_t *src)
     return ret;
 }
 
-struct tree_node_t* tree_search(struct tree_t *tree, const char *key)
+tree_node_t* tree_search(tree_t *tree, const char *key)
 {
     int cmp;
-    struct tree_node_t *root = tree->root;
+    tree_node_t *root = tree->root;
 
     while (root != NULL)
     {
@@ -212,18 +226,45 @@ struct tree_node_t* tree_search(struct tree_t *tree, const char *key)
     return NULL;
 }
 
-int tree_delete(struct tree_t *tree, const char *key)
+int tree_delete(tree_t *tree, const char *key)
 {
     int ret;
     if (!tree->size)
         return -1;
-    ret = tree_node_delete(&(tree->root), key);
+    ret = tree_node_delete(tree, &(tree->root), key);
     if (ret == 0)
         tree->size -= 1;
     return ret;
 }
 
-void tree_apply_pre(struct tree_t *tree, void (*f)(struct tree_node_t*, void*), void *arg)
+void tree_apply_pre(tree_t *tree, void (*f)(tree_node_t*, void*), void *arg)
 {
     tree_node_apply_pre(tree->root, f, arg);
+}
+
+void tree_node_nodes_to_array(const tree_t *tree, tree_node_t *root, 
+                              tree_node_t ***nodes, int *index)
+{
+    if (!root)
+        return;
+
+    if (*index == 0)
+        *nodes = (tree_node_t**) malloc(sizeof(tree_node_t*) * tree->size);
+
+    (*nodes)[*index] = (tree_node_t*) root;
+    (*index)++;
+
+    if (root->left)
+        tree_node_nodes_to_array(tree, root->left, nodes, index);
+    if (root->right)
+        tree_node_nodes_to_array(tree, root->right, nodes, index);
+}
+
+tree_node_t** tree_nodes_to_array(const tree_t *tree)
+{
+    tree_node_t **nodes = NULL;
+    int index = 0;
+    tree_node_nodes_to_array(tree, tree->root, &nodes, &index);
+    assert(tree->size == index);
+    return nodes;
 }

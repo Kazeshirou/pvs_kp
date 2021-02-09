@@ -1,29 +1,44 @@
 #pragma once
 
-struct tree_node_t
+#include "copy_constructor.h"
+#include "destructor.h"
+
+typedef struct tree_node__t
 {
     char key[255];
     void *value;
-    size_t value_size;
-    struct tree_node_t *left;
-    struct tree_node_t *right;
-};
+    struct tree_node__t *left;
+    struct tree_node__t *right;
+} tree_node_t;
 
 #define TREE_DEFAULT_MAX_SIZE 10000
 
-struct tree_t 
+typedef struct tree__t 
 {
-    struct tree_node_t *root;
+    tree_node_t *root;
     size_t size;
     size_t max_size;
-};
 
-struct tree_t* tree_init();
-void tree_clear(struct tree_t *tree);
+    size_t value_size;
+    copy_constructor_t value_copy_constr;
+    destructor_t value_destr;
+} tree_t;
 
-int tree_insert(struct tree_t *tree, const char *key, const void *value, const size_t value_size);
-int tree_insert_all(struct tree_t *dst, struct tree_t *src);
-int tree_delete(struct tree_t *tree, const char *key);
-struct tree_node_t* tree_search(struct tree_t *tree, const char *key);
-void tree_apply_pre(struct tree_t *tree, void (*f)(struct tree_node_t*, void*), void *arg);
+tree_t* tree_init(size_t value_size, 
+                  copy_constructor_t value_copy_constr, 
+                  destructor_t value_destr);
+void tree_clear(tree_t *tree);
+
+int tree_insert(tree_t *tree, const char *key, const void *value);
+int tree_insert_all(tree_t *dst, tree_t *src);
+int tree_delete(tree_t *tree, const char *key);
+tree_node_t* tree_search(tree_t *tree, const char *key);
+void tree_apply_pre(tree_t *tree, void (*f)(tree_node_t*, void*), void *arg);
+tree_node_t** tree_nodes_to_array(const tree_t *tree);
+
+#define TREE_INIT(type, value_copy_constr, value_destr) \
+    tree_init(sizeof(type), value_copy_constr, value_destr)
+
+#define TREE_INSERT(tree, key, value) \
+    tree_insert(tree, key, &value)
 

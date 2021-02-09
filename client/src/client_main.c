@@ -13,7 +13,9 @@
 int while_true = 1;
 
 int main(int argc, char* argv[]) {
-    struct config_t config;
+    config_t config;
+
+
     int optct = optionProcess(&clientOptions, argc, argv);
     argc -= optct;
     argv += optct;
