@@ -95,7 +95,7 @@ int queue_pop_front(queue_t* queue)
     return 0;
 }
 
-const void* queue_peek(queue_t *queue)
+void* queue_peek(queue_t *queue)
 {
     void *value = NULL;
     if (queue && queue->size)

@@ -7,10 +7,10 @@
 
 #include "master.h"
 #include "worker.h"
-#include "tree.h"
 #include "fileparser.h"
 #include "while_true.h"
 #include "select_fd_storage.h"
+#include "end_marker.h"
 
 /* private */
 
@@ -44,7 +44,7 @@ void update_last_time_working(worker_time_t *worker_time)
 }
 
 worker_t pick_worker(state_t *state, const worker_t *workers,
-                     const char *addr, config_t config)
+                     const char *addr, master_config_t config)
 {
     worker_t worker;
     worker_time_t worker_time;
@@ -87,30 +87,30 @@ void state_clear(state_t *state)
     free(state);
 }
 
-/* public */
-
-worker_t* init_workers(config_t *config)
+worker_t* init_workers(master_config_t *master_config)
 {
     int i;
     int pid;
     int exit_code;
-    int count = config->workers_count;
+    int count = master_config->workers_count;
     int pipe_fds[count][2];
     worker_t worker;
     worker_t *workers = (worker_t*) malloc(sizeof(worker_t) * count);
+    worker_config_t worker_config;
+
     for (i = 0; i < count; i++)
     {
         if (pipe(pipe_fds[i]) < 0)
         {
             printf("pipe()");
-            config->workers_count--;
+            master_config->workers_count--;
             continue;
         }
 
         pid = fork();
         if (pid < 0)
         {
-            config->workers_count--;
+            master_config->workers_count--;
             printf("fork()");
             continue;
         }
@@ -118,7 +118,12 @@ worker_t* init_workers(config_t *config)
         if (pid == 0)
         {
             close(pipe_fds[i][1]); // child can't write
-            exit_code = worker_main(pipe_fds[i][0], *config);
+
+            worker_config.queue_dir = master_config->queue_dir;
+            worker_config.parent_pipe_fd = pipe_fds[i][0];
+
+            exit_code = worker_main(worker_config);
+
             close(pipe_fds[i][0]);
             exit(exit_code);
         }
@@ -151,34 +156,32 @@ void clear_workers(worker_t *workers, int size)
     free(workers);
 }
 
-int add_filename_to_worker(worker_t *worker, const char *filename)
+int add_filename_to_worker(worker_t *worker, const string_t *filename)
 {
     int ret;
-    string_t *message = string_init2(filename, strlen(filename));
-    ret = add_message(worker->peer_write, *message);
-    string_clear(message);
+    ret = add_message(worker->peer_write, filename, PARENT_MESSAGE_SEP_STR);
     return ret;
 }
 
 void add_filenames_to_workers(state_t *state, const queue_t *new_files,
-                              worker_t *workers, config_t config)
+                              worker_t *workers, master_config_t config)
 
 {
     char *addr;
-    const char *filename;
+    string_t *filename;
     worker_t worker;
     tree_t *sended_files = state->sended_files;
     queue_node_t *current_file = new_files->front;
     while (current_file)
     {
-        filename = ((string_t*)current_file->value)->data;
-        if (!tree_search(sended_files, filename))
+        filename = ((string_t*)current_file->value);
+        if (!tree_search(sended_files, filename->data))
         {
             // send file name
             addr = get_addr(filename);
             worker = pick_worker(state, workers, addr, config);
             add_filename_to_worker(&worker, filename);
-            tree_insert(sended_files, filename, NULL);
+            tree_insert(sended_files, filename->data, NULL);
         }
         current_file = current_file->next;
     }
@@ -196,7 +199,7 @@ peer_t** get_peers_from_workers(worker_t *workers, size_t workers_count)
 }
 
 
-void dispatch(worker_t *workers, config_t config)
+void dispatch(worker_t *workers, master_config_t config)
 {
     int i;
     state_t *state = state_init();
@@ -206,7 +209,7 @@ void dispatch(worker_t *workers, config_t config)
 
     WHILE_TRUE()
     {
-        new_files = get_files_names(config.queue_dir);
+        new_files = get_filenames(config.queue_dir);
         if (new_files)
         {
             add_filenames_to_workers(state, new_files, workers, config);
@@ -215,7 +218,7 @@ void dispatch(worker_t *workers, config_t config)
 
         for (i = 0; i < config.workers_count; i++)
         {
-            fill_buffer_in(workers[i].peer_write, " ");
+            fill_buffer_in(workers[i].peer_write);
         }
 
         select_step(storage, peers, config.workers_count);
@@ -226,7 +229,7 @@ void dispatch(worker_t *workers, config_t config)
     free(peers);
 }
 
-void master_main(config_t config)
+void master_main(master_config_t config)
 {
     worker_t *workers = init_workers(&config);
     dispatch(workers, config);

@@ -5,7 +5,7 @@
 #include "queue.h"
 #include "mstring.h"
 
-#define MAX_BUFFER_SIZE 1
+#define MAX_BUFFER_SIZE 1024
 
 #define FDT_SOCKET '0'
 #define FDT_PIPE '1'
@@ -29,10 +29,10 @@ peer_t* peer_init(int fd, char type);
 void peer_clear(void *peer);
 void* peer_copy(const void *peer);
 
-int add_message(peer_t *peer, string_t message);
+int add_message(peer_t *peer, const string_t *message, const char *end_marker);
 
 int peer_send(peer_t *peer);
 int peer_receive(peer_t *peer);
  
-void fill_buffer_in(peer_t *peer, const char *end_marker);
+void fill_buffer_in(peer_t *peer);
 int fill_messages_out(peer_t *peer, const char *end_marker);

@@ -30,7 +30,7 @@ void queue_clear(queue_t *queue);
 int queue_push_back(queue_t *queue, const void *value);
 int queue_push_all(queue_t *queue_dst, queue_t *queue_src);
 int queue_pop_front(queue_t* queue);
-const void* queue_peek(queue_t *queue);
+void* queue_peek(queue_t *queue);
 int queue_is_empty(queue_t *queue);
 
 #define QUEUE_INIT(type, value_copy_constr, value_destr) \

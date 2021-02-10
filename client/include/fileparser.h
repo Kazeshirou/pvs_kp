@@ -7,9 +7,9 @@
 #define FILENAME_SEP '/'
 #define FILENAME_SEP_STR "/"
 
-queue_t* get_files_names(const char *path_to_dir);
+queue_t* get_filenames(const char *path_to_dir);
 
-char* get_addr(const char *filename);
+char* get_addr(const string_t *filename);
 void free_addr(char *addr);
 
-string_t* parse_message(char *filename);
+string_t* parse_message(const char *queue_dir, const string_t *filename);

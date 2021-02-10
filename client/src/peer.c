@@ -27,7 +27,7 @@ queue_t* parse_buffer(const char *buffer, size_t buffer_size, const char *end_ma
         if (j == end_marker_len)
         {
             message_end = i - end_marker_len;
-            message_size = message_end-message_begin;
+            message_size = message_end-message_begin+1;
 
             message = string_init2(buffer + message_begin, message_size);
             if (QUEUE_PUSH_BACK(messages, *message) != 0)
@@ -35,16 +35,16 @@ queue_t* parse_buffer(const char *buffer, size_t buffer_size, const char *end_ma
                 printf("error"); //todo
             }
             string_clear(message);
-            *parsed += message_size + end_marker_len;
-            message_begin = i;
+            *parsed = i+1;
+            message_begin = i+1;
         }
     }
     return messages;
 }
 
-int can_add_message_full(const string_t message, const peer_t peer)
+int buffer_in_is_full(const peer_t peer)
 {
-    return message.size + peer.buffer_in_size <= MAX_BUFFER_SIZE;
+    return peer.buffer_in_size == MAX_BUFFER_SIZE;
 }
 
 void add_data_to_buffer_in(peer_t *peer, const char *data, size_t size)
@@ -54,42 +54,33 @@ void add_data_to_buffer_in(peer_t *peer, const char *data, size_t size)
     peer->buffer_in_size += size;
 }
 
-void add_message_internal(peer_t *peer, string_t message, size_t size, const char *end_marker)
+#define MIN(a,b) (a < b) ? a : b
+
+void reduce_messages_in(peer_t *peer, const string_t *message)
 {
-    char *src = message.data + peer->message_in_begin;
-    add_data_to_buffer_in(peer, src, size);
-    peer->message_in_begin = message.size - size;
-    if (peer->message_in_begin == 0)
+    size_t available_to_send = MIN(MAX_BUFFER_SIZE, message->size-peer->message_in_begin);
+    char *src = message->data + peer->message_in_begin;
+    add_data_to_buffer_in(peer, src, available_to_send);
+    peer->message_in_begin += available_to_send;
+    // if end of message
+    if (peer->message_in_begin == message->size)
     {
-        add_data_to_buffer_in(peer, end_marker, strlen(end_marker));
+        queue_pop_front(peer->messages_in);
+        peer->message_in_begin = 0;
     }
-}
-
-void add_message_full(peer_t *peer, string_t message, const char *end_marker)
-{
-    add_message_internal(peer, message, message.size, end_marker);
-}
-
-void add_message_part(peer_t *peer, string_t message, const char *end_marker)
-{
-    add_message_internal(peer, message, MAX_BUFFER_SIZE-peer->buffer_in_size, end_marker);
 }
 
 void reduce_buffer(char *buffer, size_t *buffer_size, size_t reduced)
 {
     *buffer_size -= reduced;
-    memmove(buffer, buffer + reduced, reduced);
+    memmove(buffer, buffer + reduced, *buffer_size);
 }
 
-void reduce_buffer_in(peer_t *peer, size_t sended)
-{
-    reduce_buffer(peer->buffer_in, &(peer->buffer_in_size), sended);
-}
+#define REDUCE_BUFFER_IN(peer, sended) \
+    reduce_buffer(peer->buffer_in, &(peer->buffer_in_size), sended)
 
-void reduce_buffer_out(peer_t *peer, size_t parsed)
-{
-    reduce_buffer(peer->buffer_out, &(peer->buffer_out_size), parsed);
-}
+#define REDUCE_BUFFER_OUT(peer, parsed) \
+    reduce_buffer(peer->buffer_out, &(peer->buffer_out_size), parsed)
 
 
 /* public */
@@ -139,9 +130,25 @@ void peer_clear(void *_peer)
 }
 
 
-int add_message(peer_t *peer, string_t message)
+int add_message(peer_t *peer, const string_t *message, const char *end_marker)
 {
-    return QUEUE_PUSH_BACK(peer->messages_in, message);
+    int ret;
+    if (end_marker != NULL)
+    {
+        string_t *end_marker_str = string_init2(end_marker, strlen(end_marker));
+        string_t *message_with_end = concat(message, end_marker_str);
+
+        ret = queue_push_back(peer->messages_in, message_with_end);
+
+        string_clear(end_marker_str);
+        string_clear(message_with_end);
+    }
+    else
+    {
+        ret = queue_push_back(peer->messages_in, message);
+    }
+    
+    return ret;
 }
 
 int peer_send(peer_t *peer) 
@@ -161,10 +168,10 @@ int peer_send(peer_t *peer)
         break;
     }
 
-    printf("sended=%ld\n", sended);
+    printf("sended=%ld data=%s\n", sended, peer->buffer_in);
 
     if (sended != -1)
-        reduce_buffer_in(peer, sended);
+        REDUCE_BUFFER_IN(peer, sended);
     else
         ret = -1;
     return ret;
@@ -175,6 +182,8 @@ int peer_receive(peer_t *peer)
     int ret = 0;
     ssize_t received;
     size_t size = MAX_BUFFER_SIZE - peer->buffer_out_size;
+    if (size == 0)
+        return -3;
 
     switch (peer->type)
     {
@@ -189,7 +198,7 @@ int peer_receive(peer_t *peer)
         break;
     }
 
-    printf("received=%ld\n", received);
+   // printf("received=%ld fd=%d\n", received, peer->fd);
     
     if (received != -1)
         peer->buffer_out_size += received;
@@ -199,17 +208,14 @@ int peer_receive(peer_t *peer)
     return ret;
 }
 
-void fill_buffer_in(peer_t *peer, const char *end_marker)
+void fill_buffer_in(peer_t *peer)
 {
     const string_t *message = (string_t*)queue_peek(peer->messages_in);
-    while (message && can_add_message_full(*message, *peer))
+    while (!buffer_in_is_full(*peer) && message)
     {
-        add_message_full(peer, *message, end_marker);
-        queue_pop_front(peer->messages_in);
+        reduce_messages_in(peer, message);
         message = (string_t*)queue_peek(peer->messages_in);
     }
-    if (message)
-        add_message_part(peer, *message, end_marker);
 }
 
 int fill_messages_out(peer_t *peer, const char *end_marker)
@@ -225,7 +231,7 @@ int fill_messages_out(peer_t *peer, const char *end_marker)
     ret = queue_push_all(peer->messages_out, new_messages);
     queue_clear(new_messages); 
 
-    reduce_buffer_out(peer, parsed);
+    REDUCE_BUFFER_OUT(peer, parsed);
 
     return ret;
 }

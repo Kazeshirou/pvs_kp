@@ -13,7 +13,7 @@
 int while_true = 1;
 
 int main(int argc, char* argv[]) {
-    config_t config;
+    master_config_t config;
 
 
     int optct = optionProcess(&clientOptions, argc, argv);
@@ -27,6 +27,7 @@ int main(int argc, char* argv[]) {
     char *queue_dir = DEFAULT_QUEUE_DIR;
     config.queue_dir = queue_dir;
     config.workers_count = 2;
+    config.min_interval_working_with_addr = 1000;
 
     /*if (COUNT_OPT(QUEUE_DIR)) {
         queue_dir = OPT_VALUE_QUEUE_DIR;

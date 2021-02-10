@@ -1,3 +1,3 @@
 #pragma once
 
-extern const char* end_marker;
+#define PARENT_MESSAGE_SEP_STR " "

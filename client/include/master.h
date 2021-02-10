@@ -23,4 +23,4 @@ typedef struct state__t
     int rr_index; // for round robin alg
 } state_t;
 
-void master_main(config_t config);
+void master_main(master_config_t config);
