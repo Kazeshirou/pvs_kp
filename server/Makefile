@@ -42,7 +42,7 @@ endif
 # -Werror
 # Флаги сборки
 LDFLAGS +=  $(shell autoopts-config ldflags)
-LDFLAGS += -lpthread
+LDFLAGS += -lpthread -lpcre
 
 # latex -> pdf
 PDFLATEX = pdflatex -interaction=nonstopmode
