@@ -5,6 +5,7 @@
         "features.h": "c",
         "mutex": "c",
         "thread-shared-types.h": "c",
-        "server_info.h": "c"
+        "server_info.h": "c",
+        "smtp_cmd.h": "c"
     }
 }

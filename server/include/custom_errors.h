@@ -20,3 +20,5 @@ typedef int64_t error_code_t;
 #define CE_SIZE -6
 /// Достигнут максимальный размер.
 #define CE_MAX_SIZE -7
+// Переданы неверные аргументы.
+#define CE_INVALID_ARG -8
