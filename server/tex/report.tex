@@ -51,6 +51,7 @@
 
 \section{Синтаксис команд протокола}
 
+\subsection{Команды протокола}
 \begin{description}
 \item[Команда HELO]
 \input{include/re_helo_re.tex}
@@ -69,6 +70,13 @@
 \item[Команда QUIT]
 \input{include/re_quit_re.tex}
 \end{description}
+
+\subsection{Вспомогательные выражения, используемые для описания команд протокола}
+\begin{description}
+\item[RE\_DOMAIN]
+\input{include/re_domain_re.tex}
+\end{description}
+
 
 Для грамматики можно использовать вставку из файла и оформление \textbackslash{}begin\{verbatim\} и \textbackslash{}end\{verbatim\} или пакет \textit{listings}\footnote{На дворе XXI век, но пакет \textit{listings} всё ещё не пашет с русскими комментариями без бубна, и лично я его пока не победил.}.
 
