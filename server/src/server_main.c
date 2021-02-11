@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    printf(RE_ADDRES_LITERAL "\n");
+    printf(RE_IPV6_ADDR "\n");
     // Запуск сервера.
     smtp_server(cfg);
     return 0;
