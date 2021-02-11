@@ -1,36 +1,34 @@
 #include "msg.h"
 
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
 
-#include "while_true.h"
+error_code_t msg_init(msg_t* msg, const size_t max_size) {
+    msg->text     = NULL;
+    msg->size     = 0;
+    msg->max_size = 0;
 
-struct msg create_msg(const size_t max_size) {
-    struct msg msg = {.text = NULL, .size = 0, .max_size = 0};
-    msg.text       = calloc(max_size, sizeof(char));
+    msg->text = calloc(max_size, sizeof(char));
 
-    if (!msg.text) {
+    if (msg->text) {
         printf("Creating of msg failed");
-        return msg;
+        return CE_ALLOC;
     }
 
-    msg.max_size = max_size;
-    return msg;
+    msg->max_size = max_size;
+    return CE_SUCCESS;
 }
 
-int recreate_msg(struct msg* msg, const size_t new_max_size) {
+error_code_t msg_resize(msg_t* msg, const size_t new_max_size) {
     if (new_max_size <= msg->max_size) {
-        return 0;
+        return CE_SUCCESS;
     }
 
     char* new_buf = calloc(new_max_size, sizeof(char));
     if (!new_buf) {
         printf("new_buf calloc failed");
-        return -1;
+        return CE_ALLOC;
     }
 
     if (msg->text) {
@@ -40,68 +38,27 @@ int recreate_msg(struct msg* msg, const size_t new_max_size) {
 
     msg->text     = new_buf;
     msg->max_size = new_max_size;
-    return 1;
+    return CE_SUCCESS;
 }
 
-int add_text_to_message(struct msg* msg, const char* buf, size_t size) {
-    size_t new_size = msg->size + size;
+error_code_t msg_add_text(msg_t* msg, const char* buf, size_t size) {
+    size_t       new_size = msg->size + size;
+    error_code_t cerr;
     if (new_size > msg->max_size) {
-        if (recreate_msg(msg, new_size + 50) < 0) {
-            return -1;
+        cerr = msg_resize(msg, new_size + 50);
+        if (cerr != CE_SUCCESS) {
+            return cerr;
         }
     }
 
     memcpy(msg->text + msg->size, buf, size);
     msg->size = new_size;
-    return msg->size;
+    return CE_SUCCESS;
 }
 
-void free_msg(struct msg* msg) {
+void msg_destroy(msg_t* msg) {
     free(msg->text);
-}
-
-struct msg recv_one_message(int fd) {
-    struct msg msg = create_msg(50);
-    char       recv_buffer[1000];
-    size_t     received = 0;
-    WHILE_TRUE() {
-        int recv_res = recv(fd, &recv_buffer, sizeof(recv_buffer), 0);
-        if (recv_res == 0) {
-            printf("The connection is closed\n");
-            return msg;
-        }
-        if (recv_res > 0) {
-            received += recv_res;
-            if (add_text_to_message(&msg, recv_buffer, recv_res) < 0) {
-                return msg;
-            }
-            continue;
-        }
-
-        if (errno != EWOULDBLOCK) {
-            perror("recv() failed");
-            return msg;
-        }
-
-        if (received) {
-            return msg;
-        }
-        sleep(0.1);
-    }
-
-    return msg;
-}
-
-
-char* get_msg(struct msg* const msg) {
-    char* output = malloc(msg->size + 1);
-    if (!output) {
-        //  Не удалось выделить буфер под сообщение.
-        return NULL;
-    }
-
-    memcpy(output, msg->text, msg->size);
-    output[msg->size] = 0;
-    msg->size         = 0;
-    return output;
+    msg->text     = NULL;
+    msg->size     = 0;
+    msg->max_size = 0;
 }

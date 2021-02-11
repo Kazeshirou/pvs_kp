@@ -77,44 +77,12 @@ error_code_t process_listener(const int listener_fd, int* new_client_fd) {
 }
 
 error_code_t process_client(server_info_t* storage, const size_t i) {
-    struct msg msg = recv_one_message(storage->fds[i].fd);
-    if (!msg.size) {
-        free_msg(&msg);
-        return CE_COMMON;
-    }
-
-    printf("  %ld bytes received:\n", msg.size);
-    printf("   -> %s\n", msg.text);
-
-    if (!msg.size ||
-        (add_text_to_message(storage->msgs + i, msg.text, msg.size) < 0)) {
-        perror("  add_text_to_msg() failed");
-        free_msg(&msg);
-        return CE_COMMON;
-    }
-
-    char* full_msg = get_msg(storage->msgs + i);
-    if (!full_msg) {
-        return CE_COMMON;
-    }
-
-    // Собрано полное сообщение (получен маркер конца сообщения).
-    // Отправка данных обратно на сервер.
-    printf("  Finished msg has found:\n");
-    printf("   -> %s\n", full_msg);
-    int send_res = send(storage->fds[i].fd, full_msg, strlen(full_msg), 0);
-    free_msg(&msg);
-    if (send_res < 0) {
-        perror("  send() failed");
-        return CE_COMMON;
-    }
     return CE_SUCCESS;
 }
 
 error_code_t process_poll_fds(server_info_t* storage) {
     // Есть сокеты, готовые к чтению.
     int current_size = storage->size;
-    int compress     = 0;
     for (int i = 0; i < current_size; i++) {
         if (storage->fds[i].revents == 0)
             continue;
@@ -124,7 +92,6 @@ error_code_t process_poll_fds(server_info_t* storage) {
                    storage->fds[i].fd, storage->fds[i].revents);
             close(storage->fds[i].fd);
             storage->fds[i].fd = -1;
-            compress           = 1;
             continue;
         }
 
@@ -132,13 +99,7 @@ error_code_t process_poll_fds(server_info_t* storage) {
         if (process_client(storage, i) < 0) {
             close(storage->fds[i].fd);
             storage->fds[i].fd = -1;
-            compress           = 1;
         }
-    }
-
-    if (compress) {
-        compress = 0;
-        compress_poll_fd_storage(storage);
     }
 
     return 1;

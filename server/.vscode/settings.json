@@ -4,6 +4,7 @@
         "threads.h": "c",
         "features.h": "c",
         "mutex": "c",
-        "thread-shared-types.h": "c"
+        "thread-shared-types.h": "c",
+        "server_info.h": "c"
     }
 }

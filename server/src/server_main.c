@@ -4,6 +4,7 @@
 #include "checkoptn.h"
 
 #include "end_program_handler.h"
+#include "re_definitions.h"
 #include "smtp_server.h"
 #include "while_true.h"
 
@@ -33,6 +34,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    printf(RE_ADDRES_LITERAL "\n");
     // Запуск сервера.
     smtp_server(cfg);
     return 0;

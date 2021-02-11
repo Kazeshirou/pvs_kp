@@ -1,7 +1,7 @@
 #pragma once
 
 #include "custom_errors.h"
-#include "poll_fd_storage.h"
+#include "server_info.h"
 
 typedef struct {
     uint16_t port;

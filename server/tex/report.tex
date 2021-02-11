@@ -44,7 +44,7 @@
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{include/server_def_dot.pdf}
+\includegraphics[width=\textwidth]{include/client_def_dot.pdf}
 \caption{Состояния сервера}
 \label{fig:fsm}
 \end{figure}
@@ -88,12 +88,12 @@
 Весь это раздел сгеренерировал doxygen из части комментированных исходников программы. В файле конфигурации \textbf{doxyggen.cfg} был отключён параметр \textbf{HAVE\_DOT}, поскольку для рисования графов вызовов используется \textit{cflow}.
 
 %\input{include/files}
-\input{include/annotated}
-\input{include/server-state_8h.tex}
-\input{include/server-re_8h.tex}
-\input{include/server-run_8h.tex}
-\input{include/server-run_8c.tex}
-\input{include/structmsg.tex}
+%\input{include/annotated}
+%\input{include/server-state_8h.tex}
+%\input{include/server-re_8h.tex}
+%\input{include/server-run_8h.tex}
+%\input{include/server-run_8c.tex}
+%\input{include/structmsg.tex}
 %\input{include/structnode__t.tex}
 
 \section{Графы вызова функций}
@@ -105,13 +105,6 @@
 \includegraphics[width=\textwidth]{include/cflow01_dot.pdf}
 \caption{Граф вызовов, основные функции}
 \label{fig:cflow01}
-\end{figure}
-
-\begin{figure}
-\centering
-\includegraphics[width=\textwidth]{include/cflow02_dot.pdf}
-\caption{Граф вызовов, функции обработки команд}
-\label{fig:cflow02}
 \end{figure}
 
 Графы созданы с помощью \textit{cflow}, \textit{cflow2dot}, \textit{dot}.
