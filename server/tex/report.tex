@@ -52,10 +52,22 @@
 \section{Синтаксис команд протокола}
 
 \begin{description}
-\item[Команда выхода из сеанса]
-\input{include/re_cmd_quit_re.tex}
-\item[Команда передачи имени пользователя]
-\input{include/re_cmd_user_re.tex}
+\item[Команда HELO]
+\input{include/re_helo_re.tex}
+\item[Команда EHLO]
+\input{include/re_ehlo_re.tex}
+\item[Команда MAIL]
+\input{include/re_mail_re.tex}
+\item[Команда RCPT]
+\input{include/re_rcpt_re.tex}
+\item[Команда DATA]
+\input{include/re_data_re.tex}
+\item[Команда VRFY]
+\input{include/re_vrfy_re.tex}
+\item[Команда RSET]
+\input{include/re_rset_re.tex}
+\item[Команда QUIT]
+\input{include/re_quit_re.tex}
 \end{description}
 
 Для грамматики можно использовать вставку из файла и оформление \textbackslash{}begin\{verbatim\} и \textbackslash{}end\{verbatim\} или пакет \textit{listings}\footnote{На дворе XXI век, но пакет \textit{listings} всё ещё не пашет с русскими комментариями без бубна, и лично я его пока не победил.}.

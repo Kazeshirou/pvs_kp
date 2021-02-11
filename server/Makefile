@@ -48,7 +48,7 @@ LDFLAGS += -lpthread -lpcre
 PDFLATEX = pdflatex -interaction=nonstopmode
 
 # Файл с регулярными выражениями
-RE_FILE = $(IDIR)/server-re.h
+RE_FILE = $(IDIR)/re_definitions.h
 # Файл с графом процесса сборки программы
 Makefile_1.dot = $(DOTDIR)/Makefile_1.dot
 
@@ -115,7 +115,7 @@ $(PROG): $(OBJS)
 
 # Отчёт. PDFLATEX вызывается дважды для нормального 
 # создания ссылок, это НЕ опечатка.
-$(REPORT): $(TEXS) doxygen $(addprefix $(TEXINCDIR)/, client_def_dot.pdf Makefile_1_dot.pdf re_cmd_quit_re.tex re_cmd_user_re.tex cflow01_dot.pdf  checkoptn.def.tex)
+$(REPORT): $(TEXS) doxygen $(addprefix $(TEXINCDIR)/, client_def_dot.pdf Makefile_1_dot.pdf re_definitions_re.tex cflow01_dot.pdf  checkoptn.def.tex)
 	cp $(DOXDIR)/latex/*.sty ~/texmf/tex/latex/
 	texhash ~/texmf 
 	cd $(TEXDIR) && echo `$(PDFLATEX) report.tex` 
