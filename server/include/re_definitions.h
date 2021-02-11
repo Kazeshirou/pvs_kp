@@ -22,20 +22,34 @@
     "{0,2})?::" RE_IPV6_HEX RE_IPV6_HEX_WITH_COLON "{2})"
 #define RE_IPV6_COMP4                          \
     "((" RE_IPV6_HEX    RE_IPV6_HEX_WITH_COLON \
-    "?)?::" RE_IPV6_HEX RE_IPV6_HEX_WITH_COLON "{4})"
+    "?)?::" RE_IPV6_HEX RE_IPV6_HEX_WITH_COLON "{3})"
 #define RE_IPV6_COMP5 \
-    "(" RE_IPV6_HEX "?::" RE_IPV6_HEX RE_IPV6_HEX_WITH_COLON "{5})"
+    "(" RE_IPV6_HEX "?::" RE_IPV6_HEX RE_IPV6_HEX_WITH_COLON "{4})"
+#define RE_IPV6_COMP6 "(::" RE_IPV6_HEX RE_IPV6_HEX_WITH_COLON "{5})"
 #define RE_IPV6_COMP                                                        \
     "(" RE_IPV6_COMP0 "|" RE_IPV6_COMP1 "|" RE_IPV6_COMP2 "|" RE_IPV6_COMP3 \
-    "|" RE_IPV6_COMP4 "|" RE_IPV6_COMP5 ")"
+    "|" RE_IPV6_COMP4 "|" RE_IPV6_COMP5 "|" RE_IPV6_COMP6 ")"
 #define RE_IPV6V4_FULL \
     "(" RE_IPV6_HEX RE_IPV6_HEX_WITH_COLON "{5}:" RE_IPV4_ADDRESS_LITERAL ")"
-#define RE_IPV6V4_FULL_COMP \
-    "("                     \
-    ")"
-#define RE_IPV6_ADDR                                     \
-    "(" RE_IPV6_FULL "|" RE_IPV6_COMP "|" RE_IPV6V4_FULL \
-    "|" RE_IPV6V4_FULL_COMP ")"
+#define RE_IPV6V4_COMP0                     \
+    "((" RE_IPV6_HEX RE_IPV6_HEX_WITH_COLON \
+    "{0,3})?::" RE_IPV4_ADDRESS_LITERAL ")"
+#define RE_IPV6V4_COMP1                                             \
+    "((" RE_IPV6_HEX RE_IPV6_HEX_WITH_COLON "{0,2})?::" RE_IPV6_HEX \
+    ":" RE_IPV4_ADDRESS_LITERAL ")"
+#define RE_IPV6V4_COMP2                        \
+    "((" RE_IPV6_HEX    RE_IPV6_HEX_WITH_COLON \
+    "?)?::" RE_IPV6_HEX RE_IPV6_HEX_WITH_COLON ":" RE_IPV4_ADDRESS_LITERAL ")"
+#define RE_IPV6V4_COMP3                                      \
+    "(" RE_IPV6_HEX "?::" RE_IPV6_HEX RE_IPV6_HEX_WITH_COLON \
+    "{2}:" RE_IPV4_ADDRESS_LITERAL ")"
+#define RE_IPV6V4_COMP4 \
+    "(::" RE_IPV6_HEX RE_IPV6_HEX_WITH_COLON "{3}:" RE_IPV4_ADDRESS_LITERAL ")"
+#define RE_IPV6V4_COMP                                          \
+    "(" RE_IPV6V4_COMP0 "|" RE_IPV6V4_COMP1 "|" RE_IPV6V4_COMP2 \
+    "|" RE_IPV6V4_COMP3 "|" RE_IPV6V4_COMP4 ")"
+#define RE_IPV6_ADDR \
+    "(" RE_IPV6_FULL "|" RE_IPV6_COMP "|" RE_IPV6V4_FULL "|" RE_IPV6V4_COMP ")"
 #define RE_IPV6_ADDRESS_LITERAL    "(IPv6:" RE_IPV6_ADDR ")"
 #define RE_DCONTENT                "([\\x{21}-\\x{5A}\\x{5E}-\\x{7C}])"
 #define RE_GENERAL_ADDRESS_LITERAL "(" RE_LDH_STR ":" RE_DCONTENT "+)"

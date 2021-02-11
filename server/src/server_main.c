@@ -47,11 +47,12 @@ int main(int argc, char* argv[]) {
         char**      aLineToMatch;
         const char* psubStrMatchStr;
         int         j;
-        char*       testStrings[] = {"::", "1:2:3:4:5:6:7:8", "1:2:3:4:5::8",
-                               "1:2:3:4::7:8", NULL};
+        char* testStrings[] = {"::1:2:3:4:5:127.0.0.1", "::1:2:3:4:127.0.0.1",
+                               "1:2:3:4:5:6:7:8",       "1:2:3:4:5::8",
+                               "1:2:3:4::7:8",          NULL};
 
 
-        aStrRegex = "^" RE_IPV6_COMP "$";
+        aStrRegex = "^" RE_IPV6_ADDR "$";
         printf("Regex to use: %s\n", aStrRegex);
 
         // First, the regex string must be compiled.
