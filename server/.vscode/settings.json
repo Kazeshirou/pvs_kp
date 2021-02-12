@@ -6,6 +6,9 @@
         "mutex": "c",
         "thread-shared-types.h": "c",
         "server_info.h": "c",
-        "smtp_cmd.h": "c"
+        "smtp_cmd.h": "c",
+        "client.h": "c",
+        "stddef.h": "c",
+        "client-fsm.h": "c"
     }
 }

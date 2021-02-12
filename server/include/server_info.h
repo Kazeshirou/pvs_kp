@@ -8,7 +8,7 @@
 
 typedef struct {
     struct pollfd* fds;
-    client_t*      clients;
+    client_t**     clients;
     size_t         size;
     size_t         max_size;
 } server_info_t;

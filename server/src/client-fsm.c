@@ -55,7 +55,7 @@
  */
 typedef te_client_state (client_callback_t)(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt );
@@ -499,7 +499,7 @@ client_invalid_transition( te_client_state st, te_client_event evt )
 static te_client_state
 client_do_CLIENT_INITED_quit(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -512,7 +512,7 @@ client_do_CLIENT_INITED_quit(
 static te_client_state
 client_do_CLIENT_INITED_rset(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -525,7 +525,7 @@ client_do_CLIENT_INITED_rset(
 static te_client_state
 client_do_CLIENT_INITED_shutdown(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -538,7 +538,7 @@ client_do_CLIENT_INITED_shutdown(
 static te_client_state
 client_do_CLIENT_INITED_timeout(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -551,7 +551,7 @@ client_do_CLIENT_INITED_timeout(
 static te_client_state
 client_do_CLIENT_INITED_verify(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -564,7 +564,7 @@ client_do_CLIENT_INITED_verify(
 static te_client_state
 client_do_DATA_RECEIVED_quit(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -577,7 +577,7 @@ client_do_DATA_RECEIVED_quit(
 static te_client_state
 client_do_DATA_RECEIVED_rset(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -590,7 +590,7 @@ client_do_DATA_RECEIVED_rset(
 static te_client_state
 client_do_DATA_RECEIVED_shutdown(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -603,7 +603,7 @@ client_do_DATA_RECEIVED_shutdown(
 static te_client_state
 client_do_DATA_RECEIVED_timeout(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -616,7 +616,7 @@ client_do_DATA_RECEIVED_timeout(
 static te_client_state
 client_do_DATA_RECEIVED_verify(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -629,7 +629,7 @@ client_do_DATA_RECEIVED_verify(
 static te_client_state
 client_do_EHLO_RECEIVED_quit(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -642,7 +642,7 @@ client_do_EHLO_RECEIVED_quit(
 static te_client_state
 client_do_EHLO_RECEIVED_rset(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -655,7 +655,7 @@ client_do_EHLO_RECEIVED_rset(
 static te_client_state
 client_do_EHLO_RECEIVED_shutdown(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -668,7 +668,7 @@ client_do_EHLO_RECEIVED_shutdown(
 static te_client_state
 client_do_EHLO_RECEIVED_timeout(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -681,7 +681,7 @@ client_do_EHLO_RECEIVED_timeout(
 static te_client_state
 client_do_EHLO_RECEIVED_verify(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -694,7 +694,7 @@ client_do_EHLO_RECEIVED_verify(
 static te_client_state
 client_do_END_DATA_RECEIVED_quit(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -707,7 +707,7 @@ client_do_END_DATA_RECEIVED_quit(
 static te_client_state
 client_do_END_DATA_RECEIVED_rset(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -720,7 +720,7 @@ client_do_END_DATA_RECEIVED_rset(
 static te_client_state
 client_do_END_DATA_RECEIVED_shutdown(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -733,7 +733,7 @@ client_do_END_DATA_RECEIVED_shutdown(
 static te_client_state
 client_do_END_DATA_RECEIVED_timeout(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -746,7 +746,7 @@ client_do_END_DATA_RECEIVED_timeout(
 static te_client_state
 client_do_END_DATA_RECEIVED_verify(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -759,7 +759,7 @@ client_do_END_DATA_RECEIVED_verify(
 static te_client_state
 client_do_EXPECTED_MSG_TEXT_OR_END_MSG_quit(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -772,7 +772,7 @@ client_do_EXPECTED_MSG_TEXT_OR_END_MSG_quit(
 static te_client_state
 client_do_EXPECTED_MSG_TEXT_OR_END_MSG_rset(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -785,7 +785,7 @@ client_do_EXPECTED_MSG_TEXT_OR_END_MSG_rset(
 static te_client_state
 client_do_EXPECTED_MSG_TEXT_OR_END_MSG_shutdown(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -798,7 +798,7 @@ client_do_EXPECTED_MSG_TEXT_OR_END_MSG_shutdown(
 static te_client_state
 client_do_EXPECTED_MSG_TEXT_OR_END_MSG_timeout(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -811,7 +811,7 @@ client_do_EXPECTED_MSG_TEXT_OR_END_MSG_timeout(
 static te_client_state
 client_do_EXPECTED_MSG_TEXT_OR_END_MSG_verify(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -824,7 +824,7 @@ client_do_EXPECTED_MSG_TEXT_OR_END_MSG_verify(
 static te_client_state
 client_do_EXPECTED_RCPT_OR_DATA_quit(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -837,7 +837,7 @@ client_do_EXPECTED_RCPT_OR_DATA_quit(
 static te_client_state
 client_do_EXPECTED_RCPT_OR_DATA_rset(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -850,7 +850,7 @@ client_do_EXPECTED_RCPT_OR_DATA_rset(
 static te_client_state
 client_do_EXPECTED_RCPT_OR_DATA_shutdown(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -863,7 +863,7 @@ client_do_EXPECTED_RCPT_OR_DATA_shutdown(
 static te_client_state
 client_do_EXPECTED_RCPT_OR_DATA_timeout(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -876,7 +876,7 @@ client_do_EXPECTED_RCPT_OR_DATA_timeout(
 static te_client_state
 client_do_EXPECTED_RCPT_OR_DATA_verify(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -889,7 +889,7 @@ client_do_EXPECTED_RCPT_OR_DATA_verify(
 static te_client_state
 client_do_HELLO_RECEIVED_quit(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -902,7 +902,7 @@ client_do_HELLO_RECEIVED_quit(
 static te_client_state
 client_do_HELLO_RECEIVED_rset(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -915,7 +915,7 @@ client_do_HELLO_RECEIVED_rset(
 static te_client_state
 client_do_HELLO_RECEIVED_shutdown(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -928,7 +928,7 @@ client_do_HELLO_RECEIVED_shutdown(
 static te_client_state
 client_do_HELLO_RECEIVED_timeout(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -941,7 +941,7 @@ client_do_HELLO_RECEIVED_timeout(
 static te_client_state
 client_do_HELLO_RECEIVED_verify(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -954,7 +954,7 @@ client_do_HELLO_RECEIVED_verify(
 static te_client_state
 client_do_INIT_quit(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -967,7 +967,7 @@ client_do_INIT_quit(
 static te_client_state
 client_do_INIT_rset(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -980,7 +980,7 @@ client_do_INIT_rset(
 static te_client_state
 client_do_INIT_shutdown(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -993,7 +993,7 @@ client_do_INIT_shutdown(
 static te_client_state
 client_do_INIT_timeout(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1006,7 +1006,7 @@ client_do_INIT_timeout(
 static te_client_state
 client_do_INIT_verify(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1019,7 +1019,7 @@ client_do_INIT_verify(
 static te_client_state
 client_do_MAIL_RECEIVED_quit(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1032,7 +1032,7 @@ client_do_MAIL_RECEIVED_quit(
 static te_client_state
 client_do_MAIL_RECEIVED_rset(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1045,7 +1045,7 @@ client_do_MAIL_RECEIVED_rset(
 static te_client_state
 client_do_MAIL_RECEIVED_shutdown(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1058,7 +1058,7 @@ client_do_MAIL_RECEIVED_shutdown(
 static te_client_state
 client_do_MAIL_RECEIVED_timeout(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1071,7 +1071,7 @@ client_do_MAIL_RECEIVED_timeout(
 static te_client_state
 client_do_MAIL_RECEIVED_verify(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1084,7 +1084,7 @@ client_do_MAIL_RECEIVED_verify(
 static te_client_state
 client_do_MSG_RECEIVING_quit(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1097,7 +1097,7 @@ client_do_MSG_RECEIVING_quit(
 static te_client_state
 client_do_MSG_RECEIVING_rset(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1110,7 +1110,7 @@ client_do_MSG_RECEIVING_rset(
 static te_client_state
 client_do_MSG_RECEIVING_shutdown(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1123,7 +1123,7 @@ client_do_MSG_RECEIVING_shutdown(
 static te_client_state
 client_do_MSG_RECEIVING_timeout(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1136,7 +1136,7 @@ client_do_MSG_RECEIVING_timeout(
 static te_client_state
 client_do_MSG_RECEIVING_verify(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1149,7 +1149,7 @@ client_do_MSG_RECEIVING_verify(
 static te_client_state
 client_do_QUIT_RECEIVED_quit(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1162,7 +1162,7 @@ client_do_QUIT_RECEIVED_quit(
 static te_client_state
 client_do_QUIT_RECEIVED_rset(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1175,7 +1175,7 @@ client_do_QUIT_RECEIVED_rset(
 static te_client_state
 client_do_QUIT_RECEIVED_shutdown(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1188,7 +1188,7 @@ client_do_QUIT_RECEIVED_shutdown(
 static te_client_state
 client_do_QUIT_RECEIVED_timeout(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1201,7 +1201,7 @@ client_do_QUIT_RECEIVED_timeout(
 static te_client_state
 client_do_QUIT_RECEIVED_verify(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1214,7 +1214,7 @@ client_do_QUIT_RECEIVED_verify(
 static te_client_state
 client_do_RCPT_RECEIVED_quit(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1227,7 +1227,7 @@ client_do_RCPT_RECEIVED_quit(
 static te_client_state
 client_do_RCPT_RECEIVED_rset(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1240,7 +1240,7 @@ client_do_RCPT_RECEIVED_rset(
 static te_client_state
 client_do_RCPT_RECEIVED_shutdown(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1253,7 +1253,7 @@ client_do_RCPT_RECEIVED_shutdown(
 static te_client_state
 client_do_RCPT_RECEIVED_timeout(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1266,7 +1266,7 @@ client_do_RCPT_RECEIVED_timeout(
 static te_client_state
 client_do_RCPT_RECEIVED_verify(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1279,7 +1279,7 @@ client_do_RCPT_RECEIVED_verify(
 static te_client_state
 client_do_UNKNOWN_CMD_RECEIVED_quit(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1292,7 +1292,7 @@ client_do_UNKNOWN_CMD_RECEIVED_quit(
 static te_client_state
 client_do_UNKNOWN_CMD_RECEIVED_rset(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1305,7 +1305,7 @@ client_do_UNKNOWN_CMD_RECEIVED_rset(
 static te_client_state
 client_do_UNKNOWN_CMD_RECEIVED_shutdown(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1318,7 +1318,7 @@ client_do_UNKNOWN_CMD_RECEIVED_shutdown(
 static te_client_state
 client_do_UNKNOWN_CMD_RECEIVED_timeout(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1331,7 +1331,7 @@ client_do_UNKNOWN_CMD_RECEIVED_timeout(
 static te_client_state
 client_do_UNKNOWN_CMD_RECEIVED_verify(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1344,7 +1344,7 @@ client_do_UNKNOWN_CMD_RECEIVED_verify(
 static te_client_state
 client_do_VERIFY_RECEIVED_quit(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1357,7 +1357,7 @@ client_do_VERIFY_RECEIVED_quit(
 static te_client_state
 client_do_VERIFY_RECEIVED_rset(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1370,7 +1370,7 @@ client_do_VERIFY_RECEIVED_rset(
 static te_client_state
 client_do_VERIFY_RECEIVED_shutdown(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1383,7 +1383,7 @@ client_do_VERIFY_RECEIVED_shutdown(
 static te_client_state
 client_do_VERIFY_RECEIVED_timeout(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1396,7 +1396,7 @@ client_do_VERIFY_RECEIVED_timeout(
 static te_client_state
 client_do_VERIFY_RECEIVED_verify(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1409,7 +1409,7 @@ client_do_VERIFY_RECEIVED_verify(
 static te_client_state
 client_do_WAIT_HELLO_OR_EHLO_quit(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1422,7 +1422,7 @@ client_do_WAIT_HELLO_OR_EHLO_quit(
 static te_client_state
 client_do_WAIT_HELLO_OR_EHLO_rset(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1435,7 +1435,7 @@ client_do_WAIT_HELLO_OR_EHLO_rset(
 static te_client_state
 client_do_WAIT_HELLO_OR_EHLO_shutdown(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1448,7 +1448,7 @@ client_do_WAIT_HELLO_OR_EHLO_shutdown(
 static te_client_state
 client_do_WAIT_HELLO_OR_EHLO_timeout(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1461,7 +1461,7 @@ client_do_WAIT_HELLO_OR_EHLO_timeout(
 static te_client_state
 client_do_WAIT_HELLO_OR_EHLO_verify(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1474,7 +1474,7 @@ client_do_WAIT_HELLO_OR_EHLO_verify(
 static te_client_state
 client_do_client_inited_mail(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1487,7 +1487,7 @@ client_do_client_inited_mail(
 static te_client_state
 client_do_data_received_response(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1500,7 +1500,7 @@ client_do_data_received_response(
 static te_client_state
 client_do_ehlo_received_response(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1513,7 +1513,7 @@ client_do_ehlo_received_response(
 static te_client_state
 client_do_expected_rcpt_or_data_data(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1526,7 +1526,7 @@ client_do_expected_rcpt_or_data_data(
 static te_client_state
 client_do_expected_rcpt_or_data_rcpt(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1539,7 +1539,7 @@ client_do_expected_rcpt_or_data_rcpt(
 static te_client_state
 client_do_hello_received_response(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1552,7 +1552,7 @@ client_do_hello_received_response(
 static te_client_state
 client_do_init_response(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1565,7 +1565,7 @@ client_do_init_response(
 static te_client_state
 client_do_invalid(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1579,7 +1579,7 @@ client_do_invalid(
 static te_client_state
 client_do_mail_received_response(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1592,7 +1592,7 @@ client_do_mail_received_response(
 static te_client_state
 client_do_rcpt_received_response(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1605,7 +1605,7 @@ client_do_rcpt_received_response(
 static te_client_state
 client_do_wait_hello_or_ehlo_ehlo(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1618,7 +1618,7 @@ client_do_wait_hello_or_ehlo_ehlo(
 static te_client_state
 client_do_wait_hello_or_ehlo_helo(
     void *client,
-    const char *cmd,
+    void *match_info,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
@@ -1638,7 +1638,7 @@ client_step(
     te_client_state client_state,
     te_client_event trans_evt,
     void *client,
-    const char *cmd )
+    void *match_info )
 {
     te_client_state nxtSt;
     client_callback_t * pT;
@@ -1661,7 +1661,7 @@ client_step(
     }
 
     if (pT != NULL)
-        nxtSt = (*pT)( client, cmd, client_state, nxtSt, trans_evt );
+        nxtSt = (*pT)( client, match_info, client_state, nxtSt, trans_evt );
 
 
     /* START == FINISH STEP == DO NOT CHANGE THIS COMMENT */

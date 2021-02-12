@@ -33,7 +33,7 @@ typedef struct {
 } match_info_t;
 
 error_code_t smtp_cmd_init();
-error_code_t smtp_cmd_check(match_info_t* match_info);
+error_code_t smtp_cmd_check(SMTP_CMD cmd, match_info_t* match_info);
 error_code_t smtp_cmd_get_substring(match_info_t* match_info, int index,
                                     char* buf, size_t buf_size);
 error_code_t smtp_cmd_get_named_substring(match_info_t* match_info, char* name,

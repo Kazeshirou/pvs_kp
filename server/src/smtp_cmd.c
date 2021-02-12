@@ -58,15 +58,15 @@ error_code_t smtp_cmd_init() {
     return CE_SUCCESS;
 }
 
-error_code_t smtp_cmd_check(match_info_t* match_info) {
-    if ((match_info->cmd < 0) || (match_info->cmd > SMTP_CMD_END_DATA)) {
+error_code_t smtp_cmd_check(SMTP_CMD cmd, match_info_t* match_info) {
+    match_info->cmd = cmd;
+    if ((cmd < 0) || (cmd > SMTP_CMD_END_DATA)) {
         return CE_INVALID_ARG;
     }
     match_info->sub_str_count =
-        pcre_exec(smtp_cmds_[match_info->cmd].re_compiled,
-                  smtp_cmds_[match_info->cmd].extra, match_info->tested_line,
-                  strlen(match_info->tested_line), 0, 0, match_info->sub_str,
-                  SUB_STR_COUNT);
+        pcre_exec(smtp_cmds_[cmd].re_compiled, smtp_cmds_[cmd].extra,
+                  match_info->tested_line, strlen(match_info->tested_line), 0,
+                  0, match_info->sub_str, SUB_STR_COUNT);
     if (match_info->sub_str_count < 0) {
         switch (match_info->sub_str_count) {
             case PCRE_ERROR_NOMATCH:

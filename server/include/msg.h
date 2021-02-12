@@ -13,5 +13,8 @@ typedef struct {
 error_code_t msg_init(msg_t* msg, const size_t max_size);
 error_code_t msg_resize(msg_t* msg, const size_t new_max_size);
 error_code_t msg_add_text(msg_t* msg, const char* buf, size_t size);
-error_code_t msg_recv_one(msg_t* msg, int fd);
+error_code_t msg_rm_text(msg_t* msg, size_t size);
+error_code_t msg_recv_one(msg_t* msg, int fd, int* is_closed);
+error_code_t msg_send_one(msg_t* msg, int fd);
+void         msg_clean(msg_t* msg);
 void         msg_destroy(msg_t* msg);

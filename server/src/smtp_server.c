@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include "msg.h"
+#include "server_info.h"
 #include "thread_pool.h"
 #include "while_true.h"
 
@@ -76,51 +77,105 @@ error_code_t process_listener(const int listener_fd, int* new_client_fd) {
     return CE_SUCCESS;
 }
 
-error_code_t process_client(server_info_t* storage, const size_t i) {
+error_code_t process_poll(server_info_t* server_info) {
+    // Есть сокеты, готовые к чтению.
+    msg_t msg;
+    if (msg_init(&msg, 50) != CE_SUCCESS) {
+        return CE_INIT_3RD;
+    }
+    int is_closed;
+    int need_compress = 0;
+    for (int i = 0; i < server_info->size; i++) {
+        if (server_info->fds[i].revents == 0)
+            continue;
+
+        if (server_info->fds[i].revents & POLLIN) {
+            printf("  Descriptor %d is readable\n", server_info->fds[i].fd);
+
+            if (msg_recv_one(&msg, server_info->fds[i].fd, &is_closed) !=
+                CE_SUCCESS) {
+                continue;
+            }
+
+            if (is_closed) {
+                server_info->clients[i]->need_send = 1;
+                close(server_info->fds[i].fd = -1);
+                need_compress = 1;
+                continue;
+            }
+
+            client_process_recv(server_info->clients[i], &msg);
+            if (server_info->clients[i]->closed) {
+                close(server_info->fds[i].fd = -1);
+                need_compress = 1;
+            }
+            continue;
+        }
+
+        if ((server_info->fds[i].revents & POLLOUT) &&
+            server_info->clients[i]->need_send) {
+            printf("  Descriptor %d is writeable\n", server_info->fds[i].fd);
+
+            if (msg_send_one(&(server_info->clients[i]->msg_for_sending),
+                             server_info->fds[i].fd) != CE_SUCCESS) {
+                continue;
+            }
+            if (server_info->clients[i]->msg_for_sending.size) {
+                continue;
+            }
+            client_process_send(server_info->clients[i]);
+            if (server_info->clients[i]->closed) {
+                close(server_info->fds[i].fd = -1);
+                need_compress = 1;
+            }
+            continue;
+        }
+
+        client_process_check_timeout(server_info->clients[i]);
+        if (server_info->clients[i]->closed) {
+            close(server_info->fds[i].fd = -1);
+            need_compress = 1;
+        }
+    }
+
+    if (need_compress) {
+        server_info_compress(server_info);
+    }
     return CE_SUCCESS;
 }
 
-error_code_t process_poll_fds(server_info_t* storage) {
-    // Есть сокеты, готовые к чтению.
-    int current_size = storage->size;
-    for (int i = 0; i < current_size; i++) {
-        if (storage->fds[i].revents == 0)
-            continue;
-
-        if (storage->fds[i].revents != POLLIN) {
-            printf("  Error on descriptor %d! revents = %d\n",
-                   storage->fds[i].fd, storage->fds[i].revents);
-            close(storage->fds[i].fd);
-            storage->fds[i].fd = -1;
-            continue;
-        }
-
-        printf("  Descriptor %d is readable\n", storage->fds[i].fd);
-        if (process_client(storage, i) < 0) {
-            close(storage->fds[i].fd);
-            storage->fds[i].fd = -1;
-        }
-    }
-
-    return 1;
-}
-
 static int main_worker_func(void* worker_ptr) {
-    worker_t* worker = worker_ptr;
-    int       new_client_fd;
+    worker_t*     worker = worker_ptr;
+    server_info_t server_info;
+    if (server_info_init(&server_info, 50) != CE_SUCCESS) {
+        return CE_INIT_3RD;
+    }
+
+    int          new_client_fd;
+    error_code_t cerr;
+    int          poll_res;
     while (!worker->end_flag) {
-        error_code_t error = queue_pop_front(worker->job_queue, &new_client_fd,
-                                             sizeof(new_client_fd));
-        if (error != CE_SUCCESS) {
+        cerr = queue_try_pop_front(worker->job_queue, &new_client_fd,
+                                   sizeof(new_client_fd));
+        if (cerr == CE_SUCCESS) {
+            server_info_add_client(&server_info, new_client_fd);
+        }
+        poll_res = poll(server_info.fds, server_info.size, 1 * 1000);
+        if (poll_res < 0) {
+            perror("  poll() failed");
             continue;
         }
-        printf("new_client_fd = %d on thread %ld %ld\n", new_client_fd,
-               worker->id, worker->td);
-        close(new_client_fd);
+        // Истёк тайм-аут.
+        if (poll_res == 0) {
+            printf("  poll() timed out\n");
+            continue;
+        }
+        process_poll(&server_info);
     }
+    server_info_destroy(&server_info);
     worker->tp->is_ended++;
     printf("thread %ld %ld finished\n", worker->id, worker->td);
-    return 0;
+    return CE_SUCCESS;
 }
 
 void smtp_server(const smtp_server_cfg_t cfg) {

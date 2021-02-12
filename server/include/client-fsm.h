@@ -99,7 +99,7 @@ client_step(
     te_client_state client_state,
     te_client_event trans_evt,
     void *client,
-    const char *cmd );
+    void *match_info );
 
 #endif /* AUTOFSM_CLIENT_FSM_H_GUARD */
 /*

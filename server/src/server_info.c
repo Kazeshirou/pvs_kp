@@ -16,7 +16,7 @@ error_code_t server_info_init(server_info_t* server, const size_t max_size) {
         return CE_ALLOC;
     }
 
-    server->clients = (client_t*)malloc(max_size * sizeof(client_t));
+    server->clients = (client_t**)malloc(max_size * sizeof(client_t*));
     if (!server->clients) {
         printf("Creating of server_info.clients failed");
         free(server->fds);
@@ -24,21 +24,9 @@ error_code_t server_info_init(server_info_t* server, const size_t max_size) {
         return CE_ALLOC;
     }
 
-    error_code_t cerr;
     for (size_t i = 0; i < max_size; i++) {
-        server->fds[i].fd = -1;
-        cerr              = client_init(server->clients + i);
-        if (cerr != CE_SUCCESS) {
-            printf("Creating of server_info.clients[i] failed");
-            for (size_t j = 0; j < i; j++) {
-                client_destroy(server->clients + j);
-            }
-            free(server->fds);
-            server->fds = NULL;
-            free(server->clients);
-            server->clients = NULL;
-            return CE_INIT_3RD;
-        }
+        server->fds[i].fd  = -1;
+        server->clients[i] = NULL;
     }
 
     server->max_size = max_size;
@@ -58,29 +46,18 @@ error_code_t server_info_resize(server_info_t* server,
         return CE_ALLOC;
     }
 
-    client_t* new_client_buf =
-        (client_t*)malloc(new_max_size * sizeof(client_t));
+    client_t** new_client_buf =
+        (client_t**)malloc(new_max_size * sizeof(client_t*));
     if (new_client_buf) {
         printf("new_client_buf calloc failed");
         free(new_buf);
         return CE_ALLOC;
     }
 
-    error_code_t cerr;
     for (size_t i = server->max_size; i < new_max_size; i++) {
-        new_buf[i].fd = -1;
-        cerr          = client_init(new_client_buf + i);
-        if (cerr != CE_SUCCESS) {
-            printf("new_client_buf[i] creating failed");
-            for (size_t j = server->max_size; j < i; j++) {
-                client_destroy(new_client_buf + j);
-            }
-            free(new_buf);
-            free(new_client_buf);
-            return CE_INIT_3RD;
-        }
+        new_buf[i].fd     = -1;
+        new_client_buf[i] = NULL;
     }
-
 
     if (server->fds) {
         memcpy(new_buf, server->fds, server->max_size);
@@ -106,18 +83,58 @@ error_code_t server_info_add_client(server_info_t* server, const int fd) {
             return cerr;
         }
     }
+    server->clients[server->size] = (client_t*)malloc(sizeof(client_t));
+    if (!server->clients[server->size]) {
+        return CE_ALLOC;
+    }
+    if (client_init(server->clients[server->size]) != CE_SUCCESS) {
+        free(server->clients[server->size]);
+        server->clients[server->size] = NULL;
+    }
 
-    server->fds[server->size].fd = fd;
-    server->size                 = new_size;
+    server->fds[server->size].fd     = fd;
+    server->fds[server->size].events = POLLIN | POLLOUT;
+    server->size                     = new_size;
     return CE_SUCCESS;
 }
 
 void server_info_destroy(server_info_t* server) {
-    for (size_t i = 0; i < server->max_size; i++) {
-        client_destroy(server->clients + i);
+    for (size_t i = 0; i < server->size; i++) {
+        client_destroy(server->clients[i]);
+        free(server->clients[i]);
     }
     free(server->fds);
     server->fds = NULL;
     free(server->clients);
     server->clients = NULL;
+}
+
+
+void server_info_compress(server_info_t* server) {
+    for (size_t i = 0; i < server->size; i++) {
+        if (server->fds[i].fd >= 0) {
+            continue;
+        }
+
+        client_destroy(server->clients[i]);
+        free(server->clients[i]);
+        size_t j = i + 1;
+        for (; (server->fds[j].fd < 0) && (j < server->size); j++) {
+            if (!server->clients[j]) {
+                continue;
+            }
+            client_destroy(server->clients[j]);
+            free(server->clients[j]);
+            server->clients = NULL;
+        }
+        if (j == server->size) {
+            server->size = i;
+            break;
+        }
+        strncpy((char*)(server->fds + i), (char*)(server->fds + j),
+                sizeof(server->fds[0]) * (server->size - j));
+        strncpy((char*)(server->clients + i), (char*)(server->clients + j),
+                sizeof(server->clients[0]) * (server->size - j));
+        server->size -= j - i;
+    }
 }

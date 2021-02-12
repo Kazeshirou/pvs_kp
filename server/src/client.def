@@ -3,7 +3,7 @@ autogen definitions fsm;
 method = callout;
 type   = reentrant;
 cookie = "void *client";
-cookie = "const char *cmd";
+cookie = "void *match_info";
 
 prefix = client;
 

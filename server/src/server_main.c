@@ -44,10 +44,9 @@ int main(int argc, char* argv[]) {
 
     char         buffstring[100] = {0};
     match_info_t mi;
-    mi.cmd         = SMTP_CMD_EHLO;
     mi.tested_line = "ehlo [IPv6:::127.0.0.1]\r\n";
     printf("%s\n", RE_EHLO);
-    error_code_t err = smtp_cmd_check(&mi);
+    error_code_t err = smtp_cmd_check(SMTP_CMD_EHLO, &mi);
     if (err != CE_SUCCESS) {
         printf("fail\n");
     } else {
