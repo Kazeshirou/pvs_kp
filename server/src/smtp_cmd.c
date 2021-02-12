@@ -58,16 +58,17 @@ error_code_t smtp_cmd_init() {
     return CE_SUCCESS;
 }
 
-error_code_t smtp_cmd_check(SMTP_CMD cmd, char* tested_line, int* sub_str,
-                            int sub_str_size, int* pcre_exec_ret) {
-    if ((cmd < 0) || (cmd > SMTP_CMD_END_DATA)) {
+error_code_t smtp_cmd_check(match_info_t* match_info) {
+    if ((match_info->cmd < 0) || (match_info->cmd > SMTP_CMD_END_DATA)) {
         return CE_INVALID_ARG;
     }
-    *pcre_exec_ret = pcre_exec(
-        smtp_cmds_[cmd].re_compiled, smtp_cmds_[cmd].extra, tested_line,
-        strlen(tested_line), 0, 0, sub_str, sub_str_size);
-    if (*pcre_exec_ret < 0) {
-        switch (*pcre_exec_ret) {
+    match_info->sub_str_count =
+        pcre_exec(smtp_cmds_[match_info->cmd].re_compiled,
+                  smtp_cmds_[match_info->cmd].extra, match_info->tested_line,
+                  strlen(match_info->tested_line), 0, 0, match_info->sub_str,
+                  SUB_STR_COUNT);
+    if (match_info->sub_str_count < 0) {
+        switch (match_info->sub_str_count) {
             case PCRE_ERROR_NOMATCH:
                 printf("String did not match the pattern\n");
                 break;
@@ -93,30 +94,28 @@ error_code_t smtp_cmd_check(SMTP_CMD cmd, char* tested_line, int* sub_str,
         return CE_COMMON;
     }
 
-    if (*pcre_exec_ret == 0) {
+    if (match_info->sub_str_count == 0) {
         printf("But too many substrings were found to fit in "
                "subStrVec!\n");
         // Set rc to the max number of substring matches possible.
-        *pcre_exec_ret = sub_str_size / 3;
+        match_info->sub_str_count = SUB_STR_COUNT / 3;
     }
 
     return CE_SUCCESS;
 }
 
-error_code_t smtp_cmd_get_substring(char* tested_line, int* sub_str,
-                                    int pcre_exec_ret, int index, char* buf,
-                                    size_t buf_size) {
-    pcre_copy_substring(tested_line, sub_str, pcre_exec_ret, index, buf,
-                        buf_size);
+error_code_t smtp_cmd_get_substring(match_info_t* match_info, int index,
+                                    char* buf, size_t buf_size) {
+    pcre_copy_substring(match_info->tested_line, match_info->sub_str,
+                        match_info->sub_str_count, index, buf, buf_size);
     return CE_SUCCESS;
 }
 
-error_code_t smtp_cmd_get_named_substring(SMTP_CMD cmd, char* tested_line,
-                                          int* sub_str, int pcre_exec_ret,
-                                          char* name, char* buf,
-                                          size_t buf_size) {
-    pcre_copy_named_substring(smtp_cmds_[cmd].re_compiled, tested_line, sub_str,
-                              pcre_exec_ret, name, buf, buf_size);
+error_code_t smtp_cmd_get_named_substring(match_info_t* match_info, char* name,
+                                          char* buf, size_t buf_size) {
+    pcre_copy_named_substring(smtp_cmds_[match_info->cmd].re_compiled,
+                              match_info->tested_line, match_info->sub_str,
+                              match_info->sub_str_count, name, buf, buf_size);
     return CE_SUCCESS;
 }
 
