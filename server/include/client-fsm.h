@@ -54,7 +54,7 @@
  *  Count of non-terminal states.  The generated states INVALID and DONE
  *  are terminal, but INIT is not  :-).
  */
-#define CLIENT_STATE_CT  15
+#define CLIENT_STATE_CT  13
 typedef enum {
     CLIENT_ST_INIT,
     CLIENT_ST_WAIT_HELLO_OR_EHLO,
@@ -64,9 +64,7 @@ typedef enum {
     CLIENT_ST_MAIL_RECEIVED,
     CLIENT_ST_EXPECTED_RCPT_OR_DATA,
     CLIENT_ST_RCPT_RECEIVED,
-    CLIENT_ST_DATA_RECEIVED,
     CLIENT_ST_EXPECTED_MSG_TEXT_OR_END_MSG,
-    CLIENT_ST_MSG_RECEIVING,
     CLIENT_ST_END_DATA_RECEIVED,
     CLIENT_ST_VERIFY_RECEIVED,
     CLIENT_ST_QUIT_RECEIVED,
@@ -98,8 +96,8 @@ extern te_client_state
 client_step(
     te_client_state client_state,
     te_client_event trans_evt,
-    void *client,
-    void *match_info );
+    void *client_ptr,
+    void *match_info_ptr );
 
 #endif /* AUTOFSM_CLIENT_FSM_H_GUARD */
 /*

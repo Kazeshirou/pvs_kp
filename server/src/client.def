@@ -2,14 +2,14 @@ autogen definitions fsm;
 
 method = callout;
 type   = reentrant;
-cookie = "void *client";
-cookie = "void *match_info";
+cookie = "void *client_ptr";
+cookie = "void *match_info_ptr";
 
 prefix = client;
 
 /* Состояния init и done уже есть */
 
-state  = wait_hello_or_ehlo, hello_received, ehlo_received, client_inited, mail_received, expected_rcpt_or_data, rcpt_received, data_received, expected_msg_text_or_end_msg,  msg_receiving, end_data_received, verify_received, quit_received, unknown_cmd_received;
+state  = wait_hello_or_ehlo, hello_received, ehlo_received, client_inited, mail_received, expected_rcpt_or_data, rcpt_received, expected_msg_text_or_end_msg, end_data_received, verify_received, quit_received, unknown_cmd_received;
 event = timeout, shutdown, response, ehlo, helo, mail, rcpt, data, msg_text, end_data, rset, quit, verify, unknown;
 
 transition =
@@ -22,8 +22,10 @@ transition =
 { tst  = mail_received; tev = response; next = expected_rcpt_or_data; },
 { tst  = expected_rcpt_or_data; tev = rcpt; next = rcpt_received; },
 { tst  = rcpt_received; tev = response; next = expected_rcpt_or_data; },
-{ tst  = expected_rcpt_or_data; tev = data; next = data_received; },
-{ tst  = data_received; tev = response; next = expected_msg_text_or_end_msg; },
+{ tst  = expected_rcpt_or_data; tev = data; next = expected_msg_text_or_end_msg; },
+{ tst  = "expected_msg_text_or_end_msg"; tev = msg_text;  next = expected_msg_text_or_end_msg; },
+{ tst  = "expected_msg_text_or_end_msg"; tev = end_data;  next = end_data_received; },
+{ tst  = "end_data_received"; tev = response;  next = client_inited; },
 { tst  = "*"; tev = verify;  next = verify_received; },
 { tst  = "*"; tev = quit;  next = quit_received; },
 { tst  = "*"; tev = rset;  next = verify_received; },

@@ -3,6 +3,11 @@
 #include "custom_errors.h"
 #include "pcre.h"
 
+#define MI_MAIL_FROM_REVERSE_PATH_INDEX 1
+#define MI_RCPT_TO_FORWARD_PATH_INDEX   1
+#define MI_EHLO_INFO_INDEX              1
+#define MI_HELO_INFO_INDEX              1
+
 typedef enum {
     SMTP_CMD_UNKNOW   = -1,
     SMTP_CMD_HELO     = 0,
