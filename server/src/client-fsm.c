@@ -1558,7 +1558,11 @@ client_do_expected_msg_text_or_end_msg_end_data(
     te_client_event trans_evt)
 {
 /*  START == EXPECTED MSG TEXT OR END MSG END DATA == DO NOT CHANGE THIS COMMENT  */
-client_t* client = (client_t*)client_ptr;
+    client_t* client = (client_t*)client_ptr;
+    match_info_t* match_info = (match_info_t*)match_info_ptr;
+    if (match_info->sub_str[0]) {
+        client_add_msg_txt(client, match_info->tested_line, match_info->sub_str[0]);
+    }
     client_data_end_process(client);
     client_set_response(client, CLIENT_SUCCESS_ANSWER, sizeof(CLIENT_SUCCESS_ANSWER));
     return maybe_next;

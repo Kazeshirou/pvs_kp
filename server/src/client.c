@@ -164,7 +164,7 @@ error_code_t client_data_end_process(client_t* client) {
     if (!file) {
         printf("can't open new_mail.txt\n");
     }
-    fwrite(client->msg_text.text, 1, client->msg_text.size, file);
+    fwrite(client->msg_text.text, 1, client->msg_text.size - 2, file);
     fclose(file);
     return CE_SUCCESS;
 }
