@@ -6,9 +6,11 @@
 #include "custom_errors.h"
 #include "msg.h"
 
-#define CLIENT_CR_LF          "\r\n"
-#define CLIENT_OPENING_MSG    "220" CLIENT_CR_LF
-#define CLIENT_SUCCESS_ANSWER "250 OK" CLIENT_CR_LF
+#define CLIENT_CR_LF                "\r\n"
+#define CLIENT_OPENING_MSG          "220" CLIENT_CR_LF
+#define CLIENT_SUCCESS_ANSWER       "250 OK" CLIENT_CR_LF
+#define CLIENT_DATA_ACCEPTED_ANSWER "354" CLIENT_CR_LF
+#define CLIENT_QUIT_SUCCESS_ANSWER  "221 OK" CLIENT_CR_LF
 
 #define MAX_RCPT_TO_COUNT 100
 

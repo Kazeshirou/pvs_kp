@@ -1,5 +1,7 @@
 #include "client.h"
 
+#include "stdio.h"
+
 #include "smtp_cmd.h"
 
 error_code_t client_init(client_t* client) {
@@ -158,6 +160,12 @@ error_code_t client_set_response(client_t* client, const char* buf,
 }
 
 error_code_t client_data_end_process(client_t* client) {
+    FILE* file = fopen("/home/ntl/projects/pvs_kp/new_mail.txt", "w");
+    if (!file) {
+        printf("can't open new_mail.txt\n");
+    }
+    fwrite(client->msg_text.text, 1, client->msg_text.size, file);
+    fclose(file);
     return CE_SUCCESS;
 }
 

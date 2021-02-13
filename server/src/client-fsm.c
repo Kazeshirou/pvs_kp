@@ -71,6 +71,11 @@ static client_callback_t
     client_do_CLIENT_INITED_shutdown,
     client_do_CLIENT_INITED_timeout,
     client_do_CLIENT_INITED_verify,
+    client_do_DATA_RECEIVED_quit,
+    client_do_DATA_RECEIVED_rset,
+    client_do_DATA_RECEIVED_shutdown,
+    client_do_DATA_RECEIVED_timeout,
+    client_do_DATA_RECEIVED_verify,
     client_do_EHLO_RECEIVED_quit,
     client_do_EHLO_RECEIVED_rset,
     client_do_EHLO_RECEIVED_shutdown,
@@ -116,6 +121,11 @@ static client_callback_t
     client_do_RCPT_RECEIVED_shutdown,
     client_do_RCPT_RECEIVED_timeout,
     client_do_RCPT_RECEIVED_verify,
+    client_do_RSET_RECEIVED_quit,
+    client_do_RSET_RECEIVED_rset,
+    client_do_RSET_RECEIVED_shutdown,
+    client_do_RSET_RECEIVED_timeout,
+    client_do_RSET_RECEIVED_verify,
     client_do_UNKNOWN_CMD_RECEIVED_quit,
     client_do_UNKNOWN_CMD_RECEIVED_rset,
     client_do_UNKNOWN_CMD_RECEIVED_shutdown,
@@ -132,6 +142,7 @@ static client_callback_t
     client_do_WAIT_HELLO_OR_EHLO_timeout,
     client_do_WAIT_HELLO_OR_EHLO_verify,
     client_do_client_inited_mail,
+    client_do_data_received_response,
     client_do_ehlo_received_response,
     client_do_end_data_received_response,
     client_do_expected_msg_text_or_end_msg_end_data,
@@ -142,7 +153,10 @@ static client_callback_t
     client_do_init_response,
     client_do_invalid,
     client_do_mail_received_response,
+    client_do_quit_received_response,
     client_do_rcpt_received_response,
+    client_do_rset_received_response,
+    client_do_verify_received_response,
     client_do_wait_hello_or_ehlo_ehlo,
     client_do_wait_hello_or_ehlo_helo;
 
@@ -174,7 +188,7 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_INIT_rset }, /* EVT:  RSET */
+    { CLIENT_ST_RSET_RECEIVED, client_do_INIT_rset }, /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_INIT_quit }, /* EVT:  QUIT */
     { CLIENT_ST_VERIFY_RECEIVED, client_do_INIT_verify }, /* EVT:  VERIFY */
     { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
@@ -191,7 +205,7 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_WAIT_HELLO_OR_EHLO_rset }, /* EVT:  RSET */
+    { CLIENT_ST_RSET_RECEIVED, client_do_WAIT_HELLO_OR_EHLO_rset }, /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_WAIT_HELLO_OR_EHLO_quit }, /* EVT:  QUIT */
     { CLIENT_ST_VERIFY_RECEIVED, client_do_WAIT_HELLO_OR_EHLO_verify }, /* EVT:  VERIFY */
     { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
@@ -208,7 +222,7 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_HELLO_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_RSET_RECEIVED, client_do_HELLO_RECEIVED_rset }, /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_HELLO_RECEIVED_quit }, /* EVT:  QUIT */
     { CLIENT_ST_VERIFY_RECEIVED, client_do_HELLO_RECEIVED_verify }, /* EVT:  VERIFY */
     { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
@@ -225,7 +239,7 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_EHLO_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_RSET_RECEIVED, client_do_EHLO_RECEIVED_rset }, /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_EHLO_RECEIVED_quit }, /* EVT:  QUIT */
     { CLIENT_ST_VERIFY_RECEIVED, client_do_EHLO_RECEIVED_verify }, /* EVT:  VERIFY */
     { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
@@ -242,7 +256,7 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_CLIENT_INITED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_RSET_RECEIVED, client_do_CLIENT_INITED_rset }, /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_CLIENT_INITED_quit }, /* EVT:  QUIT */
     { CLIENT_ST_VERIFY_RECEIVED, client_do_CLIENT_INITED_verify }, /* EVT:  VERIFY */
     { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
@@ -259,7 +273,7 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_MAIL_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_RSET_RECEIVED, client_do_MAIL_RECEIVED_rset }, /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_MAIL_RECEIVED_quit }, /* EVT:  QUIT */
     { CLIENT_ST_VERIFY_RECEIVED, client_do_MAIL_RECEIVED_verify }, /* EVT:  VERIFY */
     { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
@@ -273,10 +287,10 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
     { CLIENT_ST_RCPT_RECEIVED, client_do_expected_rcpt_or_data_rcpt }, /* EVT:  RCPT */
-    { CLIENT_ST_EXPECTED_MSG_TEXT_OR_END_MSG, client_do_expected_rcpt_or_data_data }, /* EVT:  DATA */
+    { CLIENT_ST_DATA_RECEIVED, client_do_expected_rcpt_or_data_data }, /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_EXPECTED_RCPT_OR_DATA_rset }, /* EVT:  RSET */
+    { CLIENT_ST_RSET_RECEIVED, client_do_EXPECTED_RCPT_OR_DATA_rset }, /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_EXPECTED_RCPT_OR_DATA_quit }, /* EVT:  QUIT */
     { CLIENT_ST_VERIFY_RECEIVED, client_do_EXPECTED_RCPT_OR_DATA_verify }, /* EVT:  VERIFY */
     { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
@@ -293,13 +307,30 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_RCPT_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_RSET_RECEIVED, client_do_RCPT_RECEIVED_rset }, /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_RCPT_RECEIVED_quit }, /* EVT:  QUIT */
     { CLIENT_ST_VERIFY_RECEIVED, client_do_RCPT_RECEIVED_verify }, /* EVT:  VERIFY */
     { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
   },
 
-  /* STATE 8:  CLIENT_ST_EXPECTED_MSG_TEXT_OR_END_MSG */
+  /* STATE 8:  CLIENT_ST_DATA_RECEIVED */
+  { { CLIENT_ST_DONE, client_do_DATA_RECEIVED_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_DONE, client_do_DATA_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_EXPECTED_MSG_TEXT_OR_END_MSG, client_do_data_received_response }, /* EVT:  RESPONSE */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RCPT */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
+    { CLIENT_ST_RSET_RECEIVED, client_do_DATA_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_QUIT_RECEIVED, client_do_DATA_RECEIVED_quit }, /* EVT:  QUIT */
+    { CLIENT_ST_VERIFY_RECEIVED, client_do_DATA_RECEIVED_verify }, /* EVT:  VERIFY */
+    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
+  },
+
+  /* STATE 9:  CLIENT_ST_EXPECTED_MSG_TEXT_OR_END_MSG */
   { { CLIENT_ST_DONE, client_do_EXPECTED_MSG_TEXT_OR_END_MSG_timeout }, /* EVT:  TIMEOUT */
     { CLIENT_ST_DONE, client_do_EXPECTED_MSG_TEXT_OR_END_MSG_shutdown }, /* EVT:  SHUTDOWN */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RESPONSE */
@@ -310,13 +341,13 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_EXPECTED_MSG_TEXT_OR_END_MSG, client_do_expected_msg_text_or_end_msg_msg_text }, /* EVT:  MSG_TEXT */
     { CLIENT_ST_END_DATA_RECEIVED, client_do_expected_msg_text_or_end_msg_end_data }, /* EVT:  END_DATA */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_EXPECTED_MSG_TEXT_OR_END_MSG_rset }, /* EVT:  RSET */
+    { CLIENT_ST_RSET_RECEIVED, client_do_EXPECTED_MSG_TEXT_OR_END_MSG_rset }, /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_EXPECTED_MSG_TEXT_OR_END_MSG_quit }, /* EVT:  QUIT */
     { CLIENT_ST_VERIFY_RECEIVED, client_do_EXPECTED_MSG_TEXT_OR_END_MSG_verify }, /* EVT:  VERIFY */
     { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
   },
 
-  /* STATE 9:  CLIENT_ST_END_DATA_RECEIVED */
+  /* STATE 10:  CLIENT_ST_END_DATA_RECEIVED */
   { { CLIENT_ST_DONE, client_do_END_DATA_RECEIVED_timeout }, /* EVT:  TIMEOUT */
     { CLIENT_ST_DONE, client_do_END_DATA_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
     { CLIENT_ST_CLIENT_INITED, client_do_end_data_received_response }, /* EVT:  RESPONSE */
@@ -327,16 +358,16 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_END_DATA_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_RSET_RECEIVED, client_do_END_DATA_RECEIVED_rset }, /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_END_DATA_RECEIVED_quit }, /* EVT:  QUIT */
     { CLIENT_ST_VERIFY_RECEIVED, client_do_END_DATA_RECEIVED_verify }, /* EVT:  VERIFY */
     { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
   },
 
-  /* STATE 10:  CLIENT_ST_VERIFY_RECEIVED */
+  /* STATE 11:  CLIENT_ST_VERIFY_RECEIVED */
   { { CLIENT_ST_DONE, client_do_VERIFY_RECEIVED_timeout }, /* EVT:  TIMEOUT */
     { CLIENT_ST_DONE, client_do_VERIFY_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
-    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RESPONSE */
+    { CLIENT_ST_CLIENT_INITED, client_do_verify_received_response }, /* EVT:  RESPONSE */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
@@ -344,16 +375,16 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_VERIFY_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_RSET_RECEIVED, client_do_VERIFY_RECEIVED_rset }, /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_VERIFY_RECEIVED_quit }, /* EVT:  QUIT */
     { CLIENT_ST_VERIFY_RECEIVED, client_do_VERIFY_RECEIVED_verify }, /* EVT:  VERIFY */
     { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
   },
 
-  /* STATE 11:  CLIENT_ST_QUIT_RECEIVED */
+  /* STATE 12:  CLIENT_ST_QUIT_RECEIVED */
   { { CLIENT_ST_DONE, client_do_QUIT_RECEIVED_timeout }, /* EVT:  TIMEOUT */
     { CLIENT_ST_DONE, client_do_QUIT_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
-    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RESPONSE */
+    { CLIENT_ST_DONE, client_do_quit_received_response }, /* EVT:  RESPONSE */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
@@ -361,13 +392,30 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_QUIT_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_RSET_RECEIVED, client_do_QUIT_RECEIVED_rset }, /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_QUIT_RECEIVED_quit }, /* EVT:  QUIT */
     { CLIENT_ST_VERIFY_RECEIVED, client_do_QUIT_RECEIVED_verify }, /* EVT:  VERIFY */
     { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
   },
 
-  /* STATE 12:  CLIENT_ST_UNKNOWN_CMD_RECEIVED */
+  /* STATE 13:  CLIENT_ST_RSET_RECEIVED */
+  { { CLIENT_ST_DONE, client_do_RSET_RECEIVED_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_DONE, client_do_RSET_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_CLIENT_INITED, client_do_rset_received_response }, /* EVT:  RESPONSE */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RCPT */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
+    { CLIENT_ST_RSET_RECEIVED, client_do_RSET_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_QUIT_RECEIVED, client_do_RSET_RECEIVED_quit }, /* EVT:  QUIT */
+    { CLIENT_ST_VERIFY_RECEIVED, client_do_RSET_RECEIVED_verify }, /* EVT:  VERIFY */
+    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
+  },
+
+  /* STATE 14:  CLIENT_ST_UNKNOWN_CMD_RECEIVED */
   { { CLIENT_ST_DONE, client_do_UNKNOWN_CMD_RECEIVED_timeout }, /* EVT:  TIMEOUT */
     { CLIENT_ST_DONE, client_do_UNKNOWN_CMD_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RESPONSE */
@@ -378,7 +426,7 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_UNKNOWN_CMD_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_RSET_RECEIVED, client_do_UNKNOWN_CMD_RECEIVED_rset }, /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_UNKNOWN_CMD_RECEIVED_quit }, /* EVT:  QUIT */
     { CLIENT_ST_VERIFY_RECEIVED, client_do_UNKNOWN_CMD_RECEIVED_verify }, /* EVT:  VERIFY */
     { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
@@ -391,7 +439,7 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
 #define ClientStInit_off     83
 
 
-static char const zClientStrings[392] =
+static char const zClientStrings[420] =
 /*     0 */ "** OUT-OF-RANGE **\0"
 /*    19 */ "FSM Error:  in state %d (%s), event %d (%s) is invalid\n\0"
 /*    75 */ "invalid\0"
@@ -403,37 +451,39 @@ static char const zClientStrings[392] =
 /*   150 */ "mail_received\0"
 /*   164 */ "expected_rcpt_or_data\0"
 /*   186 */ "rcpt_received\0"
-/*   200 */ "expected_msg_text_or_end_msg\0"
-/*   229 */ "end_data_received\0"
-/*   247 */ "verify_received\0"
-/*   263 */ "quit_received\0"
-/*   277 */ "unknown_cmd_received\0"
-/*   298 */ "timeout\0"
-/*   306 */ "shutdown\0"
-/*   315 */ "response\0"
-/*   324 */ "ehlo\0"
-/*   329 */ "helo\0"
-/*   334 */ "mail\0"
-/*   339 */ "rcpt\0"
-/*   344 */ "data\0"
-/*   349 */ "msg_text\0"
-/*   358 */ "end_data\0"
-/*   367 */ "rset\0"
-/*   372 */ "quit\0"
-/*   377 */ "verify\0"
-/*   384 */ "unknown";
+/*   200 */ "data_received\0"
+/*   214 */ "expected_msg_text_or_end_msg\0"
+/*   243 */ "end_data_received\0"
+/*   261 */ "verify_received\0"
+/*   277 */ "quit_received\0"
+/*   291 */ "rset_received\0"
+/*   305 */ "unknown_cmd_received\0"
+/*   326 */ "timeout\0"
+/*   334 */ "shutdown\0"
+/*   343 */ "response\0"
+/*   352 */ "ehlo\0"
+/*   357 */ "helo\0"
+/*   362 */ "mail\0"
+/*   367 */ "rcpt\0"
+/*   372 */ "data\0"
+/*   377 */ "msg_text\0"
+/*   386 */ "end_data\0"
+/*   395 */ "rset\0"
+/*   400 */ "quit\0"
+/*   405 */ "verify\0"
+/*   412 */ "unknown";
 
-static const size_t aszClientStates[13] = {
-    83,  88,  107, 122, 136, 150, 164, 186, 200, 229, 247, 263, 277 };
+static const size_t aszClientStates[15] = {
+    83,  88,  107, 122, 136, 150, 164, 186, 200, 214, 243, 261, 277, 291, 305 };
 
 static const size_t aszClientEvents[15] = {
-    298, 306, 315, 324, 329, 334, 339, 344, 349, 358, 367, 372, 377, 384, 75 };
+    326, 334, 343, 352, 357, 362, 367, 372, 377, 386, 395, 400, 405, 412, 75 };
 
 
 #define CLIENT_EVT_NAME(t)   ( (((unsigned)(t)) >= 15) \
     ? zClientStrings : zClientStrings + aszClientEvents[t])
 
-#define CLIENT_STATE_NAME(s) ( (((unsigned)(s)) >= 13) \
+#define CLIENT_STATE_NAME(s) ( (((unsigned)(s)) >= 15) \
     ? zClientStrings : zClientStrings + aszClientStates[s])
 
 #ifndef EXIT_FAILURE
@@ -466,6 +516,8 @@ client_do_CLIENT_INITED_quit(
     te_client_event trans_evt)
 {
 /*  START == CLIENT INITED QUIT == DO NOT CHANGE THIS COMMENT  */
+    client_t* client = (client_t*)client_ptr;
+    client_set_response(client, CLIENT_QUIT_SUCCESS_ANSWER, sizeof(CLIENT_QUIT_SUCCESS_ANSWER));
     return maybe_next;
     /*  END   == CLIENT INITED QUIT == DO NOT CHANGE THIS COMMENT  */
 }
@@ -523,6 +575,73 @@ client_do_CLIENT_INITED_verify(
 }
 
 static te_client_state
+client_do_DATA_RECEIVED_quit(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == DATA RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
+    client_t* client = (client_t*)client_ptr;
+    client_set_response(client, CLIENT_QUIT_SUCCESS_ANSWER, sizeof(CLIENT_QUIT_SUCCESS_ANSWER));
+    return maybe_next;
+/*  END   == DATA RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
+client_do_DATA_RECEIVED_rset(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == DATA RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == DATA RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
+client_do_DATA_RECEIVED_shutdown(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == DATA RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == DATA RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
+client_do_DATA_RECEIVED_timeout(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == DATA RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == DATA RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
+client_do_DATA_RECEIVED_verify(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == DATA RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == DATA RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
 client_do_EHLO_RECEIVED_quit(
     void *client_ptr,
     void *match_info_ptr,
@@ -531,6 +650,8 @@ client_do_EHLO_RECEIVED_quit(
     te_client_event trans_evt)
 {
 /*  START == EHLO RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
+    client_t* client = (client_t*)client_ptr;
+    client_set_response(client, CLIENT_QUIT_SUCCESS_ANSWER, sizeof(CLIENT_QUIT_SUCCESS_ANSWER));
     return maybe_next;
     /*  END   == EHLO RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
 }
@@ -726,6 +847,8 @@ client_do_EXPECTED_RCPT_OR_DATA_quit(
     te_client_event trans_evt)
 {
 /*  START == EXPECTED RCPT OR DATA QUIT == DO NOT CHANGE THIS COMMENT  */
+    client_t* client = (client_t*)client_ptr;
+    client_set_response(client, CLIENT_QUIT_SUCCESS_ANSWER, sizeof(CLIENT_QUIT_SUCCESS_ANSWER));
     return maybe_next;
     /*  END   == EXPECTED RCPT OR DATA QUIT == DO NOT CHANGE THIS COMMENT  */
 }
@@ -1108,6 +1231,71 @@ client_do_RCPT_RECEIVED_verify(
 }
 
 static te_client_state
+client_do_RSET_RECEIVED_quit(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == RSET RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == RSET RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
+client_do_RSET_RECEIVED_rset(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == RSET RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == RSET RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
+client_do_RSET_RECEIVED_shutdown(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == RSET RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == RSET RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
+client_do_RSET_RECEIVED_timeout(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == RSET RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == RSET RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
+client_do_RSET_RECEIVED_verify(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == RSET RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == RSET RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
 client_do_UNKNOWN_CMD_RECEIVED_quit(
     void *client_ptr,
     void *match_info_ptr,
@@ -1323,6 +1511,19 @@ client_do_client_inited_mail(
 }
 
 static te_client_state
+client_do_data_received_response(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == DATA RECEIVED RESPONSE == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == DATA RECEIVED RESPONSE == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
 client_do_ehlo_received_response(
     void *client_ptr,
     void *match_info_ptr,
@@ -1389,6 +1590,8 @@ client_do_expected_rcpt_or_data_data(
     te_client_event trans_evt)
 {
 /*  START == EXPECTED RCPT OR DATA DATA == DO NOT CHANGE THIS COMMENT  */
+    client_t* client = (client_t*)client_ptr;
+     client_set_response(client, CLIENT_DATA_ACCEPTED_ANSWER, sizeof(CLIENT_DATA_ACCEPTED_ANSWER));
     return maybe_next;
     /*  END   == EXPECTED RCPT OR DATA DATA == DO NOT CHANGE THIS COMMENT  */
 }
@@ -1467,6 +1670,19 @@ client_do_mail_received_response(
 }
 
 static te_client_state
+client_do_quit_received_response(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == QUIT RECEIVED RESPONSE == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == QUIT RECEIVED RESPONSE == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
 client_do_rcpt_received_response(
     void *client_ptr,
     void *match_info_ptr,
@@ -1477,6 +1693,32 @@ client_do_rcpt_received_response(
 /*  START == RCPT RECEIVED RESPONSE == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
     /*  END   == RCPT RECEIVED RESPONSE == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
+client_do_rset_received_response(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == RSET RECEIVED RESPONSE == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == RSET RECEIVED RESPONSE == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
+client_do_verify_received_response(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == VERIFY RECEIVED RESPONSE == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == VERIFY RECEIVED RESPONSE == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state

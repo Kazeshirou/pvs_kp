@@ -53,7 +53,7 @@
 #define RE_FORWARD_PATH    RE_PATH
 #define RE_STRING          "(" RE_ATOM "|" RE_QUOTED_STRING ")"
 
-#define RE_END_DATA "\\x0D\\x0A.\\x0D\\x0A"
+#define RE_END_DATA "^.\\x0D\\x0A$"
 
 #define RE_HELO "^helo " RE_DOMAIN RE_CRLF
 #define RE_EHLO "^ehlo (" RE_DOMAIN "|" RE_ADDRES_LITERAL ")" RE_CRLF
