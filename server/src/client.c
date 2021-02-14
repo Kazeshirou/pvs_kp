@@ -4,12 +4,15 @@
 
 #include "smtp_cmd.h"
 
-error_code_t client_init(client_t* client) {
-    client->current_state = CLIENT_ST_INIT;
-    client->need_send     = 0;
-    client->closed        = 0;
-    client->ehlo          = 0;
-    client->to_count      = 0;
+error_code_t client_init(client_t* client, const mail_writer_t* mail_writer) {
+    client->current_state              = CLIENT_ST_INIT;
+    client->need_send                  = 0;
+    client->closed                     = 0;
+    client->ehlo                       = 0;
+    client->to_count                   = 0;
+    client->mail_writer.domain         = mail_writer->domain;
+    client->mail_writer.local_maildir  = mail_writer->local_maildir;
+    client->mail_writer.client_maildir = mail_writer->client_maildir;
     if (msg_init(&client->greating_info, 100) != CE_SUCCESS) {
         return CE_INIT_3RD;
     }

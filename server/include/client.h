@@ -4,6 +4,7 @@
 
 #include "client-fsm.h"
 #include "custom_errors.h"
+#include "mail_writer.h"
 #include "msg.h"
 
 #define CLIENT_CR_LF                "\r\n"
@@ -25,9 +26,10 @@ typedef struct {
     size_t          to_count;
     msg_t           msg_text;
     int             closed;
+    mail_writer_t   mail_writer;
 } client_t;
 
-error_code_t client_init(client_t* client);
+error_code_t client_init(client_t* client, const mail_writer_t* mail_writer);
 error_code_t client_process_recv(client_t* client, msg_t* msg);
 error_code_t client_process_send(client_t* client);
 error_code_t client_process_check_timeout(client_t* client);

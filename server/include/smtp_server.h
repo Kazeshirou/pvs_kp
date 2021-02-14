@@ -3,11 +3,6 @@
 #include "custom_errors.h"
 #include "server_info.h"
 
-typedef struct {
-    uint16_t port;
-    size_t   backlog_queue_size;
-} smtp_server_cfg_t;
-
 void         set_socket_unblock(const int fd);
 error_code_t create_server_socket(const int    port,
                                   const size_t backlog_queue_size,

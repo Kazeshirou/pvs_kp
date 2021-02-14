@@ -60,7 +60,7 @@ error_code_t create_server_socket(const int    port,
 }
 
 error_code_t process_listener(const int listener_fd, int* new_client_fd) {
-    printf("  Listening socket is readable\n");
+    // printf("  Listening socket is readable\n");
 
     *new_client_fd = accept(listener_fd, NULL, NULL);
     if (*new_client_fd < 0) {
@@ -73,7 +73,7 @@ error_code_t process_listener(const int listener_fd, int* new_client_fd) {
     // Сделаем сокет не блокируемым.
     set_socket_unblock(*new_client_fd);
 
-    printf("  New incoming connection - %d\n", *new_client_fd);
+    // printf("  New incoming connection - %d\n", *new_client_fd);
     return CE_SUCCESS;
 }
 
@@ -90,7 +90,7 @@ error_code_t process_poll(server_info_t* server_info) {
             continue;
 
         if (server_info->fds[i].revents & POLLIN) {
-            printf("  Descriptor %d is readable\n", server_info->fds[i].fd);
+            // printf("  Descriptor %d is readable\n", server_info->fds[i].fd);
 
             if (msg_recv_one(&msg, server_info->fds[i].fd, &is_closed) !=
                 CE_SUCCESS) {
@@ -114,7 +114,7 @@ error_code_t process_poll(server_info_t* server_info) {
 
         if ((server_info->fds[i].revents & POLLOUT) &&
             server_info->clients[i]->need_send) {
-            printf("  Descriptor %d is writeable\n", server_info->fds[i].fd);
+            // printf("  Descriptor %d is writeable\n", server_info->fds[i].fd);
 
             if (msg_send_one(&(server_info->clients[i]->msg_for_sending),
                              server_info->fds[i].fd) != CE_SUCCESS) {
@@ -145,9 +145,10 @@ error_code_t process_poll(server_info_t* server_info) {
 }
 
 static int main_worker_func(void* worker_ptr) {
-    worker_t*     worker = worker_ptr;
-    server_info_t server_info;
-    if (server_info_init(&server_info, 50) != CE_SUCCESS) {
+    worker_t*                worker = worker_ptr;
+    const smtp_server_cfg_t* cfg    = worker->worker_info;
+    server_info_t            server_info;
+    if (server_info_init(&server_info, cfg, 50) != CE_SUCCESS) {
         return CE_INIT_3RD;
     }
 
@@ -167,14 +168,14 @@ static int main_worker_func(void* worker_ptr) {
         }
         // Истёк тайм-аут.
         if (poll_res == 0) {
-            printf("  poll() timed out\n");
+            // printf("  poll() timed out\n");
             continue;
         }
         process_poll(&server_info);
     }
     server_info_destroy(&server_info);
     worker->tp->is_ended++;
-    printf("thread %ld %ld finished\n", worker->id, worker->td);
+    // printf("thread %ld %ld finished\n", worker->id, worker->td);
     return CE_SUCCESS;
 }
 
@@ -187,7 +188,7 @@ void smtp_server(const smtp_server_cfg_t cfg) {
     }
 
     thread_pool_t tp;
-    cerr = thread_pool_init(&tp, main_worker_func);
+    cerr = thread_pool_init(&tp, main_worker_func, &cfg);
     if (cerr != CE_SUCCESS) {
         return;
     }
@@ -199,7 +200,7 @@ void smtp_server(const smtp_server_cfg_t cfg) {
 
     int new_client_fd;
     WHILE_TRUE() {
-        printf("Waiting on poll()...\n");
+        // printf("Waiting on poll()...\n");
         int poll_res = poll(&listener_poll_fd, 1, -1);
 
         if (poll_res < 0) {
@@ -208,7 +209,7 @@ void smtp_server(const smtp_server_cfg_t cfg) {
         }
         // Истёк тайм-аут.
         if (poll_res == 0) {
-            printf("  poll() timed out.  End program.\n");
+            // printf("  poll() timed out.  End program.\n");
             continue;
         }
 
@@ -225,6 +226,6 @@ void smtp_server(const smtp_server_cfg_t cfg) {
 
         queue_push_back(&tp.job_queue, &new_client_fd, sizeof(new_client_fd));
     }
-    printf("smtp server stop\n");
+    // printf("smtp server stop\n");
     thread_pool_destroy(&tp);
 }

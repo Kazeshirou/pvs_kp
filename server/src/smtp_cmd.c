@@ -30,8 +30,8 @@ error_code_t smtp_cmd_init() {
             pcre_compile(smtp_cmds_[i].re, SMTP_CMD_RE_FLAGS, &pcre_error_str,
                          &pcre_error_offset, NULL);
         if (!smtp_cmds_[i].re_compiled) {
-            printf("ERROR: Could not compile '%s': %s\n", smtp_cmds_[i].re,
-                   pcre_error_str);
+            // printf("ERROR: Could not compile '%s': %s\n", smtp_cmds_[i].re,
+            //    pcre_error_str);
             for (size_t j = 0; j < i; j++) {
                 pcre_free(smtp_cmds_[j].re_compiled);
             }
@@ -40,8 +40,8 @@ error_code_t smtp_cmd_init() {
         smtp_cmds_[i].extra =
             pcre_study(smtp_cmds_[i].re_compiled, 0, &pcre_error_str);
         if (pcre_error_str) {
-            printf("ERROR: Could not study '%s': %s\n", smtp_cmds_[i].re,
-                   pcre_error_str);
+            // printf("ERROR: Could not study '%s': %s\n", smtp_cmds_[i].re,
+            //    pcre_error_str);
             for (size_t j = 0; j < i; j++) {
                 pcre_free(smtp_cmds_[j].re_compiled);
                 if (smtp_cmds_[j].extra != NULL) {
@@ -70,33 +70,33 @@ error_code_t smtp_cmd_check(SMTP_CMD cmd, match_info_t* match_info) {
     if (match_info->sub_str_count < 0) {
         switch (match_info->sub_str_count) {
             case PCRE_ERROR_NOMATCH:
-                printf("String did not match the pattern\n");
+                // printf("String did not match the pattern\n");
                 break;
             case PCRE_ERROR_NULL:
-                printf("Something was null\n");
+                // printf("Something was null\n");
                 break;
             case PCRE_ERROR_BADOPTION:
-                printf("A bad option was passed\n");
+                // printf("A bad option was passed\n");
                 break;
             case PCRE_ERROR_BADMAGIC:
-                printf("Magic number bad (compiled re corrupt?)\n");
+                // printf("Magic number bad (compiled re corrupt?)\n");
                 break;
             case PCRE_ERROR_UNKNOWN_NODE:
-                printf("Something kooky in the compiled re\n");
+                // printf("Something kooky in the compiled re\n");
                 break;
             case PCRE_ERROR_NOMEMORY:
-                printf("Ran out of memory\n");
+                // printf("Ran out of memory\n");
                 break;
             default:
-                printf("Unknown error\n");
+                // printf("Unknown error\n");
                 break;
         }
         return CE_COMMON;
     }
 
     if (match_info->sub_str_count == 0) {
-        printf("But too many substrings were found to fit in "
-               "subStrVec!\n");
+        // printf("But too many substrings were found to fit in "
+        //    "subStrVec!\n");
         // Set rc to the max number of substring matches possible.
         match_info->sub_str_count = SUB_STR_COUNT / 3;
     }

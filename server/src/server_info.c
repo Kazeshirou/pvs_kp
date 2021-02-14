@@ -4,21 +4,24 @@
 #include <stdlib.h>
 #include <string.h>
 
-error_code_t server_info_init(server_info_t* server, const size_t max_size) {
+error_code_t server_info_init(server_info_t*           server,
+                              const smtp_server_cfg_t* cfg,
+                              const size_t             max_size) {
     server->fds      = NULL;
     server->clients  = NULL;
     server->size     = 0;
     server->max_size = 0;
+    server->cfg      = cfg;
 
     server->fds = (struct pollfd*)calloc(max_size, sizeof(struct pollfd));
     if (!server->fds) {
-        printf("Creating of server_info.fds failed");
+        // printf("Creating of server_info.fds failed");
         return CE_ALLOC;
     }
 
     server->clients = (client_t**)malloc(max_size * sizeof(client_t*));
     if (!server->clients) {
-        printf("Creating of server_info.clients failed");
+        // printf("Creating of server_info.clients failed");
         free(server->fds);
         server->fds = NULL;
         return CE_ALLOC;
@@ -42,14 +45,14 @@ error_code_t server_info_resize(server_info_t* server,
     struct pollfd* new_buf =
         (struct pollfd*)calloc(new_max_size, sizeof(struct pollfd));
     if (!new_buf) {
-        printf("new_buf calloc failed");
+        // printf("new_buf calloc failed");
         return CE_ALLOC;
     }
 
     client_t** new_client_buf =
         (client_t**)malloc(new_max_size * sizeof(client_t*));
     if (new_client_buf) {
-        printf("new_client_buf calloc failed");
+        // printf("new_client_buf calloc failed");
         free(new_buf);
         return CE_ALLOC;
     }
@@ -87,7 +90,13 @@ error_code_t server_info_add_client(server_info_t* server, const int fd) {
     if (!server->clients[server->size]) {
         return CE_ALLOC;
     }
-    if (client_init(server->clients[server->size]) != CE_SUCCESS) {
+
+    mail_writer_t mail_writer;
+    mail_writer.domain         = server->cfg->domain;
+    mail_writer.local_maildir  = server->cfg->local_maildir;
+    mail_writer.client_maildir = server->cfg->client_maildir;
+    if (client_init(server->clients[server->size], &mail_writer) !=
+        CE_SUCCESS) {
         free(server->clients[server->size]);
         server->clients[server->size] = NULL;
     }

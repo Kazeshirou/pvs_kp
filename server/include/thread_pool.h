@@ -16,6 +16,7 @@ typedef struct {
     queue_t*               job_queue;
     volatile sig_atomic_t  end_flag;
     struct thread_pool__t* tp;
+    const void*            worker_info;
 } worker_t;
 
 typedef int (*main_worker_func_t)(void*);
@@ -27,7 +28,8 @@ typedef struct thread_pool__t {
     volatile sig_atomic_t is_ended;
 } thread_pool_t;
 
-error_code_t thread_pool_init(thread_pool_t* tp, main_worker_func_t main_func);
+error_code_t thread_pool_init(thread_pool_t* tp, main_worker_func_t main_func,
+                              const void* worker_info);
 
 error_code_t thread_pool_push_job(thread_pool_t* tp, job_t job);
 

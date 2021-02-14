@@ -22,20 +22,23 @@ static int main_worker_func(void* worker_ptr) {
     return 0;
 }
 
-error_code_t thread_pool_init(thread_pool_t* tp, main_worker_func_t main_func) {
+error_code_t thread_pool_init(thread_pool_t* tp, main_worker_func_t main_func,
+                              const void* worker_info) {
     error_code_t cerr = queue_init(&tp->job_queue);
     if (cerr != CE_SUCCESS) {
-        printf("Не удалось проинициализировать очередь работ для пула потоков");
+        // printf("Не удалось проинициализировать очередь работ для пула
+        // потоков");
         return cerr;
     }
     int    err;
     size_t i     = 0;
     tp->is_ended = 0;
     for (; i < WORKERS_COUNT; i++) {
-        tp->workers[i].id        = i;
-        tp->workers[i].end_flag  = 0;
-        tp->workers[i].job_queue = &tp->job_queue;
-        tp->workers[i].tp        = tp;
+        tp->workers[i].id          = i;
+        tp->workers[i].end_flag    = 0;
+        tp->workers[i].job_queue   = &tp->job_queue;
+        tp->workers[i].tp          = tp;
+        tp->workers[i].worker_info = worker_info;
         if (!main_func) {
             tp->main_func = &main_worker_func;
         } else {
@@ -43,12 +46,12 @@ error_code_t thread_pool_init(thread_pool_t* tp, main_worker_func_t main_func) {
         }
         err = thrd_create(&(tp->workers[i].td), tp->main_func, tp->workers + i);
         if (err != thrd_success) {
-            printf("Не удалось создать пул потоков");
+            // printf("Не удалось создать пул потоков");
             break;
         }
         err = thrd_detach(tp->workers[i].td);
         if (err != thrd_success) {
-            printf("Не удалось выполнить detach при создании пула потоков");
+            // printf("Не удалось выполнить detach при создании пула потоков");
             break;
         }
     }
@@ -68,7 +71,7 @@ void thread_pool_destroy(thread_pool_t* tp) {
         tp->workers[i].end_flag = 1;
     }
     queue_destroy(&tp->job_queue, (destructor_t)&job_destroy);
-    printf("Waiting for workers finish...\n");
+    // printf("Waiting for workers finish...\n");
     while (tp->is_ended != WORKERS_COUNT) {
         sleep(0.1);
     }
