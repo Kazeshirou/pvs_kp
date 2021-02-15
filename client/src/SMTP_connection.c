@@ -53,26 +53,15 @@ SMTP_connection_t* SMTP_connection_init(char *addr)
     conn->current_msg_line = 0;
     conn->current_rcpt = 0;
 
-    conn->messages = QUEUE_INIT(SMTP_message_t, NULL, NULL);
+    conn->messages = QUEUE_INIT(SMTP_message_t, SMTP_message_copy, SMTP_message_clear);
     if (!conn->messages)
     {
         free(conn);
         return NULL;
     }
 
-    int fd = connect_server(addr);
-    if (fd > 0)
-    {
-        conn->peer = peer_init(fd, FDT_SOCKET);
-        if (!conn->peer)
-        {
-            //close(fd);
-            queue_clear(conn->messages);
-            free(conn);
-            return NULL;
-        }
-    } 
-    else
+    conn->peer = peer_init(-1, FDT_SOCKET);
+    if (!conn->peer)
     {
         queue_clear(conn->messages);
         free(conn);

@@ -8,6 +8,8 @@
 #include "errors.h"
 #include "SMTP_constants.h"
 
+#define MAX_LINE_LENGTH 1024
+
 queue_t* get_filenames(const char *path_to_dir)
 {
     DIR *dir = NULL;
@@ -137,10 +139,8 @@ SMTP_message_t* parse_message(const char *queue_dir, const string_t *filename)
     {
         return NULL;
     }
-    int read;
-    size_t len;
     int line_num = 0;
-    char *line;
+    char line[MAX_LINE_LENGTH+1] = {0};
     string_t *queue_dir_str = string_init2(queue_dir, strlen(queue_dir));
     string_t *full_filename = concat_with_sep(queue_dir_str, filename, FILENAME_SEP);
     FILE *f = fopen(full_filename->data, "r");
@@ -152,7 +152,7 @@ SMTP_message_t* parse_message(const char *queue_dir, const string_t *filename)
 
     if (f)
     {
-        while ((read = getline(&line, &len, f)) != -1) 
+        while (fgets(line, MAX_LINE_LENGTH, f)) 
         {
             if (line_num == 0)
                 message->recipients_addr = parse_recipients(line, &(message->recipients_count));
@@ -160,18 +160,16 @@ SMTP_message_t* parse_message(const char *queue_dir, const string_t *filename)
                 message->from_addr = parse_sender(line);
             else 
             {
-                /*if (max_msg_lines == message->msg_lines)
+                if (max_msg_lines == message->msg_lines)
                 {
                     max_msg_lines *= 2;
                     message->msg = (string_t**) realloc(message->msg, sizeof(string_t*) * max_msg_lines);
                 }
-                message->msg[message->msg_lines] = string_init2(line, read);
-                message->msg_lines++;*/
+                message->msg[message->msg_lines++] = string_init2(line, strlen(line));
             }
             line_num++;
         }
         fclose(f);
-        //free(line);
     }
     else
     {

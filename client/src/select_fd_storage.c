@@ -44,11 +44,14 @@ void storage_clear(select_fd_storage_t *storage)
 
 void build_storage(peer_t *server, select_fd_storage_t *storage) 
 {
-    FD_SET(server->fd, storage->read_fds);
+    if (server->fd > 0)
+    {
+        FD_SET(server->fd, storage->read_fds);
   
-    // there is smth to send, set up write_fd for server socket
-    if (server->buffer_in_size > 0)
-        FD_SET(server->fd, storage->write_fds);
+        // there is smth to send, set up write_fd for server socket
+        if (server->buffer_in_size > 0)
+            FD_SET(server->fd, storage->write_fds);
+    }
 }
 
 void zero_storage(select_fd_storage_t *storage)

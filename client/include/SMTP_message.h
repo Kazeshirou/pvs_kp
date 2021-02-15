@@ -13,4 +13,5 @@ typedef struct SMTP_message__t
 } SMTP_message_t;
 
 SMTP_message_t* SMTP_message_init();
-void SMTP_message_clear(SMTP_message_t *msg);
+void* SMTP_message_copy(const void *other);
+void SMTP_message_clear(void *msg);
