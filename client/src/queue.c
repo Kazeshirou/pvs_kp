@@ -1,14 +1,18 @@
+#include "queue.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "queue.h"
+#include "errors.h"
 
 queue_t* queue_init(size_t value_size, copy_constructor_t value_copy_constr, destructor_t destr) 
 {
     queue_t *queue = (queue_t*) malloc(sizeof(queue_t));
     if (!queue) 
+    {
         return NULL;
+    }
 
     queue->front = NULL;
     queue->back = NULL;
@@ -17,6 +21,7 @@ queue_t* queue_init(size_t value_size, copy_constructor_t value_copy_constr, des
     queue->value_size = value_size;
     queue->destr = destr;
     queue->value_copy_constr = value_copy_constr;
+    
     return queue;
 }
 
@@ -39,18 +44,22 @@ int queue_push_back(queue_t* queue, const void* value)
 {
 
     if (queue->size == queue->max_size) 
-        return -2;
+    {
+        return QUEUE_OVERFLOW;
+    }
 
     queue_node_t* new_node = (queue_node_t*)malloc(sizeof(queue_node_t*));
-    if (!new_node) 
-        return -1;
+    if (!new_node)
+    {
+        return MEMORY_ERROR;
+    }
 
     new_node->value = copy(value, queue->value_size, queue->value_copy_constr);
 
     if (!new_node->value)
     {
         free(new_node);
-        return -1;
+        return MEMORY_ERROR;
     }
 
     new_node->next = NULL;
@@ -63,7 +72,7 @@ int queue_push_back(queue_t* queue, const void* value)
     queue->back = new_node;
     queue->size++;
 
-    return 0;
+    return SUCCESS;
 }
 
 int queue_push_all(queue_t *queue_dst, queue_t *queue_src)
@@ -80,8 +89,7 @@ int queue_push_all(queue_t *queue_dst, queue_t *queue_src)
 
 int queue_pop_front(queue_t* queue) 
 {
-    if (!queue->size) 
-        return -2;
+    assert(queue->size > 0);
 
     queue_node_t* front_node = queue->front;
     destruct(front_node->value, queue->destr);
@@ -92,7 +100,7 @@ int queue_pop_front(queue_t* queue)
         queue->front = queue->back = NULL;
 
     free(front_node);
-    return 0;
+    return SUCCESS;
 }
 
 void* queue_peek(queue_t *queue)

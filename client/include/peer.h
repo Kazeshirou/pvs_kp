@@ -13,6 +13,7 @@
 typedef struct peer__t 
 {
     int fd;
+    int is_closed;
     char type;
 
     queue_t *messages_in;

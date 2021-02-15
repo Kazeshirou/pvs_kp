@@ -3,7 +3,7 @@
 typedef struct master_config__t
 {
     char *queue_dir;
-    size_t workers_count;
+    int workers_count;
     int min_interval_working_with_addr;
 } master_config_t;
 

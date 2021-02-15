@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "while_true.h"
+#include "errors.h"
 
 void end_program_handler(int signum) {
     (void)signum;
@@ -16,12 +17,12 @@ void end_program_handler(int signum) {
 int set_end_program_handler() {
     if (signal(SIGINT, end_program_handler) == SIG_ERR) {
         perror("Can't register end program handler");
-        return -1;
+        return SIGNAL_ERROR;
     }
     if (signal(SIGQUIT, end_program_handler) == SIG_ERR) {
         perror("Can't register end program handler");
-        return -1;
+        return SIGNAL_ERROR;
     }
 
-    return 1;
+    return SUCCESS;
 }

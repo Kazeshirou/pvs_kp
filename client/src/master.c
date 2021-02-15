@@ -1,3 +1,5 @@
+#include "master.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -5,31 +7,24 @@
 #include <sys/wait.h>
 #include <time.h>
 
-#include "master.h"
 #include "worker.h"
 #include "fileparser.h"
 #include "while_true.h"
 #include "select_fd_storage.h"
 #include "end_marker.h"
+#include "errors.h"
 
 /* private */
 
 worker_t pick_worker_by_rr(state_t *state, const char *addr,
                            const worker_t *workers, size_t workers_count)
 {
-    worker_t worker;
-    worker_time_t worker_time;
-    tree_t *addr_vs_worker = state->addr_vs_worker;
     int rr_index = state->rr_index;
-
-    worker = workers[rr_index];
+    worker_t worker = workers[rr_index];
 
     rr_index = (rr_index + 1) % workers_count;
     state->rr_index = rr_index;
 
-    worker_time.worker = worker;
-    worker_time.last_time_working = time(NULL);
-    TREE_INSERT(addr_vs_worker, addr, worker_time);
     return worker;
 }
 
@@ -43,6 +38,17 @@ void update_last_time_working(worker_time_t *worker_time)
     worker_time->last_time_working = time(NULL);
 }
 
+int add_addr_vs_worker(tree_t *addr_vs_worker_map, const char *addr, worker_t worker)
+{
+    worker_time_t worker_time;
+    worker_time.worker = worker;
+    worker_time.last_time_working = time(NULL);
+    return TREE_INSERT(addr_vs_worker_map, addr, worker_time);
+}
+
+#define DELETE_ADDR_VS_WORKER(addr_vs_worker, addr) \
+    tree_delete(addr_vs_worker, addr)
+
 worker_t pick_worker(state_t *state, const worker_t *workers,
                      const char *addr, master_config_t config)
 {
@@ -53,14 +59,16 @@ worker_t pick_worker(state_t *state, const worker_t *workers,
     if (!node)
     {
         worker = pick_worker_by_rr(state, addr, workers, config.workers_count);
+        add_addr_vs_worker(addr_vs_worker, addr, worker);
     }
     else
     {
         worker_time = *((worker_time_t*)node->value);
         if (is_time_expired(worker_time, config.min_interval_working_with_addr))
         {
-            tree_delete(addr_vs_worker, addr);
+            DELETE_ADDR_VS_WORKER(addr_vs_worker, addr);
             worker = pick_worker_by_rr(state, addr, workers, config.workers_count);
+            add_addr_vs_worker(addr_vs_worker, addr, worker);
         }
         else
         {
@@ -74,9 +82,28 @@ worker_t pick_worker(state_t *state, const worker_t *workers,
 state_t* state_init()
 {
     state_t *state = (state_t*) malloc(sizeof(state_t));
+    if (!state)
+    {
+        return NULL;
+    }
+
     state->rr_index = 0;
-    state->sended_files = TREE_INIT(NULL, NULL, NULL); //set
+
+    state->sended_files = TREE_INIT(NULL, NULL, NULL);
+    if (!state->sended_files)
+    {
+        free(state);
+        return NULL;
+    }
+
     state->addr_vs_worker = TREE_INIT(worker_time_t, NULL, NULL);
+    if (!state->addr_vs_worker)
+    {
+        tree_clear(state->sended_files);
+        free(state);
+        return NULL;
+    }
+
     return state;
 }
 
@@ -95,8 +122,13 @@ worker_t* init_workers(master_config_t *master_config)
     int count = master_config->workers_count;
     int pipe_fds[count][2];
     worker_t worker;
-    worker_t *workers = (worker_t*) malloc(sizeof(worker_t) * count);
     worker_config_t worker_config;
+    worker_t *workers = (worker_t*) malloc(sizeof(worker_t) * count);
+
+    if (!workers)
+    {
+        return NULL;
+    }
 
     for (i = 0; i < count; i++)
     {
@@ -156,17 +188,14 @@ void clear_workers(worker_t *workers, int size)
     free(workers);
 }
 
-int add_filename_to_worker(worker_t *worker, const string_t *filename)
-{
-    int ret;
-    ret = add_message(worker->peer_write, filename, PARENT_MESSAGE_SEP_STR);
-    return ret;
-}
+#define ADD_FILENAME_TO_WORKER(worker, filename) \
+    add_message(worker.peer_write, filename, PARENT_MESSAGE_SEP_STR)
 
 void add_filenames_to_workers(state_t *state, const queue_t *new_files,
                               worker_t *workers, master_config_t config)
 
 {
+    int ret;
     char *addr;
     string_t *filename;
     worker_t worker;
@@ -175,14 +204,16 @@ void add_filenames_to_workers(state_t *state, const queue_t *new_files,
     while (current_file)
     {
         filename = ((string_t*)current_file->value);
-        if (!tree_search(sended_files, filename->data))
+
+        if (!tree_search(sended_files, filename->data) && (addr = get_addr(filename)))
         {
             // send file name
-            addr = get_addr(filename);
             worker = pick_worker(state, workers, addr, config);
-            add_filename_to_worker(&worker, filename);
-            tree_insert(sended_files, filename->data, NULL);
+            ret = ADD_FILENAME_TO_WORKER(worker, filename);
+            if (ret == SUCCESS)
+                tree_insert(sended_files, filename->data, NULL);
         }
+
         current_file = current_file->next;
     }
 }
@@ -191,10 +222,14 @@ peer_t** get_peers_from_workers(worker_t *workers, size_t workers_count)
 {
     int i;
     peer_t **peers = (peer_t**) malloc(sizeof(peer_t*) * workers_count);
-    for (i = 0; i < workers_count; i++)
+    if (!peers)
     {
-        peers[i] = workers[i].peer_write;
+        return NULL;
     }
+
+    for (i = 0; i < workers_count; i++)
+        peers[i] = workers[i].peer_write;
+    
     return peers;
 }
 
@@ -206,6 +241,10 @@ void dispatch(worker_t *workers, master_config_t config)
     queue_t *new_files = NULL;
     select_fd_storage_t *storage = storage_init();
     peer_t **peers = get_peers_from_workers(workers, config.workers_count);
+    if (!peers)
+    {
+        WHILE_TRUE() {}
+    }
 
     WHILE_TRUE()
     {

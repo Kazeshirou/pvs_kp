@@ -33,7 +33,6 @@ int tree_insert(tree_t *tree, const char *key, const void *value);
 int tree_insert_all(tree_t *dst, tree_t *src);
 int tree_delete(tree_t *tree, const char *key);
 tree_node_t* tree_search(tree_t *tree, const char *key);
-void tree_apply_pre(tree_t *tree, void (*f)(tree_node_t*, void*), void *arg);
 tree_node_t** tree_nodes_to_array(const tree_t *tree);
 
 #define TREE_INIT(type, value_copy_constr, value_destr) \

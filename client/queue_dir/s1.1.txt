@@ -1,3 +1,15 @@
-cdsncjdsncjks
-csdjkkcndsjkcns
-cndsjkcndsjcndsjcnsdj
+X-mysmtp-to: <ab@mysmtp.ru>, <asss@mysmtp.ru>
+X-mysmtp-from: <zhar97@yandex.ru>
+To: ab@mysmtp.ru, asss@mysmtp.ru
+From: Nataliya Zharova <zhar97@yandex.ru>
+Subject: aa
+Message-ID: <13da7763-b150-036c-7e96-de5744b56e07@yandex.ru>
+Date: Sat, 13 Feb 2021 18:27:37 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.7.1
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
+Content-Language: en-US
+
+asdfsa

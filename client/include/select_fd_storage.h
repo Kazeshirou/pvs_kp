@@ -8,7 +8,6 @@
 typedef struct select_fd_storage__t {
     fd_set *read_fds;
     fd_set *write_fds;
-    fd_set *except_fds;
 } select_fd_storage_t;
 
 select_fd_storage_t* storage_init();

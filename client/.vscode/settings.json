@@ -19,6 +19,11 @@
         "*.tcc": "cpp",
         "cstdbool": "cpp",
         "typeinfo": "cpp",
-        "queue.h": "c"
+        "queue.h": "c",
+        "smtp_connection.h": "c",
+        "smtp_message.h": "c",
+        "while_true.h": "c",
+        "client-fsm.h": "c",
+        "smtp_command_factory.h": "c"
     }
 }

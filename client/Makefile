@@ -47,9 +47,9 @@ Makefile_1.dot = $(DOTDIR)/Makefile_1.dot
 # Отдельно отчёт собирается как make report
 all: $(PROG) 
 
-INCLUDES = $(wildcard $(IDIR)/*.h) $(IDIR)/checkoptn.h #$(IDIR)/server-fsm.h
+INCLUDES = $(wildcard $(IDIR)/*.h) $(IDIR)/checkoptn.h $(IDIR)/client-fsm.h
 CSRC = $(wildcard $(CDIR)/*.c)
-CSRC += $(CDIR)/checkoptn.c # $(CDIR)/server-fsm.c
+CSRC += $(CDIR)/checkoptn.c $(CDIR)/client-fsm.c
 
 # Объектные файлы. Обычно, наоборот, по заданному списку объектных получают
 # список исходных файлов. Но мне лень.
@@ -65,11 +65,11 @@ $(IDIR)/checkoptn.h:  $(CDIR)/checkoptn.def
 	cd $(CDIR) && SHELL=/bin/sh autogen checkoptn.def
 	mv -f $(CDIR)/checkoptn.h $(IDIR)
 # Кодогенерация: конечный автомат
-#$(CDIR)/server-fsm.c: $(CDIR)/server.def
-#	cd $(CDIR) && autogen server.def
-#$(IDIR)/server-fsm.h: $(CDIR)/server.def
-#	cd $(CDIR) && autogen server.def
-#	mv -f $(CDIR)/server-fsm.h $(IDIR)
+$(CDIR)/client-fsm.c: $(CDIR)/client.def
+	cd $(CDIR) && autogen client.def
+$(IDIR)/client-fsm.h: $(CDIR)/client.def
+	cd $(CDIR) && autogen client.def
+	mv -f $(CDIR)/client-fsm.h $(IDIR)
 
 # Сгенерённый код компилируется особым образом
 # (как того требует инструкция).
@@ -77,8 +77,8 @@ $(ODIR)/checkoptn.o: $(CDIR)/checkoptn.c
 	$(CC) -c -I$(IDIR) -DTEST_CHECK_OPTS `autoopts-config cflags` -o $@  $<
 
 # Сгенерённый код компилируется особым образом (костыли).
-# $(ODIR)/server-fsm.o: $(CDIR)/server-fsm.c
-# 	$(CC) -I$(IDIR) -Wall -o $@ -c $<
+$(ODIR)/client-fsm.o: $(CDIR)/client-fsm.c
+	$(CC) -c -I$(IDIR) -Wall -o $@ $<
 
 $(DOTDIR)/%_def.dot: $(CDIR)/%.def
 	$(FSM2DOT) $< > $@

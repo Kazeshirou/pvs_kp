@@ -1,10 +1,12 @@
+#include "tree.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
-#include "tree.h"
+#include "errors.h"
 
 /* private */
 
@@ -13,22 +15,21 @@ tree_node_t* create_node(const tree_t *tree, const char *key, const void *value)
     tree_node_t *node;
 
     node = malloc(sizeof(tree_node_t));
-
-    if (node)
+    if (!node)
     {
-        node->value = copy(value, tree->value_size, tree->value_copy_constr);
-        if (node->value || !value) 
-        {
-            strcpy(node->key, key);
-            node->left = NULL;
-            node->right = NULL;
-        }
-        else
-        {
-            free(node);
-            node = NULL;
-        }
+        return NULL;
     }
+
+    node->value = copy(value, tree->value_size, tree->value_copy_constr);
+    if (!node->value && value) 
+    {
+        free(node);
+        return NULL;
+    }
+    
+    strcpy(node->key, key);
+    node->left = NULL;
+    node->right = NULL;
 
     return node;
 }
@@ -51,7 +52,7 @@ int tree_node_insert(tree_t *tree, tree_node_t **root,
                      const char *key, const void *value)
 {
     if (tree->size == tree->max_size)
-        return -2;
+        return TREE_OVERFLOW;
 
     int cmp;
 
@@ -59,10 +60,10 @@ int tree_node_insert(tree_t *tree, tree_node_t **root,
     {
         tree_node_t *node = create_node(tree, key, value);
         if (!node)
-            return -1;
+            return MEMORY_ERROR;
         *root = node;
         tree->size++;
-        return 0;
+        return SUCCESS;
     }
     
     cmp = strcmp(key, (*root)->key);
@@ -71,13 +72,18 @@ int tree_node_insert(tree_t *tree, tree_node_t **root,
     {
         // update value
         destruct((*root)->value, tree->value_destr);
-        copy((*root)->value, tree->value_size, tree->value_copy_constr);
-        return 0;
+        (*root)->value = copy(value, tree->value_size, tree->value_copy_constr);
+        if (!((*root)->value))
+        {
+            return MEMORY_ERROR;
+        }
+        return SUCCESS;
     }
 
     if (cmp < 0)
         return tree_node_insert(tree, &((*root)->left), key, value);
-    return tree_node_insert(tree, &((*root)->right), key, value);
+    else
+        return tree_node_insert(tree, &((*root)->right), key, value);
 }
 
 int tree_node_insert_all(tree_t *dst, tree_node_t *root)
@@ -100,13 +106,10 @@ int tree_node_insert_all(tree_t *dst, tree_node_t *root)
 
 int tree_node_delete(tree_t *tree, tree_node_t **root, const char *key)
 {
-    if (!tree->size)
-        return -2;
+    assert (tree->size > 0);
+    assert(*root != NULL);
 
     int cmp;
-
-    if (*root == NULL) 
-        return -1;
 
     cmp = strcmp(key, (*root)->key);
     if (cmp == 0)
@@ -117,6 +120,7 @@ int tree_node_delete(tree_t *tree, tree_node_t **root, const char *key)
             free_node(tree, *root);
             *root = temp;
             tree->size--;
+            return SUCCESS;
         }
         else if ((*root)->right == NULL)
         {
@@ -124,6 +128,7 @@ int tree_node_delete(tree_t *tree, tree_node_t **root, const char *key)
             free_node(tree, *root);
             *root = temp;
             tree->size--;
+            return SUCCESS;
         }
         else
         {
@@ -131,25 +136,19 @@ int tree_node_delete(tree_t *tree, tree_node_t **root, const char *key)
             strcpy((*root)->key, temp->key);
             // update value
             destruct((*root)->value, tree->value_destr);
-            copy((*root)->value, tree->value_size, tree->value_copy_constr);
-            tree_node_delete(tree, &((*root)->right), temp->key);
+            (*root)->value = copy(temp->value, tree->value_size, tree->value_copy_constr);
+            if (!(*root)->value)
+            {
+                return MEMORY_ERROR;
+            }
+            return tree_node_delete(tree, &((*root)->right), temp->key);
         }
     }
-    else if (cmp < 0)
-        tree_node_delete(tree, &((*root)->left), key);
+    
+    if (cmp < 0)
+        return tree_node_delete(tree, &((*root)->left), key);
     else
-        tree_node_delete(tree, &((*root)->right), key);
-
-   return 0;
-}
-
-void tree_node_apply_pre(tree_node_t *root, void (*f)(tree_node_t*, void*), void *arg)
-{
-    if (root == NULL)
-        return;
-    f(root, arg);
-    tree_node_apply_pre(root->left, f, arg);
-    tree_node_apply_pre(root->right, f, arg);
+        return tree_node_delete(tree, &((*root)->right), key);
 }
 
 /* public */
@@ -159,6 +158,11 @@ tree_t* tree_init(size_t value_size,
                   destructor_t value_destr)
 {
     tree_t *tree = (tree_t*) malloc(sizeof(tree_t));
+    if (!tree)
+    {
+        return NULL;
+    }
+
     tree->max_size = TREE_DEFAULT_MAX_SIZE;
     tree->root = NULL;
     tree->size = 0;
@@ -166,12 +170,18 @@ tree_t* tree_init(size_t value_size,
     tree->value_size = value_size;
     tree->value_copy_constr = value_copy_constr;
     tree->value_destr = value_destr;
+
     return tree;
 }
 
 void tree_clear(tree_t *tree)
 {
     tree_node_t **nodes = tree_nodes_to_array(tree);
+    if (!nodes)
+    {
+        return;
+    }
+
     int i = 0;
     for (i = 0; i < tree->size; i++)
     {
@@ -227,19 +237,8 @@ tree_node_t* tree_search(tree_t *tree, const char *key)
 }
 
 int tree_delete(tree_t *tree, const char *key)
-{
-    int ret;
-    if (!tree->size)
-        return -1;
-    ret = tree_node_delete(tree, &(tree->root), key);
-    if (ret == 0)
-        tree->size -= 1;
-    return ret;
-}
-
-void tree_apply_pre(tree_t *tree, void (*f)(tree_node_t*, void*), void *arg)
-{
-    tree_node_apply_pre(tree->root, f, arg);
+{ 
+    return tree_node_delete(tree, &(tree->root), key);
 }
 
 void tree_node_nodes_to_array(const tree_t *tree, tree_node_t *root, 
@@ -249,7 +248,13 @@ void tree_node_nodes_to_array(const tree_t *tree, tree_node_t *root,
         return;
 
     if (*index == 0)
+    {
         *nodes = (tree_node_t**) malloc(sizeof(tree_node_t*) * tree->size);
+        if (!(*nodes))
+        {
+            return;
+        }
+    }
 
     (*nodes)[*index] = (tree_node_t*) root;
     (*index)++;

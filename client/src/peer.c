@@ -1,11 +1,12 @@
+#include "peer.h"
 #include <stdio.h>
 #include <stdlib.h>	// free
 #include <string.h>
 #include <unistd.h> //read/write
 
-#include "peer.h"
 #include "queue.h"
 #include "mstring.h"
+#include "errors.h"
 
 /* private */
 
@@ -13,9 +14,14 @@ queue_t* parse_buffer(const char *buffer, size_t buffer_size, const char *end_ma
 {
     int i = 0, j = 0;
     int message_begin = 0, message_end = 0, message_size = 0;
-    string_t *message;
-    queue_t *messages = QUEUE_INIT(string_t, string_copy, string_clear);
+    string_t *message = NULL;
     *parsed = 0;
+    queue_t *messages = QUEUE_INIT(string_t, string_copy, string_clear);
+    if (!messages)
+    {
+        return NULL;
+    }
+
     int end_marker_len = strlen(end_marker);
     for (i = 0; i < buffer_size; i++)
     {
@@ -30,10 +36,7 @@ queue_t* parse_buffer(const char *buffer, size_t buffer_size, const char *end_ma
             message_size = message_end-message_begin+1;
 
             message = string_init2(buffer + message_begin, message_size);
-            if (QUEUE_PUSH_BACK(messages, *message) != 0)
-            {
-                printf("error"); //todo
-            }
+            queue_push_back(messages, message);
             string_clear(message);
             *parsed = i+1;
             message_begin = i+1;
@@ -42,10 +45,8 @@ queue_t* parse_buffer(const char *buffer, size_t buffer_size, const char *end_ma
     return messages;
 }
 
-int buffer_in_is_full(const peer_t peer)
-{
-    return peer.buffer_in_size == MAX_BUFFER_SIZE;
-}
+#define BUFFER_IN_IS_NOT_FULL(peer) \
+    peer->buffer_in_size != MAX_BUFFER_SIZE
 
 void add_data_to_buffer_in(peer_t *peer, const char *data, size_t size)
 {
@@ -88,14 +89,30 @@ void reduce_buffer(char *buffer, size_t *buffer_size, size_t reduced)
 peer_t* peer_init(int fd, char type)
 {
     peer_t *peer = (peer_t*) malloc(sizeof(peer_t));
+    if (!peer)
+    {
+        return NULL;
+    }
+
     peer->fd = fd;
+    peer->is_closed = 0;
     peer->type = type;
 
     peer->message_in_begin = 0;
     peer->messages_in = QUEUE_INIT(string_t, string_copy, string_clear);
+    if (!peer->messages_in)
+    {
+        free(peer);
+        return NULL;
+    }
     peer->buffer_in_size = 0;
     
     peer->messages_out = QUEUE_INIT(string_t, string_copy, string_clear);
+    if (!peer->messages_out)
+    {
+        free(peer);
+        return NULL;
+    }
     peer->buffer_out_size = 0;
 
     return peer;
@@ -106,16 +123,42 @@ void* peer_copy(const void *_other)
     peer_t *other = (peer_t*) _other;
 
     peer_t *peer = (peer_t*) malloc(sizeof(peer_t));
+    if (!peer)
+    {
+        return NULL;
+    }
     peer->fd = other->fd;
+    peer->is_closed = other->is_closed;
     peer->type = other->type;
 
     peer->message_in_begin = other->message_in_begin;
     peer->messages_in = QUEUE_INIT(string_t, string_copy, string_clear);
-    queue_push_all(peer->messages_in, other->messages_in);
+    if (!peer->messages_in)
+    {
+        free(peer);
+        return NULL;
+    }
+    if (queue_push_all(peer->messages_in, other->messages_in) != SUCCESS)
+    {
+        free(peer->messages_in);
+        free(peer);
+        return NULL;
+    }
     peer->buffer_in_size = other->buffer_in_size;
     
     peer->messages_out = QUEUE_INIT(string_t, string_copy, string_clear);
-    queue_push_all(peer->messages_out, other->messages_out);
+    if (!peer->messages_out)
+    {
+        free(peer);
+        return NULL;
+    }
+    if (queue_push_all(peer->messages_out, other->messages_out) != SUCCESS)
+    {
+        free(peer->messages_in);
+        free(peer->messages_out);
+        free(peer);
+        return NULL;
+    }
     peer->buffer_out_size = other->buffer_out_size;
 
     return peer;
@@ -133,15 +176,30 @@ void peer_clear(void *_peer)
 int add_message(peer_t *peer, const string_t *message, const char *end_marker)
 {
     int ret;
+    string_t *end_marker_str;
+    string_t *message_with_end;
+
     if (end_marker != NULL)
     {
-        string_t *end_marker_str = string_init2(end_marker, strlen(end_marker));
-        string_t *message_with_end = concat(message, end_marker_str);
-
-        ret = queue_push_back(peer->messages_in, message_with_end);
-
-        string_clear(end_marker_str);
-        string_clear(message_with_end);
+        end_marker_str = string_init2(end_marker, strlen(end_marker));
+        if (end_marker_str)
+        {
+            message_with_end = concat(message, end_marker_str);
+            if (message_with_end)
+            {
+                ret = queue_push_back(peer->messages_in, message_with_end);
+            }
+            else
+            {
+                string_clear(end_marker_str);
+                ret = MEMORY_ERROR;
+            }
+            string_clear(message_with_end);
+        }
+        else
+        {
+            ret = MEMORY_ERROR;
+        }
     }
     else
     {
@@ -164,16 +222,14 @@ int peer_send(peer_t *peer)
         sended = write(peer->fd, peer->buffer_in, peer->buffer_in_size);
         break;    
     default:
-        ret = -2;
+        ret = UNKNOWN_FDT;
         break;
     }
-
-    printf("sended=%ld data=%s\n", sended, peer->buffer_in);
 
     if (sended != -1)
         REDUCE_BUFFER_IN(peer, sended);
     else
-        ret = -1;
+        ret = SEND_ERROR;
     return ret;
 }
 
@@ -183,7 +239,9 @@ int peer_receive(peer_t *peer)
     ssize_t received;
     size_t size = MAX_BUFFER_SIZE - peer->buffer_out_size;
     if (size == 0)
-        return -3;
+    {
+        return RECV_BUFFER_OVERFLOW;
+    }
 
     switch (peer->type)
     {
@@ -194,16 +252,14 @@ int peer_receive(peer_t *peer)
         received = read(peer->fd, peer->buffer_out + peer->buffer_out_size, size);
         break;    
     default:
-        ret = -2;
+        ret = UNKNOWN_FDT;
         break;
     }
-
-   // printf("received=%ld fd=%d\n", received, peer->fd);
     
     if (received != -1)
         peer->buffer_out_size += received;
     else
-        ret = -1;
+        ret = RECV_ERROR;
 
     return ret;
 }
@@ -211,7 +267,7 @@ int peer_receive(peer_t *peer)
 void fill_buffer_in(peer_t *peer)
 {
     const string_t *message = (string_t*)queue_peek(peer->messages_in);
-    while (!buffer_in_is_full(*peer) && message)
+    while (BUFFER_IN_IS_NOT_FULL(peer) && message)
     {
         reduce_messages_in(peer, message);
         message = (string_t*)queue_peek(peer->messages_in);
@@ -221,15 +277,22 @@ void fill_buffer_in(peer_t *peer)
 int fill_messages_out(peer_t *peer, const char *end_marker)
 {
     if (peer->buffer_out_size == 0)
-        return 0;
+        return SUCCESS;
 
     int ret;
     size_t parsed = 0;
     queue_t *new_messages;
 
     new_messages = parse_buffer(peer->buffer_out, peer->buffer_out_size, end_marker, &parsed);
-    ret = queue_push_all(peer->messages_out, new_messages);
-    queue_clear(new_messages); 
+    if (!new_messages)
+    {
+        ret = MEMORY_ERROR;
+    }
+    else
+    {
+        ret = queue_push_all(peer->messages_out, new_messages);
+        queue_clear(new_messages); 
+    }
 
     REDUCE_BUFFER_OUT(peer, parsed);
 
