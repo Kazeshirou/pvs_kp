@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "global.h"
+
+extern worker_config_t g_config;
+
 SMTP_message_t* SMTP_message_init()
 {
     SMTP_message_t *msg = (SMTP_message_t*) malloc(sizeof(SMTP_message_t));
@@ -11,13 +15,23 @@ SMTP_message_t* SMTP_message_init()
     }
     msg->msg_lines = 0;
     msg->recipients_count = 0;
+    msg->max_attempts_time = g_config.max_attempts_time;
+    msg->min_interval_between_attempts = g_config.min_interval_between_attempts;
     return msg;
 }
 
 void* SMTP_message_copy(const void *vother)
 {
     SMTP_message_t *other = (SMTP_message_t *) vother;
-    SMTP_message_t *copy = SMTP_message_init();
+    SMTP_message_t *copy = (SMTP_message_t*) malloc(sizeof(SMTP_message_t));
+    if (!copy)
+    {
+        return NULL;
+    }
+
+    copy->max_attempts_time = other->max_attempts_time;
+    copy->min_interval_between_attempts = other->min_interval_between_attempts;
+
     copy->recipients_count = other->recipients_count;
     copy->recipients_addr = (char**) malloc(sizeof(char*) * copy->recipients_count);
     int i;
@@ -53,4 +67,14 @@ void SMTP_message_clear(void *vmsg)
     }
     free(msg->msg);
     free(msg);
+}
+
+int is_attempts_time_expired(SMTP_message_t *message)
+{
+    return time(NULL) - message->attempt_start_time > message->max_attempts_time;
+}
+
+int can_start_attempt_now(SMTP_message_t *message)
+{
+    return time(NULL) - message->last_attempt_time > message->min_interval_between_attempts;
 }

@@ -13,7 +13,7 @@ typedef struct worker__t
 typedef struct worker_time__t
 {
     worker_t worker;
-    int last_time_working;
+    time_t last_time_working;
 } worker_time_t;
 
 typedef struct state__t

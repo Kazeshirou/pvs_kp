@@ -33,7 +33,7 @@ CFLAGS = -I$(IDIR) -Wall -Werror -pedantic -std=gnu99 -g -fPIC
 # -Werror
 # Флаги сборки
 LDFLAGS += $(shell autoopts-config ldflags)
-LDFLAGS += -lpthread 
+LDFLAGS += -lpthread -lresolv
 
 # latex -> pdf
 PDFLATEX = pdflatex -interaction=nonstopmode

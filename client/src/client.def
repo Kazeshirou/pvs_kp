@@ -19,7 +19,7 @@ event =
          connection_closed_by_server, 
          connection_closed,
          response_2xx, response_3xx, response_4xx, response_502, response_5xx,
-         hello, ehlo, mail, rcpt, data, msg_text, end_data, quit;
+         hello, ehlo, mail, rset, rcpt, data, msg_text, end_data, quit;
 
 transition =
 { tst  = init;	tev = response_2xx; next = sending_hello; },

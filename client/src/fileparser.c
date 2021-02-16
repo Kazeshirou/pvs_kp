@@ -43,37 +43,31 @@ queue_t* get_filenames(const char *path_to_dir)
     return filenames;
 }
 
-char* get_addr(const string_t *filename)
+char* get_addr(const string_t *filename, int *type)
 {
-    int i, j;
-    int success = 0;
+    int meta_start;
     int filename_len = filename->size;
 
-    for (j = filename_len; j >= 0 && filename->data[j] != FILENAME_SEP; j--)
+    for (meta_start = filename_len; 
+             meta_start >= 0 && filename->data[meta_start] != SERVER_ADDR_SEP; 
+             meta_start--)
         ;
-    j++;
 
-    const size_t max_size = filename_len-j+1;
+    if (meta_start < 4)
+    {
+        return NULL;
+    }
+
+    meta_start--;
+    *type = filename->data[meta_start] - '0';
+    meta_start--;
+
+    const size_t max_size = meta_start+1;
     char *addr = (char*) calloc(max_size, sizeof(char));
     if (addr == NULL)
         return NULL;
         
-    for (i = 0; j < filename_len && success == 0; i++, j++)
-    {
-        if (filename->data[j] != SERVER_ADDR_SEP)
-            addr[i] = filename->data[j];
-        else
-            success = 1;
-    }
-    if (success)
-    {
-        addr[i] = '\0';
-    }
-    else
-    {
-        free(addr);
-        addr = NULL;
-    }
+    memcpy(addr, filename->data, meta_start);
     return addr;
 }
 
@@ -132,7 +126,8 @@ char* parse_sender(const char *line)
     return sender;
 }
 
-SMTP_message_t* parse_message(const char *queue_dir, const string_t *filename)
+SMTP_message_t* parse_message(const char *queue_dir, 
+                              const string_t *filename)
 {
     SMTP_message_t *message = SMTP_message_init();
     if (!message)

@@ -81,7 +81,7 @@ typedef enum {
  *
  *  Count of the valid transition events
  */
-#define CLIENT_FSM_EVENT_CT 16
+#define CLIENT_FSM_EVENT_CT 17
 typedef enum {
     CLIENT_FSM_EV_NONE,
     CLIENT_FSM_EV_CONNECTION_CLOSED_BY_SERVER,
@@ -94,6 +94,7 @@ typedef enum {
     CLIENT_FSM_EV_HELLO,
     CLIENT_FSM_EV_EHLO,
     CLIENT_FSM_EV_MAIL,
+    CLIENT_FSM_EV_RSET,
     CLIENT_FSM_EV_RCPT,
     CLIENT_FSM_EV_DATA,
     CLIENT_FSM_EV_MSG_TEXT,

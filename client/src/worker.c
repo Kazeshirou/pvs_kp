@@ -18,7 +18,9 @@
 #include "SMTP_connection.h"
 #include "end_marker.h"
 #include "errors.h"
+#include "global.h"
 
+extern worker_config_t g_config; 
 
 SMTP_connection_t** get_SMTP_connections(const tree_t *host_vs_peer)
 {
@@ -59,10 +61,12 @@ peer_t** get_peers(SMTP_connection_t **conns, size_t size)
     return peers;
 }
 
-SMTP_connection_t* get_peer_for_sending(tree_t *host_vs_conn_map, const string_t *filename_value)
+SMTP_connection_t* get_peer_for_sending(tree_t *host_vs_conn_map, 
+                                        const string_t *filename_value)
 {
     SMTP_connection_t *peer_for_sending = NULL;
-    char *addr = get_addr(filename_value);
+    int addr_type;
+    char *addr = get_addr(filename_value, &addr_type);
     if (!addr)
     {
         return NULL;
@@ -74,7 +78,7 @@ SMTP_connection_t* get_peer_for_sending(tree_t *host_vs_conn_map, const string_t
     }
     else
     {
-        peer_for_sending = SMTP_connection_init(addr);
+        peer_for_sending = SMTP_connection_init(addr, addr_type);
         tree_insert(host_vs_conn_map, addr, peer_for_sending);
         peer_for_sending = ((SMTP_connection_t*)tree_search(host_vs_conn_map, addr)->value);
     }
@@ -111,6 +115,8 @@ int process_parent_messages(tree_t *host_vs_conn_map, queue_t *filenames, const 
 
 int worker_main(const worker_config_t config)
 {
+    g_config = config;
+
     int i = 0;
     int parent_pipe = config.parent_pipe_fd;
     peer_t *parent = NULL;

@@ -197,6 +197,7 @@ void add_filenames_to_workers(state_t *state, const queue_t *new_files,
 {
     int ret;
     char *addr;
+    int addr_type;
     string_t *filename;
     worker_t worker;
     tree_t *sended_files = state->sended_files;
@@ -205,7 +206,7 @@ void add_filenames_to_workers(state_t *state, const queue_t *new_files,
     {
         filename = ((string_t*)current_file->value);
 
-        if (!tree_search(sended_files, filename->data) && (addr = get_addr(filename)))
+        if (!tree_search(sended_files, filename->data) && (addr = get_addr(filename, &addr_type)))
         {
             // send file name
             worker = pick_worker(state, workers, addr, config);

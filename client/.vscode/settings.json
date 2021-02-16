@@ -24,6 +24,8 @@
         "smtp_message.h": "c",
         "while_true.h": "c",
         "client-fsm.h": "c",
-        "smtp_command_factory.h": "c"
+        "smtp_command_factory.h": "c",
+        "smtp_constants.h": "c",
+        "global.h": "c"
     }
 }

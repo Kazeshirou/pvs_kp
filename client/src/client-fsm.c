@@ -109,6 +109,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  HELLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  EHLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MAIL */
+    { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RSET */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RCPT */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  DATA */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MSG_TEXT */
@@ -128,6 +129,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
     { CLIENT_FSM_ST_HELLO_SENDED, client_fsm_do_sending_hello_hello }, /* EVT:  HELLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  EHLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MAIL */
+    { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RSET */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RCPT */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  DATA */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MSG_TEXT */
@@ -147,6 +149,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  HELLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  EHLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MAIL */
+    { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RSET */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RCPT */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  DATA */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MSG_TEXT */
@@ -166,6 +169,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  HELLO */
     { CLIENT_FSM_ST_EHLO_SENDED, client_fsm_do_sending_ehlo_ehlo }, /* EVT:  EHLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MAIL */
+    { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RSET */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RCPT */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  DATA */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MSG_TEXT */
@@ -185,6 +189,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  HELLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  EHLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MAIL */
+    { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RSET */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RCPT */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  DATA */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MSG_TEXT */
@@ -204,6 +209,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  HELLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  EHLO */
     { CLIENT_FSM_ST_MAIL_SENDED, client_fsm_do_sending_mail_or_quit_mail }, /* EVT:  MAIL */
+    { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RSET */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RCPT */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  DATA */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MSG_TEXT */
@@ -223,6 +229,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  HELLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  EHLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MAIL */
+    { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RSET */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RCPT */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  DATA */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MSG_TEXT */
@@ -242,6 +249,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  HELLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  EHLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MAIL */
+    { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RSET */
     { CLIENT_FSM_ST_RCPT_SENDED, client_fsm_do_sending_rcpt_or_data_rcpt }, /* EVT:  RCPT */
     { CLIENT_FSM_ST_DATA_SENDED, client_fsm_do_sending_rcpt_or_data_data }, /* EVT:  DATA */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MSG_TEXT */
@@ -261,6 +269,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  HELLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  EHLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MAIL */
+    { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RSET */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RCPT */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  DATA */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MSG_TEXT */
@@ -280,6 +289,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  HELLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  EHLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MAIL */
+    { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RSET */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RCPT */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  DATA */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MSG_TEXT */
@@ -299,6 +309,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  HELLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  EHLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MAIL */
+    { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RSET */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RCPT */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  DATA */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MSG_TEXT */
@@ -318,6 +329,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  HELLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  EHLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MAIL */
+    { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RSET */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RCPT */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  DATA */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MSG_TEXT */
@@ -337,6 +349,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  HELLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  EHLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MAIL */
+    { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RSET */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RCPT */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  DATA */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MSG_TEXT */
@@ -356,6 +369,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  HELLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  EHLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MAIL */
+    { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RSET */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RCPT */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  DATA */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MSG_TEXT */
@@ -375,6 +389,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  HELLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  EHLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MAIL */
+    { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RSET */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RCPT */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  DATA */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MSG_TEXT */
@@ -394,6 +409,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  HELLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  EHLO */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MAIL */
+    { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RSET */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  RCPT */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  DATA */
     { CLIENT_FSM_ST_INVALID, client_fsm_do_invalid }, /* EVT:  MSG_TEXT */
@@ -408,7 +424,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
 #define Client_FsmStInit_off     83
 
 
-static char const zClient_FsmStrings[487] =
+static char const zClient_FsmStrings[492] =
 /*     0 */ "** OUT-OF-RANGE **\0"
 /*    19 */ "FSM Error:  in state %d (%s), event %d (%s) is invalid\n\0"
 /*    75 */ "invalid\0"
@@ -439,22 +455,23 @@ static char const zClient_FsmStrings[487] =
 /*   438 */ "hello\0"
 /*   444 */ "ehlo\0"
 /*   449 */ "mail\0"
-/*   454 */ "rcpt\0"
-/*   459 */ "data\0"
-/*   464 */ "msg_text\0"
-/*   473 */ "end_data\0"
-/*   482 */ "quit";
+/*   454 */ "rset\0"
+/*   459 */ "rcpt\0"
+/*   464 */ "data\0"
+/*   469 */ "msg_text\0"
+/*   478 */ "end_data\0"
+/*   487 */ "quit";
 
 static const size_t aszClient_FsmStates[16] = {
     83,  88,  102, 115, 128, 140, 161, 173, 194, 206, 218, 246, 262, 278, 291,
     303 };
 
-static const size_t aszClient_FsmEvents[17] = {
-    322, 327, 355, 373, 386, 399, 412, 425, 438, 444, 449, 454, 459, 464, 473,
-    482, 75 };
+static const size_t aszClient_FsmEvents[18] = {
+    322, 327, 355, 373, 386, 399, 412, 425, 438, 444, 449, 454, 459, 464, 469,
+    478, 487, 75 };
 
 
-#define CLIENT_FSM_EVT_NAME(t)   ( (((unsigned)(t)) >= 17) \
+#define CLIENT_FSM_EVT_NAME(t)   ( (((unsigned)(t)) >= 18) \
     ? zClient_FsmStrings : zClient_FsmStrings + aszClient_FsmEvents[t])
 
 #define CLIENT_FSM_STATE_NAME(s) ( (((unsigned)(s)) >= 16) \

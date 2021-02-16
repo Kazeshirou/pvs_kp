@@ -10,7 +10,7 @@
 
 queue_t* get_filenames(const char *path_to_dir);
 
-char* get_addr(const string_t *filename);
+char* get_addr(const string_t *filename, int *type);
 void free_addr(char *addr);
 
 SMTP_message_t* parse_message(const char *queue_dir, const string_t *filename);
