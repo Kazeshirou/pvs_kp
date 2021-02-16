@@ -1,5 +1,6 @@
 #include "client.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "smtp_cmd.h"
@@ -123,6 +124,12 @@ error_code_t client_add_mail_from(client_t* client, const char* buf,
     if (msg_add_text(&client->from, buf, size) != CE_SUCCESS) {
         return CE_COMMON;
     }
+
+    msg_clean(&client->msg_text);
+    char x_from[200];
+    snprintf(x_from, sizeof(x_from), "X-mysmtp-from: %s\r\n",
+             client->from.text);
+    msg_add_text(&client->msg_text, x_from, strlen(x_from) + 1);
 
     return CE_SUCCESS;
 }
