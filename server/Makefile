@@ -111,7 +111,7 @@ $(ODIR)/%.o: $(CDIR)/%.c $(INCLUDES) # $(GENINCLUDES)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 $(PROG): $(OBJS)
-	$(CC) -o $@ $(LDFLAGS) $^
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 # Отчёт. PDFLATEX вызывается дважды для нормального 
 # создания ссылок, это НЕ опечатка.

@@ -1,6 +1,7 @@
 #include "client.h"
 
-#include "stdio.h"
+#include <stdio.h>
+#include <string.h>
 
 #include "smtp_cmd.h"
 
@@ -61,7 +62,6 @@ error_code_t client_process_recv(client_t* client, msg_t* msg) {
         client->current_state = next_state;
         return CE_SUCCESS;
     }
-
 
     if (smtp_cmd_check(SMTP_CMD_EHLO, &mi) == CE_SUCCESS) {
         next_state =
@@ -128,16 +128,39 @@ error_code_t client_add_mail_from(client_t* client, const char* buf,
     return CE_SUCCESS;
 }
 
-error_code_t client_add_rcpt_to(client_t* client, const char* buf,
-                                size_t size) {
+error_code_t client_add_rcpt_to(client_t* client, match_info_t* mi) {
     if (client->to_count == MAX_RCPT_TO_COUNT) {
         return CE_MAX_SIZE;
     }
-    if (msg_init(&client->to[client->to_count], size + 1) != CE_SUCCESS) {
+    if (msg_init(&client->to[client->to_count].local_part, 50) != CE_SUCCESS) {
         return CE_INIT_3RD;
     }
-    if (msg_add_text(&client->to[client->to_count], buf, size) != CE_SUCCESS) {
-        return CE_COMMON;
+    if (msg_init(&client->to[client->to_count].domen, 50) != CE_SUCCESS) {
+        msg_destroy(&client->to[client->to_count].local_part);
+        return CE_INIT_3RD;
+    }
+    char buf[1000];
+    if (smtp_cmd_get_substring(mi, MI_RCPT_TO_POSTMASTER_INDEX, buf,
+                               sizeof(buf)) == CE_SUCCESS) {
+        msg_add_text(&client->to[client->to_count].local_part, "Postmaster",
+                     sizeof("Postmaster"));
+        msg_add_text(&client->to[client->to_count].domen,
+                     client->mail_writer.domain,
+                     strlen(client->mail_writer.domain) + 1);
+    } else if (smtp_cmd_get_substring(mi,
+                                      MI_RCPT_TO_POSTMASTER_FULL_DOMEN_INDEX,
+                                      buf, sizeof(buf)) == CE_SUCCESS) {
+        msg_add_text(&client->to[client->to_count].local_part, "Postmaster",
+                     sizeof("Postmaster"));
+        msg_add_text(&client->to[client->to_count].domen, buf, strlen(buf) + 1);
+    } else {
+        smtp_cmd_get_substring(mi, MI_RCPT_TO_FORWARD_PATH_LOCAL_PART_INDEX,
+                               buf, sizeof(buf));
+        msg_add_text(&client->to[client->to_count].local_part, buf,
+                     strlen(buf) + 1);
+        smtp_cmd_get_substring(mi, MI_RCPT_TO_FORWARD_PATH_DOMAIN_INDEX, buf,
+                               sizeof(buf));
+        msg_add_text(&client->to[client->to_count].domen, buf, strlen(buf) + 1);
     }
     client->to_count++;
     return CE_SUCCESS;
@@ -163,7 +186,8 @@ error_code_t client_set_response(client_t* client, const char* buf,
 }
 
 error_code_t client_data_end_process(client_t* client) {
-    FILE* file = fopen("/home/ntl/projects/pvs_kp/new_mail.txt", "w");
+    FILE* file =
+        fopen("/home/AVIASIM/zharovana/projects/pvs_kp/new_mail.txt", "w");
     if (!file) {
         printf("can't open new_mail.txt\n");
     }
@@ -174,7 +198,8 @@ error_code_t client_data_end_process(client_t* client) {
 
 void client_destroy(client_t* client) {
     for (size_t i = 0; i < client->to_count; i++) {
-        msg_destroy(&client->to[i]);
+        msg_destroy(&client->to[i].local_part);
+        msg_destroy(&client->to[i].domen);
     }
     client->to_count      = 0;
     client->current_state = CLIENT_ST_INIT;

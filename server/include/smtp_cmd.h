@@ -3,10 +3,17 @@
 #include "custom_errors.h"
 #include "pcre.h"
 
-#define MI_MAIL_FROM_REVERSE_PATH_INDEX 1
-#define MI_RCPT_TO_FORWARD_PATH_INDEX   1
-#define MI_EHLO_INFO_INDEX              1
-#define MI_HELO_INFO_INDEX              1
+#define MI_MAIL_FROM_REVERSE_PATH_INDEX          1
+#define MI_RCPT_TO_FULL_INDEX                    1
+#define MI_RCPT_TO_POSTMASTER_FULL_INDEX         2
+#define MI_RCPT_TO_POSTMASTER_FULL_DOMEN_INDEX   3
+#define MI_RCPT_TO_POSTMASTER_INDEX              9
+#define MI_RCPT_TO_FORWARD_PATH_FULL             28
+#define MI_RCPT_TO_FORWARD_PATH_LOCAL_PART_INDEX 29
+#define MI_RCPT_TO_FORWARD_PATH_DOMAIN_INDEX     38
+#define MI_RCPT_TO_FORWARD_PATH_INDEX            1
+#define MI_EHLO_INFO_INDEX                       1
+#define MI_HELO_INFO_INDEX                       1
 
 typedef enum {
     SMTP_CMD_UNKNOW   = -1,
@@ -28,8 +35,7 @@ typedef struct {
     pcre_extra* extra;
 } smtp_cmd_t;
 
-#define SUB_STR_COUNT 100
-
+#define SUB_STR_COUNT 250
 typedef struct {
     SMTP_CMD cmd;
     char*    tested_line;

@@ -1611,10 +1611,7 @@ client_do_expected_rcpt_or_data_rcpt(
 /*  START == EXPECTED RCPT OR DATA RCPT == DO NOT CHANGE THIS COMMENT  */
     client_t* client = (client_t*)client_ptr;
     match_info_t* match_info = (match_info_t*)match_info_ptr;
-    char buf[1000];
-    if (smtp_cmd_get_substring(match_info, MI_RCPT_TO_FORWARD_PATH_INDEX, buf, sizeof(buf)) == CE_SUCCESS) {
-        client_add_rcpt_to(client, buf, strlen(buf));
-    }
+    client_add_rcpt_to(client, match_info);
     client_set_response(client, CLIENT_SUCCESS_ANSWER, sizeof(CLIENT_SUCCESS_ANSWER));
     return maybe_next;
     /*  END   == EXPECTED RCPT OR DATA RCPT == DO NOT CHANGE THIS COMMENT  */

@@ -6,6 +6,7 @@
 #include "custom_errors.h"
 #include "mail_writer.h"
 #include "msg.h"
+#include "smtp_cmd.h"
 
 #define CLIENT_CR_LF                "\r\n"
 #define CLIENT_OPENING_MSG          "220" CLIENT_CR_LF
@@ -16,13 +17,18 @@
 #define MAX_RCPT_TO_COUNT 100
 
 typedef struct {
+    msg_t local_part;
+    msg_t domen;
+} receiver_t;
+
+typedef struct {
     te_client_state current_state;
     int             ehlo;
     int             need_send;
     msg_t           greating_info;
     msg_t           msg_for_sending;
     msg_t           from;
-    msg_t           to[MAX_RCPT_TO_COUNT];
+    receiver_t      to[MAX_RCPT_TO_COUNT];
     size_t          to_count;
     msg_t           msg_text;
     int             closed;
@@ -37,7 +43,7 @@ error_code_t client_add_greating_info(client_t* client, const char* buf,
                                       size_t size);
 error_code_t client_add_mail_from(client_t* client, const char* buf,
                                   size_t size);
-error_code_t client_add_rcpt_to(client_t* client, const char* buf, size_t size);
+error_code_t client_add_rcpt_to(client_t* client, match_info_t* mi);
 error_code_t client_add_msg_txt(client_t* client, const char* buf, size_t size);
 error_code_t client_data_end_process(client_t* client);
 error_code_t client_set_response(client_t* client, const char* buf,

@@ -108,6 +108,9 @@ error_code_t smtp_cmd_get_substring(match_info_t* match_info, int index,
                                     char* buf, size_t buf_size) {
     pcre_copy_substring(match_info->tested_line, match_info->sub_str,
                         match_info->sub_str_count, index, buf, buf_size);
+    if (!buf[0]) {
+        return CE_COMMON;
+    }
     return CE_SUCCESS;
 }
 
@@ -116,6 +119,9 @@ error_code_t smtp_cmd_get_named_substring(match_info_t* match_info, char* name,
     pcre_copy_named_substring(smtp_cmds_[match_info->cmd].re_compiled,
                               match_info->tested_line, match_info->sub_str,
                               match_info->sub_str_count, name, buf, buf_size);
+    if (!buf[0]) {
+        return CE_COMMON;
+    }
     return CE_SUCCESS;
 }
 
