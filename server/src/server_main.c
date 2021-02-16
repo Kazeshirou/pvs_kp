@@ -7,6 +7,7 @@
 #include "checkoptn.h"
 
 #include "end_program_handler.h"
+#include "logger.h"
 #include "re_definitions.h"
 #include "smtp_cmd.h"
 #include "smtp_server.h"
@@ -18,7 +19,12 @@
 #define DEFAULT_LOCAL_MAILDIR      "~/.mysmtp/"
 #define DEFAULT_CLIENT_MAILDIR     "~/.mysmtp_client/"
 
+#define LOG_PATH "/tmp/mysmtp_log.csv"
+
 volatile sig_atomic_t while_true = 1;
+
+logger_t  logger;
+logger_t* logger_ = &logger;
 
 int main(int argc, char* argv[]) {
     //  Обработка аргументов командной строки, сбор конфигурации серевера в
@@ -82,6 +88,14 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    if (init_logger(LOG_PATH) != CE_SUCCESS) {
+        printf("Не удалось проинициализировать логер!\n");
+        return 0;
+    }
+    add_output(stderr);
+    thrd_t log;
+    thrd_create(&log, &logger_thread, NULL);
+
     // Компилируем все регулярки.
     if (smtp_cmd_init() != CE_SUCCESS) {
         return 0;
@@ -100,7 +114,13 @@ int main(int argc, char* argv[]) {
 
     // Запуск сервера.
     smtp_server(cfg);
+
+    // Освобождение ресурсов.
+    end_program_handler(SIGINT);
     smtp_cmd_destroy();
+    destroy_logger();
+    int log_res;
+    thrd_join(log, &log_res);
     thrd_exit(0);
     return 0;
 }

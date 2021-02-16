@@ -12,3 +12,4 @@ simplest.mk
 *.log
 *.out
 *.toc
+valgrind-out.txt

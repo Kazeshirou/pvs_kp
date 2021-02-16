@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "logger.h"
 #include "msg.h"
 #include "server_info.h"
 #include "thread_pool.h"
@@ -26,13 +27,18 @@ void set_socket_unblock(const int fd) {
 static error_code_t droproot(const char* username) {
     struct passwd* pw = NULL;
 
+    char log_msg[500];
+
     pw = getpwnam(username);
     if (pw) {
         if (initgroups(pw->pw_name, pw->pw_gid) != 0 ||
             setgid(pw->pw_gid) != 0 || setuid(pw->pw_uid) != 0) {
-            fprintf(stderr, "Couldn't change to '%.32s' uid=%lu gid=%lu: %s\n",
-                    username, (unsigned long)pw->pw_uid,
-                    (unsigned long)pw->pw_gid, strerror(errno));
+            snprintf(log_msg, sizeof(log_msg),
+                     "Невозможно поменять пользователя на '%.32s' uid=%lu "
+                     "gid=%lu: %s\n",
+                     username, (unsigned long)pw->pw_uid,
+                     (unsigned long)pw->pw_gid, strerror(errno));
+            log_critical("smtp_server", log_msg);
             return CE_COMMON;
         }
     } else {
@@ -204,7 +210,11 @@ error_code_t process_poll(server_info_t* server_info) {
 static int main_worker_func(void* worker_ptr) {
     worker_t*                worker = worker_ptr;
     const smtp_server_cfg_t* cfg    = worker->worker_info;
-    server_info_t            server_info;
+    char                     log_msg[300];
+    snprintf(log_msg, sizeof(log_msg), "thread %ld %ld created\n", worker->id,
+             worker->td);
+    log_info("smtp_server", log_msg);
+    server_info_t server_info;
     if (server_info_init(&server_info, cfg, 50, worker->td) != CE_SUCCESS) {
         return CE_INIT_3RD;
     }
@@ -232,7 +242,6 @@ static int main_worker_func(void* worker_ptr) {
     }
     server_info_destroy(&server_info);
     worker->tp->is_ended++;
-    // printf("thread %ld %ld finished\n", worker->id, worker->td);
     return CE_SUCCESS;
 }
 

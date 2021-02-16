@@ -20,6 +20,7 @@
         "algorithm": "c",
         "unistd.h": "c",
         "grp.h": "c",
-        "stat.h": "c"
+        "stat.h": "c",
+        "exception": "cpp"
     }
 }
