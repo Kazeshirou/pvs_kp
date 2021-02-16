@@ -10,7 +10,8 @@
             "args": [
                 "-p 64999",
                 "-l/home/AVIASIM/zharovana/.mysmtp/",
-                "-c/home/AVIASIM/zharovana/.mysmtp_client/"
+                "-c/home/AVIASIM/zharovana/.mysmtp_client/",
+                "-uzharovana"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

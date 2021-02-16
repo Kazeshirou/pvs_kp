@@ -12,7 +12,7 @@ typedef struct {
     char     domain[255];
     char     local_maildir[255];
     char     client_maildir[255];
-
+    char     user[256];
 } smtp_server_cfg_t;
 
 typedef struct {

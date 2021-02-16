@@ -18,6 +18,7 @@
         "type_traits": "c",
         "utility": "c",
         "algorithm": "c",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "grp.h": "c"
     }
 }

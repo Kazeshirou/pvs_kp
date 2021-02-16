@@ -30,7 +30,8 @@ int main(int argc, char* argv[]) {
                              .backlog_queue_size = DEFAULT_BACKLOG_QUEUE_SIZE,
                              .domain             = {0},
                              .local_maildir      = {0},
-                             .client_maildir     = {0}};
+                             .client_maildir     = {0},
+                             .user               = {0}};
 
 
     if (COUNT_OPT(PORT)) {
@@ -66,6 +67,13 @@ int main(int argc, char* argv[]) {
     } else {
         memcpy(cfg.client_maildir, DEFAULT_CLIENT_MAILDIR,
                sizeof(DEFAULT_CLIENT_MAILDIR));
+    }
+    if (COUNT_OPT(USER)) {
+        size_t size =
+            (strlen(OPT_ARG(USER)) + 1 <= sizeof(cfg.client_maildir)) ?
+                strlen(OPT_ARG(USER)) :
+                sizeof(cfg.client_maildir);
+        memcpy(cfg.user, OPT_ARG(USER), size);
     }
 
     // Установка обработчика сигнала для gracefull shutdown

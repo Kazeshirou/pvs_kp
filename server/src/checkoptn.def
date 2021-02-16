@@ -42,6 +42,15 @@ flag = {
 };
 
 flag = {
+    name      = user;           /* Папка для обмена почтой с клиентской частью smtp-сервера */
+    value     = u;             
+    arg-type  = string;
+    max       = 1;          /* Не более одного раза */
+    min       = 0;         /* Опциональный параметр */
+    descrip   = "User for lower priority ";
+};
+
+flag = {
     name      = backlog_queue_size;           /* Размер backlog-очереди основного сокета */
     value     = b;             
     arg-type  = number;

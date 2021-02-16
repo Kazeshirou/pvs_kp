@@ -1,7 +1,12 @@
 #include "smtp_server.h"
 
 #include <errno.h>
+#define __USE_MISC
+#include <grp.h>
+#undef __USE_MISC
+#include <errno.h>
 #include <netinet/in.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/fcntl.h>
@@ -15,6 +20,25 @@
 
 void set_socket_unblock(const int fd) {
     fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
+}
+
+static error_code_t droproot(const char* username) {
+    struct passwd* pw = NULL;
+
+    pw = getpwnam(username);
+    if (pw) {
+        if (initgroups(pw->pw_name, pw->pw_gid) != 0 ||
+            setgid(pw->pw_gid) != 0 || setuid(pw->pw_uid) != 0) {
+            fprintf(stderr, "Couldn't change to '%.32s' uid=%lu gid=%lu: %s\n",
+                    username, (unsigned long)pw->pw_uid,
+                    (unsigned long)pw->pw_gid, strerror(errno));
+            return CE_COMMON;
+        }
+    } else {
+        fprintf(stderr, "Couldn't find user '%.32s'\n", username);
+        return CE_COMMON;
+    }
+    return CE_SUCCESS;
 }
 
 error_code_t create_server_socket(const int    port,
@@ -187,6 +211,12 @@ void smtp_server(const smtp_server_cfg_t cfg) {
         return;
     }
 
+    if (strlen(cfg.user)) {
+        cerr = droproot(cfg.user);
+        if (cerr != CE_SUCCESS) {
+            return;
+        }
+    }
     thread_pool_t tp;
     cerr = thread_pool_init(&tp, main_worker_func, &cfg);
     if (cerr != CE_SUCCESS) {
