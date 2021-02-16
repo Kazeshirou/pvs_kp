@@ -11,6 +11,7 @@
 #include <string.h>
 #include <sys/fcntl.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "msg.h"
@@ -38,6 +39,36 @@ static error_code_t droproot(const char* username) {
         fprintf(stderr, "Couldn't find user '%.32s'\n", username);
         return CE_COMMON;
     }
+    return CE_SUCCESS;
+}
+
+static error_code_t create_dirs(const char* local_maildir,
+                                const char* client_maildir) {
+    struct stat st = {0};
+    if (stat(local_maildir, &st) < 0) {
+        if (mkdir(local_maildir, 0777) < 0) {
+            return CE_COMMON;
+        }
+    }
+    char dir[256];
+    snprintf(dir, sizeof(dir), "%s%s", local_maildir, "tmp");
+    if (stat(dir, &st) < 0) {
+        if (mkdir(dir, 0777) < 0) {
+            return CE_COMMON;
+        }
+    }
+    snprintf(dir, sizeof(dir), "%s%s", local_maildir, "new");
+    if (stat(dir, &st) < 0) {
+        if (mkdir(dir, 0777) < 0) {
+            return CE_COMMON;
+        }
+    }
+    if (stat(client_maildir, &st) < 0) {
+        if (mkdir(client_maildir, 0777) < 0) {
+            return CE_COMMON;
+        }
+    }
+
     return CE_SUCCESS;
 }
 
@@ -217,6 +248,12 @@ void smtp_server(const smtp_server_cfg_t cfg) {
             return;
         }
     }
+
+    cerr = create_dirs(cfg.local_maildir, cfg.client_maildir);
+    if (cerr != CE_SUCCESS) {
+        return;
+    }
+
     thread_pool_t tp;
     cerr = thread_pool_init(&tp, main_worker_func, &cfg);
     if (cerr != CE_SUCCESS) {

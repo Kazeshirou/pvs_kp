@@ -19,6 +19,7 @@
         "utility": "c",
         "algorithm": "c",
         "unistd.h": "c",
-        "grp.h": "c"
+        "grp.h": "c",
+        "stat.h": "c"
     }
 }

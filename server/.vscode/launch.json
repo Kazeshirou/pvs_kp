@@ -9,8 +9,8 @@
             "preLaunchTask": "server",
             "args": [
                 "-p 64999",
-                "-l/home/AVIASIM/zharovana/.mysmtp/",
-                "-c/home/AVIASIM/zharovana/.mysmtp_client/",
+                "-l/tmp/mysmtp/",
+                "-c/tmp/mysmtp_client/",
                 "-uzharovana"
             ],
             "stopAtEntry": false,
