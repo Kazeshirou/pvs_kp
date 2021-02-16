@@ -24,6 +24,7 @@ typedef int (*main_worker_func_t)(void*);
 typedef struct thread_pool__t {
     main_worker_func_t    main_func;
     queue_t               job_queue;
+    destructor_t          job_destructor;
     worker_t              workers[WORKERS_COUNT];
     volatile sig_atomic_t is_ended;
 } thread_pool_t;

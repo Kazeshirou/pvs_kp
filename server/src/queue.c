@@ -32,7 +32,7 @@ error_code_t queue_push_back(queue_t* queue, const void* value,
         return CE_MAX_SIZE;
     }
 
-    node_t* new_node = (node_t*)malloc(sizeof(node_t*));
+    node_t* new_node = (node_t*)malloc(sizeof(node_t));
     if (!new_node) {
         mtx_unlock(&queue->mtx);
         return CE_ALLOC;
@@ -71,6 +71,9 @@ error_code_t queue_try_pop_front(queue_t* queue, void* value,
     error_code_t err        = node_get_value(front_node, value, size);
     if (err != CE_SUCCESS) {
         mtx_unlock(&queue->mtx);
+        node_destroy(front_node, NULL);
+        free(front_node);
+        mtx_unlock(&queue->mtx);
         return err;
     }
 
@@ -102,6 +105,9 @@ error_code_t queue_pop_front(queue_t* queue, void* value, const size_t size) {
     node_t*      front_node = queue->front;
     error_code_t err        = node_get_value(front_node, value, size);
     if (err != CE_SUCCESS) {
+        mtx_unlock(&queue->mtx);
+        node_destroy(front_node, NULL);
+        free(front_node);
         mtx_unlock(&queue->mtx);
         return err;
     }

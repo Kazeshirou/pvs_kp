@@ -31,8 +31,9 @@ error_code_t thread_pool_init(thread_pool_t* tp, main_worker_func_t main_func,
         return cerr;
     }
     int    err;
-    size_t i     = 0;
-    tp->is_ended = 0;
+    size_t i           = 0;
+    tp->is_ended       = 0;
+    tp->job_destructor = (destructor_t)&job_destroy;
     for (; i < WORKERS_COUNT; i++) {
         tp->workers[i].id          = i;
         tp->workers[i].end_flag    = 0;
@@ -70,7 +71,7 @@ void thread_pool_destroy(thread_pool_t* tp) {
     for (size_t i = 0; i < WORKERS_COUNT; i++) {
         tp->workers[i].end_flag = 1;
     }
-    queue_destroy(&tp->job_queue, (destructor_t)&job_destroy);
+    queue_destroy(&tp->job_queue, tp->job_destructor);
     // printf("Waiting for workers finish...\n");
     while (tp->is_ended != WORKERS_COUNT) {
         sleep(0.1);

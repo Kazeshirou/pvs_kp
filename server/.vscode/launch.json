@@ -10,8 +10,7 @@
             "args": [
                 "-p 64999",
                 "-l/tmp/mysmtp/",
-                "-c/tmp/mysmtp_client/",
-                "-uzharovana"
+                "-c/tmp/mysmtp_client/"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

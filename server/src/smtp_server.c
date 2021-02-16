@@ -193,6 +193,8 @@ error_code_t process_poll(server_info_t* server_info) {
         }
     }
 
+    msg_destroy(&msg);
+
     if (need_compress) {
         server_info_compress(server_info);
     }
@@ -259,6 +261,7 @@ void smtp_server(const smtp_server_cfg_t cfg) {
     if (cerr != CE_SUCCESS) {
         return;
     }
+    tp.job_destructor = NULL;
 
     // Настройка poll.
     struct pollfd listener_poll_fd;
