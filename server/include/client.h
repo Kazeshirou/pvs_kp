@@ -17,11 +17,6 @@
 #define MAX_RCPT_TO_COUNT 100
 
 typedef struct {
-    msg_t local_part;
-    msg_t domen;
-} receiver_t;
-
-typedef struct {
     te_client_state current_state;
     int             ehlo;
     int             need_send;

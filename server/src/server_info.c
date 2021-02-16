@@ -1,17 +1,25 @@
 #include "server_info.h"
 
+#define __USE_XOPEN_EXTENDED
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 error_code_t server_info_init(server_info_t*           server,
                               const smtp_server_cfg_t* cfg,
-                              const size_t             max_size) {
+                              const size_t max_size, const int tid) {
     server->fds      = NULL;
     server->clients  = NULL;
     server->size     = 0;
     server->max_size = 0;
     server->cfg      = cfg;
+    server->N        = 0;
+    server->pid      = getpid();
+    server->tid      = tid;
+    gethostname(server->hostname, sizeof(server->hostname));
 
     server->fds = (struct pollfd*)calloc(max_size, sizeof(struct pollfd));
     if (!server->fds) {
@@ -95,6 +103,11 @@ error_code_t server_info_add_client(server_info_t* server, const int fd) {
     mail_writer.domain         = server->cfg->domain;
     mail_writer.local_maildir  = server->cfg->local_maildir;
     mail_writer.client_maildir = server->cfg->client_maildir;
+    mail_writer.pid            = server->pid;
+    mail_writer.tid            = server->tid;
+    mail_writer.N              = &(server->N);
+    mail_writer.hostname       = server->hostname;
+
     if (client_init(server->clients[server->size], &mail_writer) !=
         CE_SUCCESS) {
         free(server->clients[server->size]);

@@ -12,6 +12,7 @@ typedef struct {
     char     domain[255];
     char     local_maildir[255];
     char     client_maildir[255];
+
 } smtp_server_cfg_t;
 
 typedef struct {
@@ -20,11 +21,15 @@ typedef struct {
     size_t                   size;
     size_t                   max_size;
     const smtp_server_cfg_t* cfg;
+    int                      pid;
+    int                      tid;
+    int                      N;
+    char                     hostname[256];
 } server_info_t;
 
 error_code_t server_info_init(server_info_t*           server,
                               const smtp_server_cfg_t* cfg,
-                              const size_t             max_size);
+                              const size_t max_size, const int tid);
 error_code_t server_info_resize(server_info_t* server,
                                 const size_t   new_max_size);
 error_code_t server_info_add_client(server_info_t* server, const int fd);

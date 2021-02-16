@@ -148,7 +148,7 @@ static int main_worker_func(void* worker_ptr) {
     worker_t*                worker = worker_ptr;
     const smtp_server_cfg_t* cfg    = worker->worker_info;
     server_info_t            server_info;
-    if (server_info_init(&server_info, cfg, 50) != CE_SUCCESS) {
+    if (server_info_init(&server_info, cfg, 50, worker->td) != CE_SUCCESS) {
         return CE_INIT_3RD;
     }
 

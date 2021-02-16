@@ -1,19 +1,17 @@
 #include "client.h"
 
-#include <stdio.h>
 #include <string.h>
 
 #include "smtp_cmd.h"
 
 error_code_t client_init(client_t* client, const mail_writer_t* mail_writer) {
-    client->current_state              = CLIENT_ST_INIT;
-    client->need_send                  = 0;
-    client->closed                     = 0;
-    client->ehlo                       = 0;
-    client->to_count                   = 0;
-    client->mail_writer.domain         = mail_writer->domain;
-    client->mail_writer.local_maildir  = mail_writer->local_maildir;
-    client->mail_writer.client_maildir = mail_writer->client_maildir;
+    client->current_state = CLIENT_ST_INIT;
+    client->need_send     = 0;
+    client->closed        = 0;
+    client->ehlo          = 0;
+    client->to_count      = 0;
+    client->mail_writer   = *mail_writer;
+
     if (msg_init(&client->greating_info, 100) != CE_SUCCESS) {
         return CE_INIT_3RD;
     }
@@ -94,6 +92,7 @@ error_code_t client_process_recv(client_t* client, msg_t* msg) {
     client->current_state = next_state;
     return CE_SUCCESS;
 }
+
 error_code_t client_process_send(client_t* client) {
     client->need_send = 0;
     msg_clean(&client->msg_for_sending);
@@ -186,14 +185,8 @@ error_code_t client_set_response(client_t* client, const char* buf,
 }
 
 error_code_t client_data_end_process(client_t* client) {
-    FILE* file =
-        fopen("/home/AVIASIM/zharovana/projects/pvs_kp/new_mail.txt", "w");
-    if (!file) {
-        printf("can't open new_mail.txt\n");
-    }
-    fwrite(client->msg_text.text, 1, client->msg_text.size - 2, file);
-    fclose(file);
-    return CE_SUCCESS;
+    return write_mail(&client->mail_writer, client->to, client->to_count,
+                      &client->msg_text);
 }
 
 void client_destroy(client_t* client) {

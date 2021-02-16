@@ -9,6 +9,15 @@
         "smtp_cmd.h": "c",
         "client.h": "c",
         "stddef.h": "c",
-        "client-fsm.h": "c"
+        "client-fsm.h": "c",
+        "*.tcc": "c",
+        "limits": "c",
+        "numeric": "c",
+        "streambuf": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "algorithm": "c",
+        "unistd.h": "c"
     }
 }
