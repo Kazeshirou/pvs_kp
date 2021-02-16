@@ -1,6 +1,7 @@
 #include <pcre.h>
 #include <stdlib.h>  // atoi
 #include <string.h>
+#include <threads.h>
 #include <unistd.h>  // close
 
 #include "checkoptn.h"
@@ -100,5 +101,6 @@ int main(int argc, char* argv[]) {
     // Запуск сервера.
     smtp_server(cfg);
     smtp_cmd_destroy();
+    thrd_exit(0);
     return 0;
 }

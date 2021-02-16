@@ -75,4 +75,5 @@ void thread_pool_destroy(thread_pool_t* tp) {
     while (tp->is_ended != WORKERS_COUNT) {
         sleep(0.1);
     }
+    sleep(0.1);
 }
