@@ -16,8 +16,11 @@
 #define DEFAULT_PORT               64999
 #define DEFAULT_BACKLOG_QUEUE_SIZE 100
 #define DEFAULT_DOMAIN             "mysmtp.ru"
-#define DEFAULT_LOCAL_MAILDIR      "~/.mysmtp/"
-#define DEFAULT_CLIENT_MAILDIR     "~/.mysmtp_client/"
+// для быстрого создания пользователей юзать скрипт
+// cheate_user.sh и туда передать первым аргументом эту же папочку, но без слеша
+// на конце.
+#define DEFAULT_LOCAL_MAILDIR  "/tmp/mysmtp/"
+#define DEFAULT_CLIENT_MAILDIR "/tmp/mysmtp_client/"
 
 #define LOG_PATH "/tmp/mysmtp_log.csv"
 
@@ -101,16 +104,17 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    char         buffstring[100] = {0};
-    match_info_t mi;
-    mi.tested_line = "ehlo [IPv6:::127.0.0.1]\r\n";
-    printf("%s\n", RE_RCPT);
-    error_code_t err = smtp_cmd_check(SMTP_CMD_EHLO, &mi);
-    if (err != CE_SUCCESS) {
-        // printf("fail\n");
-    } else {
-        err = smtp_cmd_get_substring(&mi, 21, buffstring, sizeof(buffstring));
-    }
+    // char         buffstring[100] = {0};
+    // match_info_t mi;
+    // mi.tested_line = "ehlo [IPv6:::127.0.0.1]\r\n";
+    // printf("%s\n", RE_RCPT);
+    // error_code_t err = smtp_cmd_check(SMTP_CMD_EHLO, &mi);
+    // if (err != CE_SUCCESS) {
+    // printf("fail\n");
+    // } else {
+    //     err = smtp_cmd_get_substring(&mi, 21, buffstring,
+    //     sizeof(buffstring));
+    // }
 
     // Запуск сервера.
     smtp_server(cfg);
