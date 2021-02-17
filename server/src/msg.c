@@ -122,7 +122,7 @@ error_code_t msg_send_one(msg_t* msg, int fd) {
 
 void msg_clean(msg_t* msg) {
     memset(msg->text, 0, msg->max_size);
-    msg->max_size = 0;
+    msg->size = 0;
 }
 
 void msg_destroy(msg_t* msg) {
