@@ -201,6 +201,12 @@ error_code_t process_poll(server_info_t* server_info) {
                 log_info("smtp_server", for_log_msg);
                 server_info->fds[i].fd = -1;
                 need_compress          = 1;
+            } else {
+                if (server_info->clients[i]->need_send) {
+                    server_info->fds[i].events = POLLIN | POLLOUT;
+                } else {
+                    server_info->fds[i].events = POLLIN;
+                }
             }
             continue;
         }
@@ -223,6 +229,12 @@ error_code_t process_poll(server_info_t* server_info) {
                 log_info("smtp_server", for_log_msg);
                 server_info->fds[i].fd = -1;
                 need_compress          = 1;
+            } else {
+                if (server_info->clients[i]->need_send) {
+                    server_info->fds[i].events = POLLIN | POLLOUT;
+                } else {
+                    server_info->fds[i].events = POLLIN;
+                }
             }
             continue;
         }

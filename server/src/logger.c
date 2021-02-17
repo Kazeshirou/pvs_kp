@@ -1,14 +1,14 @@
 #include "logger.h"
 
 #include <string.h>
-#include <time.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include "while_true.h"
 
 typedef char log_t[2000];
 
-static void inner_log(time_t time, const char* level, const char* system,
+static void inner_log(size_t time, const char* level, const char* system,
                       const char* msg) {
     log_t log;
     snprintf(log, sizeof(log), "%ld | %s | %s | %s\n", time, level, system,
@@ -16,14 +16,21 @@ static void inner_log(time_t time, const char* level, const char* system,
     queue_push_back(&logger_->log_queue, log, sizeof(log));
 }
 
+static size_t get_time() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+
+    return tv.tv_sec * 1000000 + tv.tv_usec;
+}
+
 void log_critical(const char* system, const char* msg) {
-    inner_log(time(NULL), "CRITICAL", system, msg);
+    inner_log(get_time(), "CRITICAL", system, msg);
 }
 void log_warning(const char* system, const char* msg) {
-    inner_log(time(NULL), "WARNING", system, msg);
+    inner_log(get_time(), "WARNING", system, msg);
 }
 void log_info(const char* system, const char* msg) {
-    inner_log(time(NULL), "INFO", system, msg);
+    inner_log(get_time(), "INFO", system, msg);
 }
 
 

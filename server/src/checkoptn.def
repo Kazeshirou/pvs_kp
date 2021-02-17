@@ -88,3 +88,12 @@ flag = {
     min       = 0;         /* Опциональный параметр */
     descrip   = "Number of working threads";
 };
+
+flag = {
+    name      = log_path;           /* Путь к файлу лога */
+    value     = L;             
+    arg-type  = string;
+    max       = 1;          /* Не более одного раза */
+    min       = 0;         /* Опциональный параметр */
+    descrip   = "Path to log file";
+};

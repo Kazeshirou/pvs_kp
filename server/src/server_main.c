@@ -25,7 +25,7 @@
 #define DEFAULT_CLIENT_MAILDIR "/tmp/mysmtp_client/"
 #define DEFAULT_RELAY_COUNT    0
 
-#define LOG_PATH "/tmp/mysmtp_log.csv"
+#define DEFAULT_LOG_PATH "/tmp/mysmtp_log.csv"
 
 volatile sig_atomic_t while_true = 1;
 
@@ -43,9 +43,9 @@ int main(int argc, char* argv[]) {
                              .address            = DEFAULT_ADDRESS,
                              .backlog_queue_size = DEFAULT_BACKLOG_QUEUE_SIZE,
                              .thread_pool_size   = DEFAULT_THREAD_POOL_SIZE,
-                             .client_maildir     = DEFAULT_DOMAIN,
-                             .domain             = DEFAULT_LOCAL_MAILDIR,
-                             .local_maildir      = DEFAULT_CLIENT_MAILDIR,
+                             .client_maildir     = DEFAULT_CLIENT_MAILDIR,
+                             .domain             = DEFAULT_DOMAIN,
+                             .local_maildir      = DEFAULT_LOCAL_MAILDIR,
                              .user               = "",
                              .relay_networks     = NULL,
                              .relay_count        = 0};
@@ -67,13 +67,13 @@ int main(int argc, char* argv[]) {
         cfg.domain = OPT_ARG(DOMAIN);
     }
     if (COUNT_OPT(LOCAL_MAILDIR)) {
-        cfg.local_maildir = OPT_ARG(DOMAIN);
+        cfg.local_maildir = OPT_ARG(LOCAL_MAILDIR);
     }
     if (COUNT_OPT(CLIENT_MAILDIR)) {
-        cfg.local_maildir = OPT_ARG(CLIENT_MAILDIR);
+        cfg.client_maildir = OPT_ARG(CLIENT_MAILDIR);
     }
     if (COUNT_OPT(USER)) {
-        cfg.local_maildir = OPT_ARG(USER);
+        cfg.user = OPT_ARG(USER);
     }
     cfg.relay_count = COUNT_OPT(RELAY);
     if (cfg.relay_count) {
@@ -95,9 +95,13 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    if (init_logger(LOG_PATH) != CE_SUCCESS) {
+    const char* log_path = DEFAULT_LOG_PATH;
+    if (COUNT_OPT(LOG_PATH)) {
+        log_path = OPT_ARG(LOG_PATH);
+    }
+    if (init_logger(log_path) != CE_SUCCESS) {
         printf("Не удалось проинициализировать логер!\n");
-        return 0;
+        return 1;
     }
     add_output(stderr);
     thrd_t log;
