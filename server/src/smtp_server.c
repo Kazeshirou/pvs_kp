@@ -63,12 +63,6 @@ static error_code_t create_dirs(const char* local_maildir,
             return CE_COMMON;
         }
     }
-    snprintf(dir, sizeof(dir), "%s%s", local_maildir, "new");
-    if (stat(dir, &st) < 0) {
-        if (mkdir(dir, 0777) < 0) {
-            return CE_COMMON;
-        }
-    }
     if (stat(client_maildir, &st) < 0) {
         if (mkdir(client_maildir, 0777) < 0) {
             return CE_COMMON;

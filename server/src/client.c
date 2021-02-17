@@ -141,24 +141,25 @@ error_code_t client_add_rcpt_to(client_t* client, match_info_t* mi) {
     if (msg_init(&client->to[client->to_count].local_part, 50) != CE_SUCCESS) {
         return CE_INIT_3RD;
     }
-    if (msg_init(&client->to[client->to_count].domen, 50) != CE_SUCCESS) {
+    if (msg_init(&client->to[client->to_count].domain, 50) != CE_SUCCESS) {
         msg_destroy(&client->to[client->to_count].local_part);
         return CE_INIT_3RD;
     }
-    char buf[1000];
+    char buf[1000] = {0};
     if (smtp_cmd_get_substring(mi, MI_RCPT_TO_POSTMASTER_INDEX, buf,
                                sizeof(buf)) == CE_SUCCESS) {
         msg_add_text(&client->to[client->to_count].local_part, "Postmaster",
                      sizeof("Postmaster"));
-        msg_add_text(&client->to[client->to_count].domen,
+        msg_add_text(&client->to[client->to_count].domain,
                      client->mail_writer.domain,
                      strlen(client->mail_writer.domain) + 1);
     } else if (smtp_cmd_get_substring(mi,
-                                      MI_RCPT_TO_POSTMASTER_FULL_DOMEN_INDEX,
+                                      MI_RCPT_TO_POSTMASTER_FULL_DOMAIN_INDEX,
                                       buf, sizeof(buf)) == CE_SUCCESS) {
         msg_add_text(&client->to[client->to_count].local_part, "Postmaster",
                      sizeof("Postmaster"));
-        msg_add_text(&client->to[client->to_count].domen, buf, strlen(buf) + 1);
+        msg_add_text(&client->to[client->to_count].domain, buf,
+                     strlen(buf) + 1);
     } else {
         smtp_cmd_get_substring(mi, MI_RCPT_TO_FORWARD_PATH_LOCAL_PART_INDEX,
                                buf, sizeof(buf));
@@ -166,7 +167,20 @@ error_code_t client_add_rcpt_to(client_t* client, match_info_t* mi) {
                      strlen(buf) + 1);
         smtp_cmd_get_substring(mi, MI_RCPT_TO_FORWARD_PATH_DOMAIN_INDEX, buf,
                                sizeof(buf));
-        msg_add_text(&client->to[client->to_count].domen, buf, strlen(buf) + 1);
+        msg_add_text(&client->to[client->to_count].domain, buf,
+                     strlen(buf) + 1);
+        buf[0] = 0;
+        if (smtp_cmd_get_substring(mi,
+                                   MI_RCPT_TO_FORWARD_PATH_DOMAIN_IPV4_INDEX,
+                                   buf, sizeof(buf)) == CE_SUCCESS) {
+            client->to[client->to_count].domain_type = DOMAIN_TYPE_IPV4;
+        } else if (smtp_cmd_get_substring(
+                       mi, MI_RCPT_TO_FORWARD_PATH_DOMAIN_IPV6_INDEX, buf,
+                       sizeof(buf)) == CE_SUCCESS) {
+            client->to[client->to_count].domain_type = DOMAIN_TYPE_IPV6;
+        } else {
+            client->to[client->to_count].domain_type = DOMAIN_TYPE_HOST;
+        }
     }
     client->to_count++;
     return CE_SUCCESS;
@@ -199,7 +213,7 @@ error_code_t client_data_end_process(client_t* client) {
 void client_destroy(client_t* client) {
     for (size_t i = 0; i < client->to_count; i++) {
         msg_destroy(&client->to[i].local_part);
-        msg_destroy(&client->to[i].domen);
+        msg_destroy(&client->to[i].domain);
     }
     client->to_count      = 0;
     client->current_state = CLIENT_ST_INIT;

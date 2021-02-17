@@ -3,9 +3,16 @@
 #include "custom_errors.h"
 #include "msg.h"
 
+typedef enum {
+    DOMAIN_TYPE_IPV4 = 0,
+    DOMAIN_TYPE_IPV6 = 1,
+    DOMAIN_TYPE_HOST = 2
+} DOMAIN_TYPE;
+
 typedef struct {
-    msg_t local_part;
-    msg_t domen;
+    msg_t       local_part;
+    msg_t       domain;
+    DOMAIN_TYPE domain_type;
 } receiver_t;
 
 
