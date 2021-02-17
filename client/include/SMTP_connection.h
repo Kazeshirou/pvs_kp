@@ -9,6 +9,7 @@
 
 typedef struct SMTP_connection__t 
 {
+    char *addr;
     queue_t *messages;
     te_client_fsm_state state;
     te_client_fsm_event last_event;
@@ -25,9 +26,10 @@ typedef struct SMTP_connection__t
     string_t *ip;
     int ip_type;
 
-    int is_alive;
-
 } SMTP_connection_t;
 
 SMTP_connection_t* SMTP_connection_init(const char *addr, int type);
+void* SMTP_connection_copy(const void *vother);
+void SMTP_connection_clear(void *conn);
+
 te_client_fsm_event generate_event(SMTP_connection_t *conn);

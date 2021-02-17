@@ -22,3 +22,5 @@
 
 #define UNKNOWN_FDT -14
 #define RECV_BUFFER_OVERFLOW -15
+
+#define LOG_FILE_OPEN_ERROR -16

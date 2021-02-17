@@ -21,6 +21,10 @@
 #include "global.h"
 
 extern worker_config_t g_config; 
+extern peer_t *g_logger;
+
+// parent + logger peers
+#define ADDITIONAL_PEERS_CNT 2
 
 SMTP_connection_t** get_SMTP_connections(const tree_t *host_vs_peer)
 {
@@ -48,7 +52,7 @@ SMTP_connection_t** get_SMTP_connections(const tree_t *host_vs_peer)
 
 peer_t** get_peers(SMTP_connection_t **conns, size_t size)
 {
-    peer_t **peers = (peer_t**) malloc(sizeof(peer_t*) * size+1);
+    peer_t **peers = (peer_t**) malloc(sizeof(peer_t*) * (size+ADDITIONAL_PEERS_CNT)); 
     if (!peers)
     {
         return NULL;
@@ -61,7 +65,7 @@ peer_t** get_peers(SMTP_connection_t **conns, size_t size)
     return peers;
 }
 
-SMTP_connection_t* get_peer_for_sending(tree_t *host_vs_conn_map, 
+SMTP_connection_t* get_conn_for_sending(tree_t *host_vs_conn_map, 
                                         const string_t *filename_value)
 {
     SMTP_connection_t *peer_for_sending = NULL;
@@ -79,8 +83,11 @@ SMTP_connection_t* get_peer_for_sending(tree_t *host_vs_conn_map,
     else
     {
         peer_for_sending = SMTP_connection_init(addr, addr_type);
-        tree_insert(host_vs_conn_map, addr, peer_for_sending);
-        peer_for_sending = ((SMTP_connection_t*)tree_search(host_vs_conn_map, addr)->value);
+        if (peer_for_sending)
+        {
+            tree_insert(host_vs_conn_map, addr, peer_for_sending);
+           peer_for_sending = ((SMTP_connection_t*)tree_search(host_vs_conn_map, addr)->value);
+        }
     }
     free_addr(addr);
     return peer_for_sending;
@@ -96,7 +103,7 @@ int process_parent_messages(tree_t *host_vs_conn_map, queue_t *filenames, const 
     {
         printf("qs=%ld", filenames->size);
         printf("%s\n\n", current_filename->data);
-        peer_for_sending = get_peer_for_sending(host_vs_conn_map, current_filename);
+        peer_for_sending = get_conn_for_sending(host_vs_conn_map, current_filename);
         if (peer_for_sending)
         {
             message_for_peer = parse_message(queue_dir, current_filename);
@@ -118,11 +125,10 @@ int worker_main(const worker_config_t config)
     g_config = config;
 
     int i = 0;
-    int parent_pipe = config.parent_pipe_fd;
     peer_t *parent = NULL;
     te_client_fsm_event event;
 
-    tree_t *host_vs_conn_map = TREE_INIT(SMTP_connection_t, NULL, NULL);
+    tree_t *host_vs_conn_map = TREE_INIT(SMTP_connection_t, SMTP_connection_copy, SMTP_connection_clear);
     if (!host_vs_conn_map)
     {
         return MEMORY_ERROR;
@@ -139,9 +145,18 @@ int worker_main(const worker_config_t config)
     peer_t **peers = NULL;
     int peers_count = host_vs_conn_map->size;
 
-    parent = peer_init(parent_pipe, FDT_PIPE);
+    parent = peer_init(config.parent_pipe_fd, FDT_PIPE);
     if (!parent)
     {
+        tree_clear(host_vs_conn_map);
+        storage_clear(storage);
+        return MEMORY_ERROR;
+    }
+
+    g_logger = peer_init(config.logger_fd, FDT_PIPE);
+    if (!g_logger)
+    {
+        peer_clear(parent);
         tree_clear(host_vs_conn_map);
         storage_clear(storage);
         return MEMORY_ERROR;
@@ -158,10 +173,15 @@ int worker_main(const worker_config_t config)
             continue;
         }
         peers[peers_count] = parent;
+        peers[peers_count+1] = g_logger;
 
-        for (i = 0; i < peers_count+1; i++)
+        for (i = 0; i < peers_count+ADDITIONAL_PEERS_CNT; i++)
         {
-            if (peers[i]->fd != parent_pipe)
+            if (peers[i]->fd == config.logger_fd)
+            {
+                fill_buffer_in(peers[i]);
+            }
+            else if (peers[i]->fd != config.parent_pipe_fd)
             {
                 event = generate_event(conns[i]);
                 conns[i]->state = client_fsm_step(conns[i]->state, event);
@@ -169,20 +189,26 @@ int worker_main(const worker_config_t config)
             }
         }
 
-        select_step(storage, peers, peers_count+1);
+        select_step(storage, peers, peers_count+ADDITIONAL_PEERS_CNT);
 
-        for (i = 0; i < peers_count+1; i++)
+        for (i = 0; i < peers_count+ADDITIONAL_PEERS_CNT; i++)
         {
-            if (peers[i]->fd == parent_pipe)
+            if (peers[i]->fd == config.parent_pipe_fd)
             {
-                fill_messages_out(peers[i], PARENT_MESSAGE_SEP_STR);
+                fill_messages_out(peers[i], PARENT_MESSAGE_END_MARKER);
                 process_parent_messages(host_vs_conn_map, peers[i]->messages_out, config.queue_dir);
             }
-            else
+            else if (peers[i]->fd != config.logger_fd)
             {
                 fill_messages_out(peers[i], "\r\n");
                 event = generate_event(conns[i]);
                 conns[i]->state = client_fsm_step(conns[i]->state, event);
+                if (conns[i]->state == CLIENT_FSM_ST_DONE)
+                {
+                    if (peers[i]->fd > 0)
+                        close(peers[i]->fd);
+                    tree_delete(host_vs_conn_map, conns[i]->addr);
+                }
             }
         }
             

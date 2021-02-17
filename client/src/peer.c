@@ -251,7 +251,7 @@ int peer_receive(peer_t *peer)
     {
     case FDT_SOCKET:
         received = recv(peer->fd, peer->buffer_out + peer->buffer_out_size, size, 0);
-        printf("%s", peer->buffer_out + peer->buffer_out_size);
+        //printf("%s", peer->buffer_out + peer->buffer_out_size);
         break;
     case FDT_PIPE:
         received = read(peer->fd, peer->buffer_out + peer->buffer_out_size, size);

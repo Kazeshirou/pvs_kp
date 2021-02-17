@@ -86,7 +86,39 @@ size_t get_recipients_count(const char *line)
     return count + 1;
 }
 
-char** parse_recipients(const char *line, size_t *count)
+int check_recipient(char *rcpt, const char *addr, int a_type)
+{
+    int at_idx;
+    for (at_idx = 0; at_idx < strlen(rcpt) && rcpt[at_idx] != '@'; at_idx++)
+        ;
+    if (a_type == 0)
+    {
+        if (strcmp(rcpt + at_idx + 1, addr) == 0)
+            return 1;
+    }
+    if (a_type == 1)
+    {
+        if (rcpt[at_idx+1] != '[')
+            return 0;
+        if (strlen(addr) != strlen(rcpt) - at_idx - 3)
+            return 0;
+        if (memcmp(rcpt + at_idx + 2, addr, strlen(addr)) == 0)
+            return 1;
+    }
+    if (a_type == 2)
+    {
+        if (rcpt[at_idx+1] != '[')
+            return 0;
+        if (strlen(addr) != strlen(rcpt) - at_idx - 7)
+            return 0;
+        if (memcmp(rcpt + at_idx + 6, addr, strlen(addr)) == 0)
+            return 1;
+    }
+    return 0;
+
+}
+
+char** parse_recipients(const char *line, size_t *count, const char *addr, int a_type)
 {
     char *header = X_DOMAIN_TO;
     char *rcpt = NULL;
@@ -109,7 +141,16 @@ char** parse_recipients(const char *line, size_t *count)
         rcpt = (char*) malloc(sizeof(char) * rcpt_len);
         memcpy(rcpt, line+rcpt_start, rcpt_len);
         rcpt[rcpt_len] = '\0';
-        recipients[current_rcpt_num++] = rcpt;
+
+        if (!check_recipient(rcpt, addr, a_type))
+        {
+            (*count)--;
+            free(rcpt);
+        }
+        else
+        {
+            recipients[current_rcpt_num++] = rcpt;
+        }
     }
     return recipients;
 }
@@ -129,9 +170,13 @@ char* parse_sender(const char *line)
 SMTP_message_t* parse_message(const char *queue_dir, 
                               const string_t *filename)
 {
+    int a_type;
+    char *addr = get_addr(filename, &a_type);
+
     SMTP_message_t *message = SMTP_message_init();
     if (!message)
     {
+        free(addr);
         return NULL;
     }
     int line_num = 0;
@@ -150,7 +195,7 @@ SMTP_message_t* parse_message(const char *queue_dir,
         while (fgets(line, MAX_LINE_LENGTH, f)) 
         {
             if (line_num == 0)
-                message->recipients_addr = parse_recipients(line, &(message->recipients_count));
+                message->recipients_addr = parse_recipients(line, &(message->recipients_count), addr, a_type);
             else if (line_num == 1)
                 message->from_addr = parse_sender(line);
             else 
@@ -171,5 +216,6 @@ SMTP_message_t* parse_message(const char *queue_dir,
         printf("ERROR %s", full_filename->data);
     }
 
+    free(addr);
     return message;
 }

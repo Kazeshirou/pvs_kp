@@ -105,6 +105,58 @@ string_t *get_IP(const char *host)
     return ip;
 }
 
+int connect_server_ipv6(const string_t *ip, int port)
+{
+    int fd;
+
+    struct sockaddr_in6 server_addr;
+    memset(&server_addr, 0, sizeof(server_addr));
+    fd = socket(AF_INET6, SOCK_STREAM, 0);
+    if (fd < 0) 
+    {
+        send_log_char(strerror(errno));
+        return -1;
+    }
+
+    server_addr.sin6_family = AF_INET6;
+
+    inet_pton(server_addr.sin6_family, ip->data, &server_addr.sin6_addr);
+    server_addr.sin6_port = htons(port);
+
+    if (connect(fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) != 0) 
+    {
+        send_log_char(strerror(errno));
+        return -1;
+    }
+
+    send_log_char("HELLO");
+    return fd;
+}
+
+int connect_server_ipv4(const string_t *ip, int port)
+{
+    int fd;
+    struct sockaddr_in server_addr;
+    memset(&server_addr, 0, sizeof(server_addr));
+    fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0) 
+    {
+        perror("socket()");
+        return -1;
+    }
+    server_addr.sin_family = AF_INET;
+
+    inet_pton(server_addr.sin_family, ip->data, &server_addr.sin_addr);
+    server_addr.sin_port = htons(port);
+
+    if (connect(fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) != 0) 
+    {
+        perror("connect()");
+        return -1;
+    }
+    return fd;
+}
+
 int connect_server(const string_t *ip, int type)
 {
     if (ip == NULL)
@@ -113,34 +165,16 @@ int connect_server(const string_t *ip, int type)
     int fd;
     int port = 25;
 
-    fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd < 0) 
-    {
-        perror("socket()");
-        return -1;
-    }
-
-    // set up addres
-    struct sockaddr_in server_addr;
-    memset(&server_addr, 0, sizeof(server_addr));
     if (type == AT_IPv4)
     {
-        server_addr.sin_family = AF_INET;
-    } 
+        fd = connect_server_ipv4(ip, port);
+    }
     else if (type == AT_IPv6)
     {
-        server_addr.sin_family = AF_INET6;
+        fd = connect_server_ipv6(ip, port);
     } 
     else
     {
-        return -1;
-    }
-
-    inet_pton(server_addr.sin_family, ip->data, &server_addr.sin_addr);
-    server_addr.sin_port = htons(port);
-
-    if (connect(fd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) != 0) {
-        perror("connect()");
         return -1;
     }
   
@@ -169,7 +203,13 @@ SMTP_connection_t* SMTP_connection_init(const char *addr, int type)
     int fd = -1;
 
     conn->state = CLIENT_FSM_ST_INIT;
-    conn->is_alive = 1;
+    conn->addr = (char*) calloc(sizeof(char), strlen(addr) + 1);
+    if (!conn->addr)
+    {
+        free(conn);
+        return NULL;
+    }
+    memcpy(conn->addr, addr, strlen(addr));
     conn->current_msg_line = 0;
     conn->current_rcpt = 0;
     conn->current_connection_num = 0;
@@ -179,6 +219,7 @@ SMTP_connection_t* SMTP_connection_init(const char *addr, int type)
     conn->messages = QUEUE_INIT(SMTP_message_t, SMTP_message_copy, SMTP_message_clear);
     if (!conn->messages)
     {
+        free(conn->addr);
         free(conn);
         return NULL;
     }
@@ -195,6 +236,7 @@ SMTP_connection_t* SMTP_connection_init(const char *addr, int type)
     conn->ip_type = type;
 
     fd = connect_server(conn->ip, conn->ip_type);
+
     conn->current_connection_num++;
     conn->last_connection_time = time(NULL);
 
@@ -203,11 +245,73 @@ SMTP_connection_t* SMTP_connection_init(const char *addr, int type)
     {
         queue_clear(conn->messages);
         free(conn->ip);
+        free(conn->addr);
         free(conn);
         return NULL;
     }
 
     return conn;
+}
+
+void* SMTP_connection_copy(const void *vother)
+{
+    SMTP_connection_t *other = (SMTP_connection_t *) vother;
+    SMTP_connection_t *copy = (SMTP_connection_t*) malloc(sizeof(SMTP_connection_t));
+    if (!copy)
+    {
+        return NULL;
+    }
+
+    copy->state = other->state;
+    copy->addr = (char*) calloc(sizeof(char), strlen(other->addr) + 1);
+    if (!copy->addr)
+    {
+        free(copy);
+        return NULL;
+    }
+    memcpy(copy->addr, other->addr, strlen(other->addr));
+    copy->current_msg_line = other->current_msg_line;
+    copy->current_rcpt = other->current_rcpt;
+    copy->current_connection_num = other->current_connection_num;
+    copy->max_connections_count = other->max_connections_count;
+    copy->min_interval_between_connections = copy->min_interval_between_connections;
+
+    copy->messages = QUEUE_INIT(SMTP_message_t, SMTP_message_copy, SMTP_message_clear);
+    if (!copy->messages)
+    {
+        free(copy->addr);
+        free(copy);
+        return NULL;
+    }
+    queue_push_all(copy->messages, other->messages);
+    
+    copy->ip = string_copy(other->ip);
+    copy->ip_type = other->ip_type;
+
+    copy->last_connection_time = other->last_connection_time;
+    copy->last_event = other->last_event;
+
+    copy->peer = peer_copy(other->peer);
+    if (!copy->peer)
+    {
+        queue_clear(copy->messages);
+        free(copy->ip);
+        free(copy->addr);
+        free(copy);
+        return NULL;
+    }
+
+    return copy;
+}
+
+void SMTP_connection_clear(void *vconn)
+{
+    SMTP_connection_t *conn = (SMTP_connection_t *) vconn;
+    queue_clear(conn->messages);
+    string_clear(conn->ip);
+    peer_clear(conn->peer);
+    free(conn->addr);
+    free(conn);
 }
 
 int SMTP_connection_reinit(SMTP_connection_t *conn)
@@ -252,12 +356,11 @@ te_client_fsm_event generate_event(SMTP_connection_t *conn)
     {
         if (!has_more_connection_attempts(conn))
         {
-            return CLIENT_FSM_ST_CLOSING_CONNECTION;
+            return CLIENT_FSM_EV_CLOSE_CONNECTION;
         }
         if (can_reconnect_now(conn))
         {
             SMTP_connection_reinit(conn);
-            event = CLIENT_FSM_EV_CONNECTION_CLOSED_BY_SERVER;
         }
     }
 
@@ -271,6 +374,9 @@ te_client_fsm_event generate_event(SMTP_connection_t *conn)
         command = EHLO_command();
         event = CLIENT_FSM_EV_EHLO;
         break;
+    case CLIENT_FSM_ST_GET_NEXT_MESSAGE_AND_SENDING_MAIL_OR_QUIT:
+        if (!queue_is_empty(conn->messages))
+            queue_pop_front(conn->messages);
     case CLIENT_FSM_ST_SENDING_MAIL_OR_QUIT:
         if (queue_is_empty(conn->messages))
         {
@@ -330,7 +436,7 @@ te_client_fsm_event generate_event(SMTP_connection_t *conn)
         {
             if (conn->current_msg_line < message->msg_lines)
             {
-                command = message->msg[conn->current_msg_line];
+                command = string_copy(message->msg[conn->current_msg_line]);
                 event = CLIENT_FSM_EV_MSG_TEXT;
                 conn->current_msg_line++;
             }
@@ -347,6 +453,7 @@ te_client_fsm_event generate_event(SMTP_connection_t *conn)
     case CLIENT_FSM_ST_MAIL_SENDED:
     case CLIENT_FSM_ST_RCPT_SENDED:
     case CLIENT_FSM_ST_DATA_SENDED:
+    case CLIENT_FSM_ST_QUIT_SENDED:
     case CLIENT_FSM_ST_MSG_TEXT_SENDED:
     case CLIENT_FSM_ST_END_DATA_SENDED:
         if (!queue_is_empty(conn->peer->messages_out))
@@ -367,15 +474,6 @@ te_client_fsm_event generate_event(SMTP_connection_t *conn)
             else if (response_code >= 500 && response_code < 600)
                 event = CLIENT_FSM_EV_RESPONSE_5XX;
         }
-        else
-        {
-            event = CLIENT_FSM_EV_NONE;
-        }
-        break;
-    case CLIENT_FSM_ST_CLOSING_CONNECTION:
-        conn->is_alive = 0;
-        close(conn->peer->fd);
-        event = CLIENT_FSM_EV_CONNECTION_CLOSED;
         break;
     default:
         break;

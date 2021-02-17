@@ -9,6 +9,7 @@
 
 #include "worker.h"
 #include "fileparser.h"
+#include "logger.h"
 #include "while_true.h"
 #include "select_fd_storage.h"
 #include "end_marker.h"
@@ -114,7 +115,83 @@ void state_clear(state_t *state)
     free(state);
 }
 
-worker_t* init_workers(master_config_t *master_config)
+int init_logger(master_config_t *config, int **write_fds)
+{
+    int pid;
+    int i;
+    int workers_count = config->workers_count;
+    logger_config_t logger_config;
+    int *read_fds = (int*) calloc(workers_count, sizeof(int));
+    if (!read_fds)
+    {
+        perror("calloc()");
+        return MEMORY_ERROR;
+    }
+    *write_fds = (int*) calloc(workers_count, sizeof(int));
+    if (!write_fds)
+    {
+        perror("calloc()");
+        return MEMORY_ERROR;
+    }
+    
+    int exit_code;
+    int pipe_fds[config->workers_count][2];
+    int fds_idx = 0;
+    
+    for (i = 0; i < workers_count; i++)
+    {
+        if (pipe(pipe_fds[i]) < 0)
+        {
+            perror("pipe()");
+            config->workers_count--;
+            continue;
+        }
+        read_fds[fds_idx] = pipe_fds[i][0];
+        (*write_fds)[fds_idx] = pipe_fds[i][1];
+        fds_idx++;
+    }
+
+    pid = fork();
+    if (pid < 0)
+    {
+        perror("fork()");
+        return -1;
+    }
+
+    // logger process
+    if (pid == 0)
+    {
+        for (i = 0; i < workers_count; i++)
+        {
+            close(pipe_fds[i][1]); // logger can't write
+        }
+
+        logger_config.log_file = config->log_file;
+        logger_config.worker_pipe_fds = read_fds;
+        logger_config.workers_count = config->workers_count;
+
+        exit_code = logger_main(logger_config);
+
+        free(read_fds);
+        for (i = 0; i < workers_count; i++)
+        {
+            close(pipe_fds[i][0]);
+        }
+        exit(exit_code);
+    }
+    else
+    {
+        for (i = 0; i < workers_count; i++)
+        {
+            close(pipe_fds[i][0]); // master and workers can't read
+        }
+    }
+
+    return pid;
+
+}
+
+worker_t* init_workers(master_config_t *master_config, int *logger_fds)
 {
     int i;
     int pid;
@@ -134,7 +211,7 @@ worker_t* init_workers(master_config_t *master_config)
     {
         if (pipe(pipe_fds[i]) < 0)
         {
-            printf("pipe()");
+            perror("pipe()");
             master_config->workers_count--;
             continue;
         }
@@ -143,7 +220,7 @@ worker_t* init_workers(master_config_t *master_config)
         if (pid < 0)
         {
             master_config->workers_count--;
-            printf("fork()");
+            perror("fork()");
             continue;
         }
         // child process
@@ -153,10 +230,12 @@ worker_t* init_workers(master_config_t *master_config)
 
             worker_config.queue_dir = master_config->queue_dir;
             worker_config.parent_pipe_fd = pipe_fds[i][0];
+            worker_config.logger_fd = logger_fds[i];
 
             exit_code = worker_main(worker_config);
 
             close(pipe_fds[i][0]);
+            close(logger_fds[i]);
             exit(exit_code);
         }
         // parent process
@@ -189,7 +268,7 @@ void clear_workers(worker_t *workers, int size)
 }
 
 #define ADD_FILENAME_TO_WORKER(worker, filename) \
-    add_message(worker.peer_write, filename, PARENT_MESSAGE_SEP_STR)
+    add_message(worker.peer_write, filename, PARENT_MESSAGE_END_MARKER)
 
 void add_filenames_to_workers(state_t *state, const queue_t *new_files,
                               worker_t *workers, master_config_t config)
@@ -271,7 +350,12 @@ void dispatch(worker_t *workers, master_config_t config)
 
 void master_main(master_config_t config)
 {
-    worker_t *workers = init_workers(&config);
+    int *log_pipe_fd;
+    int lpid = init_logger(&config, &log_pipe_fd);
+    if (lpid < 0)
+        return;
+
+    worker_t *workers = init_workers(&config, log_pipe_fd);
     dispatch(workers, config);
     clear_workers(workers, config.workers_count);
 
