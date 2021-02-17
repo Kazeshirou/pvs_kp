@@ -165,10 +165,6 @@ error_code_t client_add_rcpt_to(client_t* client, match_info_t* mi) {
                                buf, sizeof(buf));
         msg_add_text(&client->to[client->to_count].local_part, buf,
                      strlen(buf) + 1);
-        smtp_cmd_get_substring(mi, MI_RCPT_TO_FORWARD_PATH_DOMAIN_INDEX, buf,
-                               sizeof(buf));
-        msg_add_text(&client->to[client->to_count].domain, buf,
-                     strlen(buf) + 1);
         buf[0] = 0;
         if (smtp_cmd_get_substring(mi,
                                    MI_RCPT_TO_FORWARD_PATH_DOMAIN_IPV4_INDEX,
@@ -179,8 +175,12 @@ error_code_t client_add_rcpt_to(client_t* client, match_info_t* mi) {
                        sizeof(buf)) == CE_SUCCESS) {
             client->to[client->to_count].domain_type = DOMAIN_TYPE_IPV6;
         } else {
+            smtp_cmd_get_substring(mi, MI_RCPT_TO_FORWARD_PATH_DOMAIN_INDEX,
+                                   buf, sizeof(buf));
             client->to[client->to_count].domain_type = DOMAIN_TYPE_HOST;
         }
+        msg_add_text(&client->to[client->to_count].domain, buf,
+                     strlen(buf) + 1);
     }
     client->to_count++;
     return CE_SUCCESS;
