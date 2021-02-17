@@ -29,13 +29,18 @@ void* SMTP_message_copy(const void *vother)
         return NULL;
     }
 
+    int i;
+    int len;
+
     copy->max_attempts_time = other->max_attempts_time;
     copy->min_interval_between_attempts = other->min_interval_between_attempts;
 
+    len = strlen(other->from_addr)+1;
+    copy->from_addr = (char*) malloc(sizeof(char) * len);
+    memcpy(copy->from_addr, other->from_addr, len);
+
     copy->recipients_count = other->recipients_count;
     copy->recipients_addr = (char**) malloc(sizeof(char*) * copy->recipients_count);
-    int i;
-    int len;
     for (i = 0; i < copy->recipients_count; i++)
     {
         len = strlen(other->recipients_addr[i])+1;

@@ -159,6 +159,16 @@ int worker_main(const worker_config_t config)
         }
         peers[peers_count] = parent;
 
+        for (i = 0; i < peers_count+1; i++)
+        {
+            if (peers[i]->fd != parent_pipe)
+            {
+                event = generate_event(conns[i]);
+                conns[i]->state = client_fsm_step(conns[i]->state, event);
+                fill_buffer_in(peers[i]);
+            }
+        }
+
         select_step(storage, peers, peers_count+1);
 
         for (i = 0; i < peers_count+1; i++)
@@ -172,9 +182,7 @@ int worker_main(const worker_config_t config)
             {
                 fill_messages_out(peers[i], "\r\n");
                 event = generate_event(conns[i]);
-                if (event != CLIENT_FSM_EV_NONE)
-                    client_fsm_step(conns[i]->state, event);
-                fill_buffer_in(peers[i]);
+                conns[i]->state = client_fsm_step(conns[i]->state, event);
             }
         }
             

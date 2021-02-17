@@ -229,7 +229,11 @@ int peer_send(peer_t *peer)
     if (sended != -1)
         REDUCE_BUFFER_IN(peer, sended);
     else
+    {
+        close(peer->fd);
+        peer->fd = -1;
         ret = SEND_ERROR;
+    }
     return ret;
 }
 
@@ -247,6 +251,7 @@ int peer_receive(peer_t *peer)
     {
     case FDT_SOCKET:
         received = recv(peer->fd, peer->buffer_out + peer->buffer_out_size, size, 0);
+        printf("%s", peer->buffer_out + peer->buffer_out_size);
         break;
     case FDT_PIPE:
         received = read(peer->fd, peer->buffer_out + peer->buffer_out_size, size);
@@ -259,7 +264,11 @@ int peer_receive(peer_t *peer)
     if (received != -1)
         peer->buffer_out_size += received;
     else
+    {
         ret = RECV_ERROR;
+        close(peer->fd);
+        peer->fd = -1;
+    }
 
     return ret;
 }

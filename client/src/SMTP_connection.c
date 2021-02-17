@@ -305,7 +305,7 @@ te_client_fsm_event generate_event(SMTP_connection_t *conn)
         }
         else
         {
-            if (conn->current_rcpt == message->recipients_count)
+            if (conn->current_rcpt < message->recipients_count)
             {
                 command = RCPTTO_command(message->recipients_addr[conn->current_rcpt]);
                 event = CLIENT_FSM_EV_RCPT;
@@ -328,7 +328,7 @@ te_client_fsm_event generate_event(SMTP_connection_t *conn)
         }
         else
         {
-            if (conn->current_msg_line == message->msg_lines)
+            if (conn->current_msg_line < message->msg_lines)
             {
                 command = message->msg[conn->current_msg_line];
                 event = CLIENT_FSM_EV_MSG_TEXT;
@@ -352,7 +352,10 @@ te_client_fsm_event generate_event(SMTP_connection_t *conn)
         if (!queue_is_empty(conn->peer->messages_out))
         {
             response_code = parse_response_code((string_t*) queue_peek(conn->peer->messages_out));
-            queue_pop_front(conn->peer->messages_out);
+            while (!queue_is_empty(conn->peer->messages_out))
+                queue_pop_front(conn->peer->messages_out);
+            
+            
             if (response_code >= 200 && response_code < 300)
                 event = CLIENT_FSM_EV_RESPONSE_2XX;
             else if (response_code >= 300 && response_code < 400)
@@ -364,10 +367,16 @@ te_client_fsm_event generate_event(SMTP_connection_t *conn)
             else if (response_code >= 500 && response_code < 600)
                 event = CLIENT_FSM_EV_RESPONSE_5XX;
         }
+        else
+        {
+            event = CLIENT_FSM_EV_NONE;
+        }
         break;
     case CLIENT_FSM_ST_CLOSING_CONNECTION:
         conn->is_alive = 0;
         close(conn->peer->fd);
+        event = CLIENT_FSM_EV_CONNECTION_CLOSED;
+        break;
     default:
         break;
     }
@@ -375,8 +384,11 @@ te_client_fsm_event generate_event(SMTP_connection_t *conn)
 
     if (command)
     {
-        add_message(conn->peer, command, "\r\n");
+        printf("%s\n",command->data);
+        add_message(conn->peer, command, NULL);
+        free(command);
     }
+
 
     conn->last_event = event;
     return event;
