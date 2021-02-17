@@ -10,7 +10,9 @@
             "args": [
                 "-p 64999",
                 "-l/tmp/mysmtp/",
-                "-c/tmp/mysmtp_client/"
+                "-c/tmp/mysmtp_client/",
+                "-raaa",
+                "-rbbb"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

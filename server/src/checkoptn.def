@@ -59,3 +59,32 @@ flag = {
     min       = 0;         /* Опциональный параметр */
     descrip   = "Backlog queue size of main socket";
 };
+
+flag = {
+    name      = address;           /* Адрес для привязки */
+    value     = a;             
+    arg-type  = string;
+    max       = 1;          /* Не более одного раза */
+    min       = 0;         /* Опциональный параметр */
+    descrip   = "Adress to bind";
+};
+
+flag = {
+    name      = relay;           /* Cети, для который разрешен релей почты*/
+    value     = r;             
+    arg-type  = string;
+    max = NOLIMIT;
+    min       = 0;         /* Опциональный параметр */
+    stack_arg;    
+    descrip   = "Networks for relay";
+};
+
+flag = {
+    name      = thread_pool_size;           /*  Количество рабочих потоков */
+    value     = t;             
+    arg-type  = number;
+    arg-range = "1->150";
+    max       = 1;          /* Не более одного раза */
+    min       = 0;         /* Опциональный параметр */
+    descrip   = "Number of working threads";
+};

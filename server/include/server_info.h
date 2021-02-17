@@ -7,12 +7,16 @@
 #include "custom_errors.h"
 
 typedef struct {
-    uint16_t port;
-    size_t   backlog_queue_size;
-    char     domain[255];
-    char     local_maildir[255];
-    char     client_maildir[255];
-    char     user[256];
+    uint16_t     port;
+    const char*  address;
+    size_t       backlog_queue_size;
+    size_t       thread_pool_size;
+    const char*  domain;
+    const char*  local_maildir;
+    const char*  client_maildir;
+    const char*  user;
+    const char** relay_networks;
+    size_t       relay_count;
 } smtp_server_cfg_t;
 
 typedef struct {

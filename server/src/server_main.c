@@ -14,13 +14,16 @@
 #include "while_true.h"
 
 #define DEFAULT_PORT               64999
+#define DEFAULT_ADDRESS            "::"
 #define DEFAULT_BACKLOG_QUEUE_SIZE 100
+#define DEFAULT_THREAD_POOL_SIZE   4
 #define DEFAULT_DOMAIN             "mysmtp.ru"
 // для быстрого создания пользователей юзать скрипт
 // cheate_user.sh и туда передать первым аргументом эту же папочку, но без слеша
 // на конце.
 #define DEFAULT_LOCAL_MAILDIR  "/tmp/mysmtp/"
 #define DEFAULT_CLIENT_MAILDIR "/tmp/mysmtp_client/"
+#define DEFAULT_RELAY_COUNT    0
 
 #define LOG_PATH "/tmp/mysmtp_log.csv"
 
@@ -37,53 +40,54 @@ int main(int argc, char* argv[]) {
     argv += optct;
 
     smtp_server_cfg_t cfg = {.port               = DEFAULT_PORT,
+                             .address            = DEFAULT_ADDRESS,
                              .backlog_queue_size = DEFAULT_BACKLOG_QUEUE_SIZE,
-                             .domain             = {0},
-                             .local_maildir      = {0},
-                             .client_maildir     = {0},
-                             .user               = {0}};
+                             .thread_pool_size   = DEFAULT_THREAD_POOL_SIZE,
+                             .client_maildir     = DEFAULT_DOMAIN,
+                             .domain             = DEFAULT_LOCAL_MAILDIR,
+                             .local_maildir      = DEFAULT_CLIENT_MAILDIR,
+                             .user               = "",
+                             .relay_networks     = NULL,
+                             .relay_count        = 0};
 
 
     if (COUNT_OPT(PORT)) {
         cfg.port = OPT_VALUE_PORT;
     }
+    if (COUNT_OPT(ADDRESS)) {
+        cfg.address = OPT_ARG(ADDRESS);
+    }
     if (COUNT_OPT(BACKLOG_QUEUE_SIZE)) {
         cfg.backlog_queue_size = OPT_VALUE_BACKLOG_QUEUE_SIZE;
     }
+    if (COUNT_OPT(THREAD_POOL_SIZE)) {
+        cfg.backlog_queue_size = OPT_VALUE_THREAD_POOL_SIZE;
+    }
     if (COUNT_OPT(DOMAIN)) {
-        size_t size = (strlen(OPT_ARG(DOMAIN)) + 1 <= sizeof(cfg.domain)) ?
-                          strlen(OPT_ARG(DOMAIN)) :
-                          sizeof(cfg.domain);
-        memcpy(cfg.domain, OPT_ARG(DOMAIN), size);
-    } else {
-        memcpy(cfg.domain, DEFAULT_DOMAIN, sizeof(DEFAULT_DOMAIN));
+        cfg.domain = OPT_ARG(DOMAIN);
     }
     if (COUNT_OPT(LOCAL_MAILDIR)) {
-        size_t size =
-            (strlen(OPT_ARG(LOCAL_MAILDIR)) + 1 <= sizeof(cfg.local_maildir)) ?
-                strlen(OPT_ARG(LOCAL_MAILDIR)) :
-                sizeof(cfg.local_maildir);
-        memcpy(cfg.local_maildir, OPT_ARG(LOCAL_MAILDIR), size);
-    } else {
-        memcpy(cfg.local_maildir, DEFAULT_LOCAL_MAILDIR,
-               sizeof(DEFAULT_LOCAL_MAILDIR));
+        cfg.local_maildir = OPT_ARG(DOMAIN);
     }
     if (COUNT_OPT(CLIENT_MAILDIR)) {
-        size_t size = (strlen(OPT_ARG(CLIENT_MAILDIR)) + 1 <=
-                       sizeof(cfg.client_maildir)) ?
-                          strlen(OPT_ARG(CLIENT_MAILDIR)) :
-                          sizeof(cfg.client_maildir);
-        memcpy(cfg.client_maildir, OPT_ARG(CLIENT_MAILDIR), size);
-    } else {
-        memcpy(cfg.client_maildir, DEFAULT_CLIENT_MAILDIR,
-               sizeof(DEFAULT_CLIENT_MAILDIR));
+        cfg.local_maildir = OPT_ARG(CLIENT_MAILDIR);
     }
     if (COUNT_OPT(USER)) {
-        size_t size =
-            (strlen(OPT_ARG(USER)) + 1 <= sizeof(cfg.client_maildir)) ?
-                strlen(OPT_ARG(USER)) :
-                sizeof(cfg.client_maildir);
-        memcpy(cfg.user, OPT_ARG(USER), size);
+        cfg.local_maildir = OPT_ARG(USER);
+    }
+    cfg.relay_count = COUNT_OPT(RELAY);
+    if (cfg.relay_count) {
+        cfg.relay_networks =
+            (const char**)calloc(sizeof(char*), cfg.relay_count);
+        if (!cfg.relay_networks) {
+            printf("Не удалось выделить память для сетей, для которых разрешён "
+                   "релей.\n");
+            return 1;
+        }
+        const char** pp = STACKLST_OPT(RELAY);
+        for (size_t i = 0; i < cfg.relay_count; i++) {
+            cfg.relay_networks[i] = pp[i];
+        }
     }
 
     // Установка обработчика сигнала для gracefull shutdown
@@ -121,6 +125,9 @@ int main(int argc, char* argv[]) {
 
     // Освобождение ресурсов.
     end_program_handler(SIGINT);
+    if (cfg.relay_count) {
+        free(cfg.relay_networks);
+    }
     smtp_cmd_destroy();
     destroy_logger();
     int log_res;
