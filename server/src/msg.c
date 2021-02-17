@@ -14,7 +14,6 @@ error_code_t msg_init(msg_t* msg, const size_t max_size) {
     msg->text = calloc(max_size, sizeof(char));
 
     if (!msg->text) {
-        printf("Creating of msg failed");
         return CE_ALLOC;
     }
 
@@ -29,7 +28,6 @@ error_code_t msg_resize(msg_t* msg, const size_t new_max_size) {
 
     char* new_buf = calloc(new_max_size, sizeof(char));
     if (!new_buf) {
-        printf("new_buf calloc failed");
         return CE_ALLOC;
     }
 
@@ -90,7 +88,6 @@ error_code_t msg_recv_one(msg_t* msg, int fd, int* is_closed) {
             return CE_SUCCESS;
         }
 
-        perror("Error on recving");
         return CE_COMMON;
     }
     return CE_SUCCESS;
@@ -114,7 +111,6 @@ error_code_t msg_send_one(msg_t* msg, int fd) {
             return CE_SUCCESS;
         }
 
-        perror("Error on sending");
         return CE_COMMON;
     }
     return CE_SUCCESS;

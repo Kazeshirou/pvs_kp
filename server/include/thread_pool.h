@@ -6,8 +6,6 @@
 #include "job.h"
 #include "queue.h"
 
-#define WORKERS_COUNT 10
-
 struct thread_pool__t;
 
 typedef struct {
@@ -25,12 +23,14 @@ typedef struct thread_pool__t {
     main_worker_func_t    main_func;
     queue_t               job_queue;
     destructor_t          job_destructor;
-    worker_t              workers[WORKERS_COUNT];
+    worker_t*             workers;
+    size_t                size;
     volatile sig_atomic_t is_ended;
 } thread_pool_t;
 
-error_code_t thread_pool_init(thread_pool_t* tp, main_worker_func_t main_func,
-                              const void* worker_info);
+error_code_t thread_pool_init(thread_pool_t* tp, size_t size,
+                              main_worker_func_t main_func,
+                              const void*        worker_info);
 
 error_code_t thread_pool_push_job(thread_pool_t* tp, job_t job);
 

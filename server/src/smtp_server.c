@@ -56,6 +56,9 @@ static error_code_t create_dirs(const char* local_maildir,
     struct stat st = {0};
     if (stat(local_maildir, &st) < 0) {
         if (mkdir(local_maildir, 0777) < 0) {
+            snprintf(for_logger_msg, sizeof(for_logger_msg),
+                     "Не удалось создать папку '%s'", local_maildir);
+            log_critical("smtp_server", for_logger_msg);
             return CE_COMMON;
         }
     }
@@ -63,11 +66,17 @@ static error_code_t create_dirs(const char* local_maildir,
     snprintf(dir, sizeof(dir), "%s%s", local_maildir, "tmp");
     if (stat(dir, &st) < 0) {
         if (mkdir(dir, 0777) < 0) {
+            snprintf(for_logger_msg, sizeof(for_logger_msg),
+                     "Не удалось создать папку '%s'", dir);
+            log_critical("smtp_server", for_logger_msg);
             return CE_COMMON;
         }
     }
     if (stat(client_maildir, &st) < 0) {
         if (mkdir(client_maildir, 0777) < 0) {
+            snprintf(for_logger_msg, sizeof(for_logger_msg),
+                     "Не удалось создать папку '%s'", client_maildir);
+            log_critical("smtp_server", for_logger_msg);
             return CE_COMMON;
         }
     }
@@ -134,12 +143,12 @@ error_code_t create_server_socket(const int port, const char* address,
 }
 
 error_code_t process_listener(const int listener_fd, int* new_client_fd) {
-    // printf("  Listening socket is readable\n");
-
     *new_client_fd = accept(listener_fd, NULL, NULL);
     if (*new_client_fd < 0) {
         if (errno != EWOULDBLOCK) {
-            perror("  accept() failed");
+            snprintf(for_logger_msg, sizeof(for_logger_msg),
+                     "accept() провален: %s", strerror(errno));
+            log_critical("smtp_server", for_logger_msg);
         }
         return CE_COMMON;
     }
@@ -147,7 +156,9 @@ error_code_t process_listener(const int listener_fd, int* new_client_fd) {
     // Сделаем сокет не блокируемым.
     set_socket_unblock(*new_client_fd);
 
-    // printf("  New incoming connection - %d\n", *new_client_fd);
+    snprintf(for_logger_msg, sizeof(for_logger_msg), "Новое соединение: %d",
+             *new_client_fd);
+    log_info("smtp_server", for_logger_msg);
     return CE_SUCCESS;
 }
 
@@ -164,8 +175,6 @@ error_code_t process_poll(server_info_t* server_info) {
             continue;
 
         if (server_info->fds[i].revents & POLLIN) {
-            // printf("  Descriptor %d is readable\n", server_info->fds[i].fd);
-
             if (msg_recv_one(&msg, server_info->fds[i].fd, &is_closed) !=
                 CE_SUCCESS) {
                 continue;
@@ -188,8 +197,6 @@ error_code_t process_poll(server_info_t* server_info) {
 
         if ((server_info->fds[i].revents & POLLOUT) &&
             server_info->clients[i]->need_send) {
-            // printf("  Descriptor %d is writeable\n", server_info->fds[i].fd);
-
             if (msg_send_one(&(server_info->clients[i]->msg_for_sending),
                              server_info->fds[i].fd) != CE_SUCCESS) {
                 continue;
@@ -282,8 +289,10 @@ void smtp_server(const smtp_server_cfg_t cfg) {
     }
 
     thread_pool_t tp;
-    cerr = thread_pool_init(&tp, main_worker_func, &cfg);
+    cerr = thread_pool_init(&tp, cfg.thread_pool_size, main_worker_func, &cfg);
     if (cerr != CE_SUCCESS) {
+        log_critical("smtp_server",
+                     "Не удалось проинициализировать пул потоков");
         return;
     }
     tp.job_destructor = NULL;
@@ -295,21 +304,23 @@ void smtp_server(const smtp_server_cfg_t cfg) {
 
     int new_client_fd;
     WHILE_TRUE() {
-        // printf("Waiting on poll()...\n");
-        int poll_res = poll(&listener_poll_fd, 1, -1);
+        int poll_res = poll(&listener_poll_fd, 1, 1000);
 
         if (poll_res < 0) {
-            perror("  poll() failed");
+            if (errno != EINTR) {
+                snprintf(for_logger_msg, sizeof(for_logger_msg),
+                         "Ошибка poll() для главного сокета: %d %s", errno,
+                         strerror(errno));
+                log_warning("smtp_server", for_logger_msg);
+            } else {
+                log_info("smtp_server", "poll() прерван сигналом");
+            }
             continue;
         }
         // Истёк тайм-аут.
         if (poll_res == 0) {
-            // printf("  poll() timed out.  End program.\n");
             continue;
         }
-
-        if (listener_poll_fd.revents == 0)
-            continue;
 
         if (listener_poll_fd.revents != POLLIN) {
             continue;

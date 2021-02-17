@@ -1,6 +1,6 @@
 #include "thread_pool.h"
 
-#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "while_true.h"
@@ -15,26 +15,30 @@ static int main_worker_func(void* worker_ptr) {
             continue;
         }
         job_run(&current_job);
-        // Обработка возвращённого работой кода ошибки в current_job.err.
         job_destroy(&current_job);
     }
     worker->tp->is_ended++;
     return 0;
 }
 
-error_code_t thread_pool_init(thread_pool_t* tp, main_worker_func_t main_func,
-                              const void* worker_info) {
+error_code_t thread_pool_init(thread_pool_t* tp, size_t size,
+                              main_worker_func_t main_func,
+                              const void*        worker_info) {
+    tp->workers = (worker_t*)malloc(sizeof(worker_t) * size);
+    if (!tp->workers) {
+        return CE_ALLOC;
+    }
+    tp->size          = size;
     error_code_t cerr = queue_init(&tp->job_queue);
     if (cerr != CE_SUCCESS) {
-        // printf("Не удалось проинициализировать очередь работ для пула
-        // потоков");
+        free(tp->workers);
         return cerr;
     }
     int    err;
     size_t i           = 0;
     tp->is_ended       = 0;
     tp->job_destructor = (destructor_t)&job_destroy;
-    for (; i < WORKERS_COUNT; i++) {
+    for (; i < tp->size; i++) {
         tp->workers[i].id          = i;
         tp->workers[i].end_flag    = 0;
         tp->workers[i].job_queue   = &tp->job_queue;
@@ -45,19 +49,26 @@ error_code_t thread_pool_init(thread_pool_t* tp, main_worker_func_t main_func,
         } else {
             tp->main_func = main_func;
         }
-        err = thrd_create(&(tp->workers[i].td), tp->main_func, tp->workers + i);
+        err =
+            thrd_create(&(tp->workers[i].td), tp->main_func, &(tp->workers[i]));
         if (err != thrd_success) {
-            // printf("Не удалось создать пул потоков");
             break;
         }
         err = thrd_detach(tp->workers[i].td);
         if (err != thrd_success) {
-            // printf("Не удалось выполнить detach при создании пула потоков");
             break;
         }
     }
-    if (i != WORKERS_COUNT) {
-        thread_pool_destroy(tp);
+    if (i != tp->size) {
+        for (size_t j = 0; j < i; j++) {
+            tp->workers[j].end_flag = 1;
+        }
+        queue_destroy(&tp->job_queue, tp->job_destructor);
+        while (tp->is_ended != i) {
+            sleep(0.1);
+        }
+        sleep(0.1);
+        free(tp->workers);
         return CE_INIT_3RD;
     }
     return CE_SUCCESS;
@@ -68,13 +79,13 @@ error_code_t thread_pool_push_job(thread_pool_t* tp, job_t job) {
 }
 
 void thread_pool_destroy(thread_pool_t* tp) {
-    for (size_t i = 0; i < WORKERS_COUNT; i++) {
+    for (size_t i = 0; i < tp->size; i++) {
         tp->workers[i].end_flag = 1;
     }
     queue_destroy(&tp->job_queue, tp->job_destructor);
-    // printf("Waiting for workers finish...\n");
-    while (tp->is_ended != WORKERS_COUNT) {
+    while (tp->is_ended != tp->size) {
         sleep(0.1);
     }
+    free(tp->workers);
     sleep(0.1);
 }
