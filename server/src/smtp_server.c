@@ -4,6 +4,7 @@
 #define __USE_MISC
 #include <grp.h>
 #undef __USE_MISC
+#include <arpa/inet.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <pwd.h>
@@ -20,6 +21,8 @@
 #include "thread_pool.h"
 #include "while_true.h"
 
+static char for_logger_msg[1000];
+
 void set_socket_unblock(const int fd) {
     fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
 }
@@ -27,22 +30,22 @@ void set_socket_unblock(const int fd) {
 static error_code_t droproot(const char* username) {
     struct passwd* pw = NULL;
 
-    char log_msg[500];
-
     pw = getpwnam(username);
     if (pw) {
         if (initgroups(pw->pw_name, pw->pw_gid) != 0 ||
             setgid(pw->pw_gid) != 0 || setuid(pw->pw_uid) != 0) {
-            snprintf(log_msg, sizeof(log_msg),
+            snprintf(for_logger_msg, sizeof(for_logger_msg),
                      "Невозможно поменять пользователя на '%.32s' uid=%lu "
-                     "gid=%lu: %s\n",
+                     "gid=%lu: %s",
                      username, (unsigned long)pw->pw_uid,
                      (unsigned long)pw->pw_gid, strerror(errno));
-            log_critical("smtp_server", log_msg);
+            log_critical("smtp_server", for_logger_msg);
             return CE_COMMON;
         }
     } else {
-        fprintf(stderr, "Couldn't find user '%.32s'\n", username);
+        snprintf(for_logger_msg, sizeof(for_logger_msg),
+                 "Не удалось найти пользователя '%.32s'", username);
+        log_critical("smtp_server", for_logger_msg);
         return CE_COMMON;
     }
     return CE_SUCCESS;
@@ -72,12 +75,14 @@ static error_code_t create_dirs(const char* local_maildir,
     return CE_SUCCESS;
 }
 
-error_code_t create_server_socket(const int    port,
+error_code_t create_server_socket(const int port, const char* address,
                                   const size_t backlog_queue_size,
                                   int*         server_fd) {
     *server_fd = socket(AF_INET6, SOCK_STREAM, 0);
     if (*server_fd < 0) {
-        perror("listen_fd socket failed");
+        snprintf(for_logger_msg, sizeof(for_logger_msg),
+                 "Не удалось создать слушающий сокет: %s", strerror(errno));
+        log_critical("smtp_server", for_logger_msg);
         return CE_INIT_3RD;
     }
 
@@ -86,7 +91,9 @@ error_code_t create_server_socket(const int    port,
     int on = 1;
     if (setsockopt(*server_fd, SOL_SOCKET, SO_REUSEADDR, (char*)&on,
                    sizeof(on)) < 0) {
-        perror("setsockopt(SO_REUSEADDR) failed");
+        snprintf(for_logger_msg, sizeof(for_logger_msg),
+                 "setsockopt(SO_REUSEADDR) провален: %s", strerror(errno));
+        log_critical("smtp_server", for_logger_msg);
         close(*server_fd);
         return CE_COMMON;
     }
@@ -98,15 +105,27 @@ error_code_t create_server_socket(const int    port,
     memset(&listener_addr, 0, sizeof(listener_addr));
     listener_addr.sin6_family = AF_INET6;
     listener_addr.sin6_port   = htons(port);
+    if (inet_pton(AF_INET6, address, &listener_addr.sin6_addr) != 1) {
+        snprintf(for_logger_msg, sizeof(for_logger_msg),
+                 "Введён некорректный адрес %s", address);
+        log_critical("smtp_server", for_logger_msg);
+        close(*server_fd);
+        return CE_COMMON;
+    }
+
     if (bind(*server_fd, (struct sockaddr*)&listener_addr,
              sizeof(listener_addr)) < 0) {
-        perror("bind() failed");
+        snprintf(for_logger_msg, sizeof(for_logger_msg), "bind() провален: %s",
+                 strerror(errno));
+        log_critical("smtp_server", for_logger_msg);
         close(*server_fd);
         return CE_COMMON;
     }
 
     if (listen(*server_fd, backlog_queue_size) < 0) {
-        perror("listen() failed");
+        snprintf(for_logger_msg, sizeof(for_logger_msg),
+                 "listen() провален: %s", strerror(errno));
+        log_critical("smtp_server", for_logger_msg);
         close(*server_fd);
         return CE_COMMON;
     }
@@ -205,7 +224,7 @@ static int main_worker_func(void* worker_ptr) {
     worker_t*                worker = worker_ptr;
     const smtp_server_cfg_t* cfg    = worker->worker_info;
     char                     log_msg[300];
-    snprintf(log_msg, sizeof(log_msg), "thread %ld %ld created\n", worker->id,
+    snprintf(log_msg, sizeof(log_msg), "thread %ld %ld created", worker->id,
              worker->td);
     log_info("smtp_server", log_msg);
     server_info_t server_info;
@@ -234,6 +253,9 @@ static int main_worker_func(void* worker_ptr) {
         }
         process_poll(&server_info);
     }
+    snprintf(log_msg, sizeof(log_msg), "thread %ld %ld finished", worker->id,
+             worker->td);
+    log_info("smtp_server", log_msg);
     server_info_destroy(&server_info);
     worker->tp->is_ended++;
     return CE_SUCCESS;
@@ -241,8 +263,8 @@ static int main_worker_func(void* worker_ptr) {
 
 void smtp_server(const smtp_server_cfg_t cfg) {
     int          listener_fd;
-    error_code_t cerr =
-        create_server_socket(cfg.port, cfg.backlog_queue_size, &listener_fd);
+    error_code_t cerr = create_server_socket(
+        cfg.port, cfg.address, cfg.backlog_queue_size, &listener_fd);
     if (cerr != CE_SUCCESS) {
         return;
     }

@@ -129,9 +129,11 @@ int main(int argc, char* argv[]) {
         free(cfg.relay_networks);
     }
     smtp_cmd_destroy();
-    destroy_logger();
+    // Дадим шанс поработать логеру.
+    sleep(0.1);
     int log_res;
     thrd_join(log, &log_res);
+    destroy_logger();
     thrd_exit(0);
     return 0;
 }

@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "while_true.h"
 
@@ -10,7 +11,8 @@ typedef char log_t[2000];
 static void inner_log(time_t time, const char* level, const char* system,
                       const char* msg) {
     log_t log;
-    snprintf(log, sizeof(log), "%ld | %s | %s | %s", time, level, system, msg);
+    snprintf(log, sizeof(log), "%ld | %s | %s | %s\n", time, level, system,
+             msg);
     queue_push_back(&logger_->log_queue, log, sizeof(log));
 }
 
@@ -67,5 +69,15 @@ int logger_thread(void* ptr) {
             fprintf(logger_->outputs[i], "%s", msg);
         }
     }
+    // Костыль, чтоб подождать все сообщения на выходе.
+    sleep(1);
+
+    while (queue_try_pop_front(&logger_->log_queue, msg, sizeof(msg)) ==
+           CE_SUCCESS) {
+        for (size_t i = 0; i < logger_->current_outputs; i++) {
+            fprintf(logger_->outputs[i], "%s", msg);
+        }
+    }
+
     return 0;
 }
