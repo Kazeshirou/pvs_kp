@@ -1,6 +1,7 @@
 #pragma once
 
 #include <errno.h>
+#include <stdio.h>
 
 #include "config.h"
 #include "end_marker.h"
@@ -9,12 +10,15 @@
 worker_config_t g_config; 
 peer_t *g_logger;
 
-#define SEND_LOG(log) \
-    add_message(g_logger, log, LOG_END_MARKER)
+#define MAX_g_log_message 1024
+char g_log_message[MAX_g_log_message];
 
-inline static void send_log_char(char *clog)
+inline static void send_log()
 {
-    string_t *log = string_init2(clog, strlen(clog));
-    add_message(g_logger, log, LOG_END_MARKER);
-    string_clear(log);
+    string_t *slog = string_init2(g_log_message, strlen(g_log_message));
+    if (slog)
+    {
+        add_message(g_logger, slog, LOG_END_MARKER);
+        string_clear(slog);
+    }
 }

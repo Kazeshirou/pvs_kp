@@ -11,6 +11,7 @@ state  =
          get_next_message_and_sending_mail_or_quit,
          sending_mail_or_quit, mail_sended, 
          sending_rcpt_or_data, rcpt_sended, data_sended, 
+         rset_sended,
          sending_msg_text_or_end_msg, msg_text_sended, end_data_sended, 
          sending_quit, quit_sended;
 
@@ -31,8 +32,10 @@ transition =
 { tst  = get_next_message_and_sending_mail_or_quit; tev = quit; next = quit_sended; },
 { tst  = sending_rcpt_or_data; tev = rcpt; next = rcpt_sended; },
 { tst  = sending_rcpt_or_data; tev = data; next = data_sended; },
+{ tst  = sending_rcpt_or_data; tev = rset; next = rset_sended; },
 
 { tst  = sending_msg_text_or_end_msg; tev = msg_text; next = msg_text_sended; },
+{ tst  = sending_msg_text_or_end_msg; tev = rset; next = rset_sended; },
 { tst  = sending_msg_text_or_end_msg; tev = end_data; next = end_data_sended; },
 
 { tst  = hello_sended; tev = response_2xx; next = sending_mail_or_quit; },
@@ -45,17 +48,24 @@ transition =
 { tst  = ehlo_sended; tev = none; next = ehlo_sended; },
 
 { tst  = mail_sended; tev = response_2xx; next = sending_rcpt_or_data; },
+{ tst  = mail_sended; tev = response_5xx; next = get_next_message_and_sending_mail_or_quit; },
 { tst  = mail_sended; tev = none; next = mail_sended; },
 
 { tst  = rcpt_sended; tev = response_2xx; next = sending_rcpt_or_data; },
+{ tst  = rcpt_sended; tev = response_5xx; next = get_next_message_and_sending_mail_or_quit; },
 { tst  = rcpt_sended; tev = none; next = rcpt_sended; },
 
 { tst  = data_sended; tev = response_3xx; next = sending_msg_text_or_end_msg; },
+{ tst  = data_sended; tev = response_5xx; next = get_next_message_and_sending_mail_or_quit; },
 { tst  = data_sended; tev = none; next = data_sended; },
+
+{ tst  = rset_sended; tev = response_2xx; next = get_next_message_and_sending_mail_or_quit; },
+{ tst  = rset_sended; tev = none; next = rset_sended; },
 
 { tst  = msg_text_sended; tev = none; next = sending_msg_text_or_end_msg; },
 
 { tst  = end_data_sended; tev = response_2xx; next = get_next_message_and_sending_mail_or_quit; },
+{ tst  = end_data_sended; tev = response_5xx; next = get_next_message_and_sending_mail_or_quit; },
 { tst  = end_data_sended; tev = none; next = end_data_sended; },
 
 { tst = quit_sended; tev = none; next = quit_sended; },

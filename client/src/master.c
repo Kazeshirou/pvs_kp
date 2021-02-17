@@ -231,6 +231,10 @@ worker_t* init_workers(master_config_t *master_config, int *logger_fds)
             worker_config.queue_dir = master_config->queue_dir;
             worker_config.parent_pipe_fd = pipe_fds[i][0];
             worker_config.logger_fd = logger_fds[i];
+            worker_config.max_attempts_time =master_config->max_attempts_time;
+            worker_config.min_interval_between_attempts = master_config->min_interval_between_attempts;
+            worker_config.max_connections_count = master_config->max_connections_count;
+            worker_config.min_interval_between_connections = master_config->min_interval_between_connections;
 
             exit_code = worker_main(worker_config);
 
@@ -259,12 +263,22 @@ void clear_workers(worker_t *workers, int size)
         waitpid(workers[i].pid, &status, 0);
         if (status != 0)
         {
-            printf("worker status");
+            printf("worker status: %d", status);
         }
         close(workers[i].peer_write->fd);
         peer_clear(workers[i].peer_write);
     }
     free(workers);
+}
+
+void clear_logger(int lpid)
+{
+    int lstatus;
+    waitpid(lpid, &lstatus, 0);
+    if (lstatus != 0)
+    {
+        printf("logger status: %d", lstatus);
+    }
 }
 
 #define ADD_FILENAME_TO_WORKER(worker, filename) \
@@ -356,8 +370,13 @@ void master_main(master_config_t config)
         return;
 
     worker_t *workers = init_workers(&config, log_pipe_fd);
+    if (!workers)
+        return;
+
     dispatch(workers, config);
+
     clear_workers(workers, config.workers_count);
+    clear_logger(lpid);
 
     printf("bye parent!\n");
 }

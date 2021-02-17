@@ -12,11 +12,12 @@ int process_logs(queue_t *logs, FILE *f, int worker_fd)
     string_t *log = (string_t*) queue_peek(logs);
     while (log)
     {
-        fflush(stdout);
+        printf("[%d] %s\n", worker_fd, log->data);
+        fprintf(f, "[%d] %s\n", worker_fd, log->data);
+
         fflush(f);
-        printf("[%d] %s", worker_fd, log->data);
-        printf("wtf");
-        fprintf(f, "[%d] %s", worker_fd, log->data);
+        fflush(stdout);
+        
         queue_pop_front(logs);
         log = (string_t*) queue_peek(logs);
     }
@@ -75,14 +76,14 @@ int logger_main(const logger_config_t config)
         }
     } 
 
-    for (i = 0; i < workers_count; i++)
+    /*for (i = 0; i < workers_count; i++)
         peer_clear(workers[i]);
     free(workers);
-    storage_clear(storage);
+    storage_clear(storage);*/
+   
+    printf("Процесс логгирования завершен");
 
     fclose(f);
-   
-    printf("logger bye!");
 
     return SUCCESS;
 }

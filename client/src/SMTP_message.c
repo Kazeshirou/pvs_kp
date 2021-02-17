@@ -5,12 +5,15 @@
 #include "global.h"
 
 extern worker_config_t g_config;
+extern char g_log_message[MAX_g_log_message];
 
 SMTP_message_t* SMTP_message_init()
 {
     SMTP_message_t *msg = (SMTP_message_t*) malloc(sizeof(SMTP_message_t));
     if (!msg)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: SMTP_message_init()");
+        send_log();
         return NULL;
     }
     msg->msg_lines = 0;
@@ -26,6 +29,8 @@ void* SMTP_message_copy(const void *vother)
     SMTP_message_t *copy = (SMTP_message_t*) malloc(sizeof(SMTP_message_t));
     if (!copy)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: SMTP_message_copy()");
+        send_log();
         return NULL;
     }
 

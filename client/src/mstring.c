@@ -2,18 +2,23 @@
 #include <string.h> //memcpy
 
 #include "mstring.h"
+#include "global.h"
 
 string_t* string_init(size_t size)
 {
     string_t *str = (string_t*)malloc(sizeof(string_t));
     if (!str)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: string_init()");
+        send_log();
         return NULL;
     }
 
     str->data = (char*)malloc(sizeof(char)*size+1);
     if (!str->data)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: string_init()");
+        send_log();
         free(str);
         return NULL;
     }
@@ -50,6 +55,8 @@ string_t* concat(const string_t *first, const string_t *second)
     char *concated = (char*) malloc(sizeof(char)*size);
     if (!concated)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: string_init()");
+        send_log();
         return NULL;
     }
     memcpy(concated, first->data, first->size); 
@@ -64,6 +71,8 @@ string_t* concat_with_sep(const string_t *first, const string_t *second, const c
     char *concated = (char*) malloc(sizeof(char)*size);
     if (!concated)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: string_init()");
+        send_log();
         return NULL;
     }
     

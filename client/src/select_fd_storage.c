@@ -5,18 +5,25 @@
 
 #include "queue.h"
 #include "errors.h"
+#include "global.h"
+
+extern char g_log_message[MAX_g_log_message];
 
 select_fd_storage_t* storage_init()
 {
     select_fd_storage_t *storage = (select_fd_storage_t*) malloc(sizeof(select_fd_storage_t));
     if (!storage)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: storage_init()");
+        send_log();
         return NULL;
     }
 
     fd_set *read_fds = (fd_set*)malloc(sizeof(fd_set));
     if (!read_fds)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: storage_init()");
+        send_log();
         free(storage);
         return NULL;
     }
@@ -24,6 +31,8 @@ select_fd_storage_t* storage_init()
     fd_set *write_fds = (fd_set*)malloc(sizeof(fd_set));
     if (!write_fds)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: storage_init()");
+        send_log();
         free(read_fds);
         free(storage);
         return NULL;
@@ -80,6 +89,9 @@ int select_step(select_fd_storage_t *storage, peer_t **peers, int peers_count)
     int i;
     int max_fd;
     int ret = 0;
+    struct timeval timeout;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;    
 
     zero_storage(storage);
 
@@ -87,10 +99,12 @@ int select_step(select_fd_storage_t *storage, peer_t **peers, int peers_count)
         build_storage(peers[i], storage);
 
     max_fd = get_max_fd(peers, peers_count);
-    ret = select(max_fd + 1, storage->read_fds, storage->write_fds, NULL, NULL);
+    ret = select(max_fd + 1, storage->read_fds, storage->write_fds, NULL, &timeout);
     if (ret < 0)
     {
-        printf("select()");
+        perror("select()");
+        //sprintf(g_log_message, "select(): %s", strerror(errno));
+        //send_log();
         return SELECT_ERROR;
     }
 

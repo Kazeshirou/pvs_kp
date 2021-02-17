@@ -5,12 +5,17 @@
 #include <string.h>
 
 #include "errors.h"
+#include "global.h"
+
+extern char g_log_message[MAX_g_log_message];
 
 queue_t* queue_init(size_t value_size, copy_constructor_t value_copy_constr, destructor_t destr) 
 {
     queue_t *queue = (queue_t*) malloc(sizeof(queue_t));
     if (!queue) 
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: queue_init()");
+        send_log();
         return NULL;
     }
 
@@ -45,12 +50,16 @@ int queue_push_back(queue_t* queue, const void* value)
 
     if (queue->size == queue->max_size) 
     {
+        sprintf(g_log_message, "Очередь переполнена");
+        send_log();
         return QUEUE_OVERFLOW;
     }
 
     queue_node_t* new_node = (queue_node_t*)malloc(sizeof(queue_node_t*));
     if (!new_node)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: queue_push_back()");
+        send_log();
         return MEMORY_ERROR;
     }
 

@@ -22,6 +22,7 @@
 
 extern worker_config_t g_config; 
 extern peer_t *g_logger;
+extern char g_log_message[MAX_g_log_message];
 
 // parent + logger peers
 #define ADDITIONAL_PEERS_CNT 2
@@ -38,6 +39,8 @@ SMTP_connection_t** get_SMTP_connections(const tree_t *host_vs_peer)
     SMTP_connection_t **peers = (SMTP_connection_t**) malloc(sizeof(SMTP_connection_t*) * host_vs_peer->size);
     if (!peers)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: get_SMTP_connections()");
+        send_log();
         free(nodes);
         return NULL;
     }
@@ -55,6 +58,8 @@ peer_t** get_peers(SMTP_connection_t **conns, size_t size)
     peer_t **peers = (peer_t**) malloc(sizeof(peer_t*) * (size+ADDITIONAL_PEERS_CNT)); 
     if (!peers)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: get_peers()");
+        send_log();
         return NULL;
     }
     int i = 0;
@@ -71,6 +76,7 @@ SMTP_connection_t* get_conn_for_sending(tree_t *host_vs_conn_map,
     SMTP_connection_t *peer_for_sending = NULL;
     int addr_type;
     char *addr = get_addr(filename_value, &addr_type);
+    printf("%s\n", addr);
     if (!addr)
     {
         return NULL;
@@ -86,11 +92,22 @@ SMTP_connection_t* get_conn_for_sending(tree_t *host_vs_conn_map,
         if (peer_for_sending)
         {
             tree_insert(host_vs_conn_map, addr, peer_for_sending);
-           peer_for_sending = ((SMTP_connection_t*)tree_search(host_vs_conn_map, addr)->value);
+            peer_for_sending = ((SMTP_connection_t*)tree_search(host_vs_conn_map, addr)->value);
         }
     }
     free_addr(addr);
     return peer_for_sending;
+}
+
+int remove_file(const char *queue_dir, const string_t *filename)
+{
+    int ret;
+    string_t *queue_dir_str = string_init2(queue_dir, strlen(queue_dir));
+    string_t *full_filename = concat_with_sep(queue_dir_str, filename, FILENAME_SEP);
+    ret = remove(full_filename->data);
+    string_clear(queue_dir_str);
+    string_clear(full_filename);
+    return ret;
 }
 
 int process_parent_messages(tree_t *host_vs_conn_map, queue_t *filenames, const char *queue_dir)
@@ -101,8 +118,9 @@ int process_parent_messages(tree_t *host_vs_conn_map, queue_t *filenames, const 
 
     while(current_filename)
     {
-        printf("qs=%ld", filenames->size);
-        printf("%s\n\n", current_filename->data);
+        sprintf(g_log_message, "Найдено письмо для отправки: %s", current_filename->data);
+        send_log();
+        
         peer_for_sending = get_conn_for_sending(host_vs_conn_map, current_filename);
         if (peer_for_sending)
         {
@@ -113,6 +131,8 @@ int process_parent_messages(tree_t *host_vs_conn_map, queue_t *filenames, const 
                 SMTP_message_clear(message_for_peer);
             }
         }
+
+        remove_file(queue_dir, current_filename);
 
         queue_pop_front(filenames);
         current_filename = (string_t*)queue_peek(filenames);
@@ -203,8 +223,12 @@ int worker_main(const worker_config_t config)
                 fill_messages_out(peers[i], "\r\n");
                 event = generate_event(conns[i]);
                 conns[i]->state = client_fsm_step(conns[i]->state, event);
+
                 if (conns[i]->state == CLIENT_FSM_ST_DONE)
                 {
+                    sprintf(g_log_message, "Соединение закрыто: %s (%s)", conns[i]->addr, conns[i]->ip->data);
+                    send_log();
+
                     if (peers[i]->fd > 0)
                         close(peers[i]->fd);
                     tree_delete(host_vs_conn_map, conns[i]->addr);
@@ -217,10 +241,11 @@ int worker_main(const worker_config_t config)
     } 
 
     peer_clear(parent);
+    peer_clear(g_logger);
     storage_clear(storage);
     tree_clear(host_vs_conn_map);
    
-    printf("bye!");
+    printf("Рабочий процесс завершен");
 
     return SUCCESS;
 }

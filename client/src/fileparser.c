@@ -7,8 +7,11 @@
 
 #include "errors.h"
 #include "SMTP_constants.h"
+#include "global.h"
 
 #define MAX_LINE_LENGTH 1024
+
+extern char g_log_message[MAX_g_log_message];
 
 queue_t* get_filenames(const char *path_to_dir)
 {
@@ -21,7 +24,8 @@ queue_t* get_filenames(const char *path_to_dir)
     dir = opendir(path_to_dir);
     if (dir == NULL) 
     {
-        printf("Error in opening %s\n", path_to_dir);
+        sprintf(g_log_message, "Ошибка открытия директории %s\n", path_to_dir);
+        send_log();
         return NULL;
     }
     while ((entry = readdir(dir)) != NULL)
@@ -33,8 +37,7 @@ queue_t* get_filenames(const char *path_to_dir)
         string_clear(filename);
         if (ret != SUCCESS)
         {
-            // todo log
-            break;
+            continue;
         }
     }
 
@@ -55,6 +58,8 @@ char* get_addr(const string_t *filename, int *type)
 
     if (meta_start < 4)
     {
+        sprintf(g_log_message, "Ошибка определения хоста/ip %s", filename->data);
+        send_log();
         return NULL;
     }
 
@@ -65,7 +70,11 @@ char* get_addr(const string_t *filename, int *type)
     const size_t max_size = meta_start+1;
     char *addr = (char*) calloc(max_size, sizeof(char));
     if (addr == NULL)
+    {
+        sprintf(g_log_message, "Ошибка выделения памяти: get_addr()");
+        send_log();
         return NULL;
+    }
         
     memcpy(addr, filename->data, meta_start);
     return addr;
@@ -91,25 +100,25 @@ int check_recipient(char *rcpt, const char *addr, int a_type)
     int at_idx;
     for (at_idx = 0; at_idx < strlen(rcpt) && rcpt[at_idx] != '@'; at_idx++)
         ;
+    if (a_type == 2)
+    {
+        if (memcmp(rcpt + at_idx + 1, addr, strlen(addr)) == 0)
+            return 1;
+    }
     if (a_type == 0)
     {
-        if (strcmp(rcpt + at_idx + 1, addr) == 0)
+        if (rcpt[at_idx+1] != '[')
+            return 0;
+        if (strlen(addr) != (strlen(rcpt) - at_idx - 4))
+            return 0;
+        if (memcmp(rcpt + at_idx + 2, addr, strlen(addr)) == 0)
             return 1;
     }
     if (a_type == 1)
     {
         if (rcpt[at_idx+1] != '[')
             return 0;
-        if (strlen(addr) != strlen(rcpt) - at_idx - 3)
-            return 0;
-        if (memcmp(rcpt + at_idx + 2, addr, strlen(addr)) == 0)
-            return 1;
-    }
-    if (a_type == 2)
-    {
-        if (rcpt[at_idx+1] != '[')
-            return 0;
-        if (strlen(addr) != strlen(rcpt) - at_idx - 7)
+        if (strlen(addr) != (strlen(rcpt) - at_idx - 8))
             return 0;
         if (memcmp(rcpt + at_idx + 6, addr, strlen(addr)) == 0)
             return 1;
@@ -162,6 +171,12 @@ char* parse_sender(const char *line)
     int end = strlen(line);
     int sender_len = end-start-1;
     char *sender = (char*) malloc(sizeof(char) * sender_len);
+    if (!sender)
+    {
+        sprintf(g_log_message, "Ошибка выделения памяти: parse_sender()");
+        send_log();
+        return NULL;
+    }
     memcpy(sender, line+start, sender_len);
     sender[sender_len] = '\0';
     return sender;
@@ -172,6 +187,8 @@ SMTP_message_t* parse_message(const char *queue_dir,
 {
     int a_type;
     char *addr = get_addr(filename, &a_type);
+    if (!addr)
+        return NULL;
 
     SMTP_message_t *message = SMTP_message_init();
     if (!message)
@@ -195,7 +212,11 @@ SMTP_message_t* parse_message(const char *queue_dir,
         while (fgets(line, MAX_LINE_LENGTH, f)) 
         {
             if (line_num == 0)
+            {
                 message->recipients_addr = parse_recipients(line, &(message->recipients_count), addr, a_type);
+                if (message->recipients_count <= 0)
+                    break;
+            }
             else if (line_num == 1)
                 message->from_addr = parse_sender(line);
             else 
@@ -213,9 +234,18 @@ SMTP_message_t* parse_message(const char *queue_dir,
     }
     else
     {
-        printf("ERROR %s", full_filename->data);
+        sprintf(g_log_message, "Ошибка открытия файла: %s", full_filename->data);
+        send_log();
     }
 
+    if (message->recipients_count <= 0)
+    {
+        sprintf(g_log_message, "Количество получателей с адресом %s равно 0: %s", addr, line);
+        send_log();
+        free(message);
+        free(addr);
+        return NULL;
+    }
     free(addr);
     return message;
 }

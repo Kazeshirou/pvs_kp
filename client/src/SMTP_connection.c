@@ -18,6 +18,7 @@
 #include "global.h"
 
 extern worker_config_t g_config; 
+extern char g_log_message[MAX_g_log_message];
 
 string_t* get_DNS_record(const char *host, int type) 
 {
@@ -114,7 +115,8 @@ int connect_server_ipv6(const string_t *ip, int port)
     fd = socket(AF_INET6, SOCK_STREAM, 0);
     if (fd < 0) 
     {
-        send_log_char(strerror(errno));
+        sprintf(g_log_message, "socket(): %s", strerror(errno));
+        send_log();
         return -1;
     }
 
@@ -125,11 +127,11 @@ int connect_server_ipv6(const string_t *ip, int port)
 
     if (connect(fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) != 0) 
     {
-        send_log_char(strerror(errno));
+        sprintf(g_log_message, "connect(): %s", strerror(errno));
+        send_log();
         return -1;
     }
 
-    send_log_char("HELLO");
     return fd;
 }
 
@@ -141,7 +143,8 @@ int connect_server_ipv4(const string_t *ip, int port)
     fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) 
     {
-        perror("socket()");
+        sprintf(g_log_message, "socket(): %s", strerror(errno));
+        send_log();
         return -1;
     }
     server_addr.sin_family = AF_INET;
@@ -151,7 +154,8 @@ int connect_server_ipv4(const string_t *ip, int port)
 
     if (connect(fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) != 0) 
     {
-        perror("connect()");
+        sprintf(g_log_message, "connect(): %s", strerror(errno));
+        send_log();
         return -1;
     }
     return fd;
@@ -175,11 +179,16 @@ int connect_server(const string_t *ip, int type)
     } 
     else
     {
+        sprintf(g_log_message, "Неизвестный тип адреса %d: connect_server()", type);
+        send_log();
         return -1;
     }
   
-    printf("Connected to %s:%d.\n", ip->data, port);
-  
+    if (fd > 0)
+    {
+        sprintf(g_log_message, "Успешное подключение: %s:%d", ip->data, port);
+        send_log();
+    }
     return fd;
 }
 
@@ -198,6 +207,8 @@ SMTP_connection_t* SMTP_connection_init(const char *addr, int type)
     SMTP_connection_t *conn = (SMTP_connection_t*) malloc(sizeof(SMTP_connection_t));
     if (!conn)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: SMTP_connection_init()");
+        send_log();
         return NULL;
     }
     int fd = -1;
@@ -206,6 +217,8 @@ SMTP_connection_t* SMTP_connection_init(const char *addr, int type)
     conn->addr = (char*) calloc(sizeof(char), strlen(addr) + 1);
     if (!conn->addr)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: SMTP_connection_init()");
+        send_log();
         free(conn);
         return NULL;
     }
@@ -259,6 +272,8 @@ void* SMTP_connection_copy(const void *vother)
     SMTP_connection_t *copy = (SMTP_connection_t*) malloc(sizeof(SMTP_connection_t));
     if (!copy)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: SMTP_connection_copy()");
+        send_log();
         return NULL;
     }
 
@@ -266,6 +281,8 @@ void* SMTP_connection_copy(const void *vother)
     copy->addr = (char*) calloc(sizeof(char), strlen(other->addr) + 1);
     if (!copy->addr)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: SMTP_connection_copy()");
+        send_log();
         free(copy);
         return NULL;
     }
@@ -348,6 +365,7 @@ int parse_response_code(const string_t *response)
 te_client_fsm_event generate_event(SMTP_connection_t *conn)
 {
     string_t *command = NULL;
+    string_t *response = NULL;
     SMTP_message_t *message = NULL;
     te_client_fsm_event event = CLIENT_FSM_EV_NONE;
     int response_code;
@@ -395,6 +413,7 @@ te_client_fsm_event generate_event(SMTP_connection_t *conn)
                 }
             }
             message->last_attempt_time = time(NULL);
+            message->attempt_start_time = 0;
             command = MAILFROM_command(message->from_addr);
             event = CLIENT_FSM_EV_MAIL;
             conn->current_rcpt = 0;
@@ -453,15 +472,20 @@ te_client_fsm_event generate_event(SMTP_connection_t *conn)
     case CLIENT_FSM_ST_MAIL_SENDED:
     case CLIENT_FSM_ST_RCPT_SENDED:
     case CLIENT_FSM_ST_DATA_SENDED:
+    case CLIENT_FSM_ST_RSET_SENDED:
     case CLIENT_FSM_ST_QUIT_SENDED:
     case CLIENT_FSM_ST_MSG_TEXT_SENDED:
     case CLIENT_FSM_ST_END_DATA_SENDED:
         if (!queue_is_empty(conn->peer->messages_out))
         {
-            response_code = parse_response_code((string_t*) queue_peek(conn->peer->messages_out));
+            response = (string_t*) queue_peek(conn->peer->messages_out);
+            response_code = parse_response_code(response);
+
+            sprintf(g_log_message, "Получен ответ с кодом %d: %s", response_code, response->data);
+            send_log();
+
             while (!queue_is_empty(conn->peer->messages_out))
                 queue_pop_front(conn->peer->messages_out);
-            
             
             if (response_code >= 200 && response_code < 300)
                 event = CLIENT_FSM_EV_RESPONSE_2XX;
@@ -482,7 +506,8 @@ te_client_fsm_event generate_event(SMTP_connection_t *conn)
 
     if (command)
     {
-        printf("%s\n",command->data);
+        sprintf(g_log_message, "Отправлена команда: %s", command->data);
+        send_log();
         add_message(conn->peer, command, NULL);
         free(command);
     }

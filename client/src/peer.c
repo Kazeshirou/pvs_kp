@@ -7,6 +7,9 @@
 #include "queue.h"
 #include "mstring.h"
 #include "errors.h"
+#include "global.h"
+
+extern char g_log_message[MAX_g_log_message];
 
 /* private */
 
@@ -91,6 +94,8 @@ peer_t* peer_init(int fd, char type)
     peer_t *peer = (peer_t*) malloc(sizeof(peer_t));
     if (!peer)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: string_init()");
+        send_log();
         return NULL;
     }
 
@@ -125,6 +130,8 @@ void* peer_copy(const void *_other)
     peer_t *peer = (peer_t*) malloc(sizeof(peer_t));
     if (!peer)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: string_init()");
+        send_log();
         return NULL;
     }
     peer->fd = other->fd;
@@ -167,9 +174,12 @@ void* peer_copy(const void *_other)
 void peer_clear(void *_peer)
 {
     peer_t *peer = (peer_t*) _peer;
-    queue_clear(peer->messages_in);
-    queue_clear(peer->messages_out);
-    free(peer);
+    if (peer)
+    {
+        queue_clear(peer->messages_in);
+        queue_clear(peer->messages_out);
+        free(peer);
+    }
 }
 
 
@@ -244,6 +254,8 @@ int peer_receive(peer_t *peer)
     size_t size = MAX_BUFFER_SIZE - peer->buffer_out_size;
     if (size == 0)
     {
+        sprintf(g_log_message, "Буфер получателя переполнен");
+        send_log();
         return RECV_BUFFER_OVERFLOW;
     }
 
@@ -251,7 +263,6 @@ int peer_receive(peer_t *peer)
     {
     case FDT_SOCKET:
         received = recv(peer->fd, peer->buffer_out + peer->buffer_out_size, size, 0);
-        //printf("%s", peer->buffer_out + peer->buffer_out_size);
         break;
     case FDT_PIPE:
         received = read(peer->fd, peer->buffer_out + peer->buffer_out_size, size);

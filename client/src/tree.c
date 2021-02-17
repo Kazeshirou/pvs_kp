@@ -7,6 +7,9 @@
 #include <assert.h>
 
 #include "errors.h"
+#include "global.h"
+
+extern char g_log_message[MAX_g_log_message];
 
 /* private */
 
@@ -17,6 +20,8 @@ tree_node_t* create_node(const tree_t *tree, const char *key, const void *value)
     node = malloc(sizeof(tree_node_t));
     if (!node)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: create_node()");
+        send_log();
         return NULL;
     }
 
@@ -160,6 +165,8 @@ tree_t* tree_init(size_t value_size,
     tree_t *tree = (tree_t*) malloc(sizeof(tree_t));
     if (!tree)
     {
+        sprintf(g_log_message, "Ошибка выделения памяти: tree_init()");
+        send_log();
         return NULL;
     }
 
@@ -252,6 +259,8 @@ void tree_node_nodes_to_array(const tree_t *tree, tree_node_t *root,
         *nodes = (tree_node_t**) malloc(sizeof(tree_node_t*) * tree->size);
         if (!(*nodes))
         {
+            sprintf(g_log_message, "Ошибка выделения памяти: tree_node_nodes_to_array()");
+            send_log();
             return;
         }
     }

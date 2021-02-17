@@ -54,7 +54,7 @@
  *  Count of non-terminal states.  The generated states INVALID and DONE
  *  are terminal, but INIT is not  :-).
  */
-#define CLIENT_FSM_STATE_CT  16
+#define CLIENT_FSM_STATE_CT  17
 typedef enum {
     CLIENT_FSM_ST_INIT,
     CLIENT_FSM_ST_SENDING_HELLO,
@@ -67,6 +67,7 @@ typedef enum {
     CLIENT_FSM_ST_SENDING_RCPT_OR_DATA,
     CLIENT_FSM_ST_RCPT_SENDED,
     CLIENT_FSM_ST_DATA_SENDED,
+    CLIENT_FSM_ST_RSET_SENDED,
     CLIENT_FSM_ST_SENDING_MSG_TEXT_OR_END_MSG,
     CLIENT_FSM_ST_MSG_TEXT_SENDED,
     CLIENT_FSM_ST_END_DATA_SENDED,
