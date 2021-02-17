@@ -87,7 +87,6 @@ error_code_t write_mail(mail_writer_t* mw, receiver_t* to, size_t to_count,
             continue;
         }
         create_link_to_file(mw, tmp_path, local_filename, to[i]);
-        (*(mw->N))++;
         for (size_t j = i + 1; j < to_count; j++) {
             if ((to[i].domain.size == to[j].domain.size) &&
                 (memcmp(to[i].domain.text, to[j].domain.text,
@@ -96,6 +95,7 @@ error_code_t write_mail(mail_writer_t* mw, receiver_t* to, size_t to_count,
             }
         }
     }
+    (*(mw->N))++;
     remove(tmp_path);
 
     return CE_SUCCESS;
