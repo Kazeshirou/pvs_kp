@@ -20,8 +20,8 @@ typedef struct {
     const char* domain;
     const char* local_maildir;
     const char* client_maildir;
-    int         pid;
-    int         tid;
+    size_t      pid;
+    size_t      tid;
     int*        N;
     const char* hostname;
 } mail_writer_t;

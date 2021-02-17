@@ -26,14 +26,16 @@ typedef struct {
     size_t                   max_size;
     const smtp_server_cfg_t* cfg;
     int                      pid;
-    int                      tid;
+    size_t                   tid;
+    size_t                   id;
     int                      N;
     char                     hostname[256];
 } server_info_t;
 
 error_code_t server_info_init(server_info_t*           server,
                               const smtp_server_cfg_t* cfg,
-                              const size_t max_size, const int tid);
+                              const size_t max_size, const size_t tid,
+                              const size_t id);
 error_code_t server_info_resize(server_info_t* server,
                                 const size_t   new_max_size);
 error_code_t server_info_add_client(server_info_t* server, const int fd);

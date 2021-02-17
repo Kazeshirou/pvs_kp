@@ -18,7 +18,7 @@ static int is_to_local(mail_writer_t* mw, const char* domain) {
 static void generate_local_file_name(mail_writer_t* mw, char* filename,
                                      size_t filename_size) {
     time_t t = time(NULL);
-    snprintf(filename, filename_size, "%ld.P%dT%dN%d.%s", t, mw->pid, mw->tid,
+    snprintf(filename, filename_size, "%ld.P%ldT%ldN%d.%s", t, mw->pid, mw->tid,
              *(mw->N), mw->hostname);
 }
 static void generate_for_client_file_name(mail_writer_t*    mw,
@@ -26,8 +26,9 @@ static void generate_for_client_file_name(mail_writer_t*    mw,
                                           char*             filename,
                                           size_t            filename_size) {
     time_t t = time(NULL);
-    snprintf(filename, filename_size, "%s.%d.T%dN%dM%ld", receiver->domain.text,
-             receiver->domain_type, mw->tid, *(mw->N), t);
+    snprintf(filename, filename_size, "%s.%d.T%ldN%dM%ld",
+             receiver->domain.text, receiver->domain_type, mw->tid, *(mw->N),
+             t);
 }
 static void generate_file_path(const char* path, const char* folder,
                                const char* filename, char* filepath,

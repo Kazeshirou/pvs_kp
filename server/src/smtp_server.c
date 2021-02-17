@@ -21,7 +21,7 @@
 #include "thread_pool.h"
 #include "while_true.h"
 
-static char for_logger_msg[1000];
+static char for_log_msg[1000];
 
 void set_socket_unblock(const int fd) {
     fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
@@ -34,18 +34,18 @@ static error_code_t droproot(const char* username) {
     if (pw) {
         if (initgroups(pw->pw_name, pw->pw_gid) != 0 ||
             setgid(pw->pw_gid) != 0 || setuid(pw->pw_uid) != 0) {
-            snprintf(for_logger_msg, sizeof(for_logger_msg),
+            snprintf(for_log_msg, sizeof(for_log_msg),
                      "Невозможно поменять пользователя на '%.32s' uid=%lu "
                      "gid=%lu: %s",
                      username, (unsigned long)pw->pw_uid,
                      (unsigned long)pw->pw_gid, strerror(errno));
-            log_critical("smtp_server", for_logger_msg);
+            log_critical("smtp_server", for_log_msg);
             return CE_COMMON;
         }
     } else {
-        snprintf(for_logger_msg, sizeof(for_logger_msg),
+        snprintf(for_log_msg, sizeof(for_log_msg),
                  "Не удалось найти пользователя '%.32s'", username);
-        log_critical("smtp_server", for_logger_msg);
+        log_critical("smtp_server", for_log_msg);
         return CE_COMMON;
     }
     return CE_SUCCESS;
@@ -56,9 +56,9 @@ static error_code_t create_dirs(const char* local_maildir,
     struct stat st = {0};
     if (stat(local_maildir, &st) < 0) {
         if (mkdir(local_maildir, 0777) < 0) {
-            snprintf(for_logger_msg, sizeof(for_logger_msg),
+            snprintf(for_log_msg, sizeof(for_log_msg),
                      "Не удалось создать папку '%s'", local_maildir);
-            log_critical("smtp_server", for_logger_msg);
+            log_critical("smtp_server", for_log_msg);
             return CE_COMMON;
         }
     }
@@ -66,17 +66,17 @@ static error_code_t create_dirs(const char* local_maildir,
     snprintf(dir, sizeof(dir), "%s%s", local_maildir, "tmp");
     if (stat(dir, &st) < 0) {
         if (mkdir(dir, 0777) < 0) {
-            snprintf(for_logger_msg, sizeof(for_logger_msg),
+            snprintf(for_log_msg, sizeof(for_log_msg),
                      "Не удалось создать папку '%s'", dir);
-            log_critical("smtp_server", for_logger_msg);
+            log_critical("smtp_server", for_log_msg);
             return CE_COMMON;
         }
     }
     if (stat(client_maildir, &st) < 0) {
         if (mkdir(client_maildir, 0777) < 0) {
-            snprintf(for_logger_msg, sizeof(for_logger_msg),
+            snprintf(for_log_msg, sizeof(for_log_msg),
                      "Не удалось создать папку '%s'", client_maildir);
-            log_critical("smtp_server", for_logger_msg);
+            log_critical("smtp_server", for_log_msg);
             return CE_COMMON;
         }
     }
@@ -89,9 +89,9 @@ error_code_t create_server_socket(const int port, const char* address,
                                   int*         server_fd) {
     *server_fd = socket(AF_INET6, SOCK_STREAM, 0);
     if (*server_fd < 0) {
-        snprintf(for_logger_msg, sizeof(for_logger_msg),
+        snprintf(for_log_msg, sizeof(for_log_msg),
                  "Не удалось создать слушающий сокет: %s", strerror(errno));
-        log_critical("smtp_server", for_logger_msg);
+        log_critical("smtp_server", for_log_msg);
         return CE_INIT_3RD;
     }
 
@@ -100,9 +100,9 @@ error_code_t create_server_socket(const int port, const char* address,
     int on = 1;
     if (setsockopt(*server_fd, SOL_SOCKET, SO_REUSEADDR, (char*)&on,
                    sizeof(on)) < 0) {
-        snprintf(for_logger_msg, sizeof(for_logger_msg),
+        snprintf(for_log_msg, sizeof(for_log_msg),
                  "setsockopt(SO_REUSEADDR) провален: %s", strerror(errno));
-        log_critical("smtp_server", for_logger_msg);
+        log_critical("smtp_server", for_log_msg);
         close(*server_fd);
         return CE_COMMON;
     }
@@ -115,26 +115,26 @@ error_code_t create_server_socket(const int port, const char* address,
     listener_addr.sin6_family = AF_INET6;
     listener_addr.sin6_port   = htons(port);
     if (inet_pton(AF_INET6, address, &listener_addr.sin6_addr) != 1) {
-        snprintf(for_logger_msg, sizeof(for_logger_msg),
+        snprintf(for_log_msg, sizeof(for_log_msg),
                  "Введён некорректный адрес %s", address);
-        log_critical("smtp_server", for_logger_msg);
+        log_critical("smtp_server", for_log_msg);
         close(*server_fd);
         return CE_COMMON;
     }
 
     if (bind(*server_fd, (struct sockaddr*)&listener_addr,
              sizeof(listener_addr)) < 0) {
-        snprintf(for_logger_msg, sizeof(for_logger_msg), "bind() провален: %s",
+        snprintf(for_log_msg, sizeof(for_log_msg), "bind() провален: %s",
                  strerror(errno));
-        log_critical("smtp_server", for_logger_msg);
+        log_critical("smtp_server", for_log_msg);
         close(*server_fd);
         return CE_COMMON;
     }
 
     if (listen(*server_fd, backlog_queue_size) < 0) {
-        snprintf(for_logger_msg, sizeof(for_logger_msg),
-                 "listen() провален: %s", strerror(errno));
-        log_critical("smtp_server", for_logger_msg);
+        snprintf(for_log_msg, sizeof(for_log_msg), "listen() провален: %s",
+                 strerror(errno));
+        log_critical("smtp_server", for_log_msg);
         close(*server_fd);
         return CE_COMMON;
     }
@@ -146,9 +146,9 @@ error_code_t process_listener(const int listener_fd, int* new_client_fd) {
     *new_client_fd = accept(listener_fd, NULL, NULL);
     if (*new_client_fd < 0) {
         if (errno != EWOULDBLOCK) {
-            snprintf(for_logger_msg, sizeof(for_logger_msg),
-                     "accept() провален: %s", strerror(errno));
-            log_critical("smtp_server", for_logger_msg);
+            snprintf(for_log_msg, sizeof(for_log_msg), "accept() провален: %s",
+                     strerror(errno));
+            log_critical("smtp_server", for_log_msg);
         }
         return CE_COMMON;
     }
@@ -156,13 +156,14 @@ error_code_t process_listener(const int listener_fd, int* new_client_fd) {
     // Сделаем сокет не блокируемым.
     set_socket_unblock(*new_client_fd);
 
-    snprintf(for_logger_msg, sizeof(for_logger_msg), "Новое соединение: %d",
+    snprintf(for_log_msg, sizeof(for_log_msg), "Новое соединение: %d",
              *new_client_fd);
-    log_info("smtp_server", for_logger_msg);
+    log_info("smtp_server", for_log_msg);
     return CE_SUCCESS;
 }
 
 error_code_t process_poll(server_info_t* server_info) {
+    char for_log_msg[1000];
     // Есть сокеты, готовые к чтению.
     msg_t msg;
     if (msg_init(&msg, 50) != CE_SUCCESS) {
@@ -181,16 +182,25 @@ error_code_t process_poll(server_info_t* server_info) {
             }
 
             if (is_closed) {
-                server_info->clients[i]->need_send = 1;
-                close(server_info->fds[i].fd = -1);
-                need_compress = 1;
+                close(server_info->fds[i].fd);
+                snprintf(for_log_msg, sizeof(for_log_msg),
+                         "Соединение с клиентом %d разорвано у потока %ld ",
+                         server_info->fds[i].fd, server_info->id);
+                log_info("smtp_server", for_log_msg);
+                server_info->fds[i].fd = -1;
+                need_compress          = 1;
                 continue;
             }
 
             client_process_recv(server_info->clients[i], &msg);
             if (server_info->clients[i]->closed) {
-                close(server_info->fds[i].fd = -1);
-                need_compress = 1;
+                close(server_info->fds[i].fd);
+                snprintf(for_log_msg, sizeof(for_log_msg),
+                         "Соединение с клиентом %d у потока %ld закрыто",
+                         server_info->fds[i].fd, server_info->id);
+                log_info("smtp_server", for_log_msg);
+                server_info->fds[i].fd = -1;
+                need_compress          = 1;
             }
             continue;
         }
@@ -206,16 +216,26 @@ error_code_t process_poll(server_info_t* server_info) {
             }
             client_process_send(server_info->clients[i]);
             if (server_info->clients[i]->closed) {
-                close(server_info->fds[i].fd = -1);
-                need_compress = 1;
+                close(server_info->fds[i].fd);
+                snprintf(for_log_msg, sizeof(for_log_msg),
+                         "Соединение с клиентом %d у потока %ld закрыто",
+                         server_info->fds[i].fd, server_info->id);
+                log_info("smtp_server", for_log_msg);
+                server_info->fds[i].fd = -1;
+                need_compress          = 1;
             }
             continue;
         }
 
         client_process_check_timeout(server_info->clients[i]);
         if (server_info->clients[i]->closed) {
-            close(server_info->fds[i].fd = -1);
-            need_compress = 1;
+            close(server_info->fds[i].fd);
+            snprintf(for_log_msg, sizeof(for_log_msg),
+                     "Соединение с клиентом %d у потока %ld закрыто",
+                     server_info->fds[i].fd, server_info->id);
+            log_info("smtp_server", for_log_msg);
+            server_info->fds[i].fd = -1;
+            need_compress          = 1;
         }
     }
 
@@ -228,14 +248,15 @@ error_code_t process_poll(server_info_t* server_info) {
 }
 
 static int main_worker_func(void* worker_ptr) {
+    char                     for_log_msg[1000];
     worker_t*                worker = worker_ptr;
     const smtp_server_cfg_t* cfg    = worker->worker_info;
-    char                     log_msg[300];
-    snprintf(log_msg, sizeof(log_msg), "thread %ld %ld created", worker->id,
-             worker->td);
-    log_info("smtp_server", log_msg);
+    snprintf(for_log_msg, sizeof(for_log_msg), "Поток %ld %ld создан",
+             worker->id, worker->td);
+    log_info("smtp_server", for_log_msg);
     server_info_t server_info;
-    if (server_info_init(&server_info, cfg, 50, worker->td) != CE_SUCCESS) {
+    if (server_info_init(&server_info, cfg, 50, worker->td, worker->id) !=
+        CE_SUCCESS) {
         return CE_INIT_3RD;
     }
 
@@ -247,22 +268,37 @@ static int main_worker_func(void* worker_ptr) {
                                    sizeof(new_client_fd));
         if (cerr == CE_SUCCESS) {
             server_info_add_client(&server_info, new_client_fd);
+            snprintf(for_log_msg, sizeof(for_log_msg), "Клиент %d у потока %ld",
+                     new_client_fd, worker->id);
+            log_info("smtp_server", for_log_msg);
         }
-        poll_res = poll(server_info.fds, server_info.size, 1 * 1000);
+        if (!server_info.size) {
+            sleep(0.1);
+            continue;
+        }
+        poll_res = poll(server_info.fds, server_info.size, 100);
         if (poll_res < 0) {
-            perror("  poll() failed");
+            if (errno != EINTR) {
+                snprintf(for_log_msg, sizeof(for_log_msg),
+                         "Ошибка poll() клиентских сокетов в потоке %lu: %s",
+                         worker->id, strerror(errno));
+                log_warning("smtp_server", for_log_msg);
+            } else {
+                snprintf(for_log_msg, sizeof(for_log_msg),
+                         "poll() прерван сигналом в потоке %lu", worker->id);
+                log_info("smtp_server", for_log_msg);
+            }
             continue;
         }
         // Истёк тайм-аут.
         if (poll_res == 0) {
-            // printf("  poll() timed out\n");
             continue;
         }
         process_poll(&server_info);
     }
-    snprintf(log_msg, sizeof(log_msg), "thread %ld %ld finished", worker->id,
-             worker->td);
-    log_info("smtp_server", log_msg);
+    snprintf(for_log_msg, sizeof(for_log_msg), "Поток %ld %ld завершён",
+             worker->id, worker->td);
+    log_info("smtp_server", for_log_msg);
     server_info_destroy(&server_info);
     worker->tp->is_ended++;
     return CE_SUCCESS;
@@ -308,10 +344,10 @@ void smtp_server(const smtp_server_cfg_t cfg) {
 
         if (poll_res < 0) {
             if (errno != EINTR) {
-                snprintf(for_logger_msg, sizeof(for_logger_msg),
-                         "Ошибка poll() для главного сокета: %d %s", errno,
+                snprintf(for_log_msg, sizeof(for_log_msg),
+                         "Ошибка poll() для главного сокета: %s",
                          strerror(errno));
-                log_warning("smtp_server", for_logger_msg);
+                log_warning("smtp_server", for_log_msg);
             } else {
                 log_info("smtp_server", "poll() прерван сигналом");
             }

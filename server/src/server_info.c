@@ -10,7 +10,8 @@
 
 error_code_t server_info_init(server_info_t*           server,
                               const smtp_server_cfg_t* cfg,
-                              const size_t max_size, const int tid) {
+                              const size_t max_size, const size_t tid,
+                              const size_t id) {
     server->fds      = NULL;
     server->clients  = NULL;
     server->size     = 0;
@@ -19,6 +20,7 @@ error_code_t server_info_init(server_info_t*           server,
     server->N        = 0;
     server->pid      = getpid();
     server->tid      = tid;
+    server->id       = id;
     gethostname(server->hostname, sizeof(server->hostname));
 
     server->fds = (struct pollfd*)calloc(max_size, sizeof(struct pollfd));
@@ -153,9 +155,9 @@ void server_info_compress(server_info_t* server) {
             server->size = i;
             break;
         }
-        strncpy((char*)(server->fds + i), (char*)(server->fds + j),
+        memmove((server->fds + i), (server->fds + j),
                 sizeof(server->fds[0]) * (server->size - j));
-        strncpy((char*)(server->clients + i), (char*)(server->clients + j),
+        memmove((server->clients + i), (server->clients + j),
                 sizeof(server->clients[0]) * (server->size - j));
         server->size -= j - i;
     }
