@@ -6,6 +6,7 @@ import socket
 import signal
 import glob
 import os, shutil
+import sys
 
 def session(name, host, port, first_answer, session):
     errors = None
@@ -53,7 +54,7 @@ def clean_dir(path):
         elif os.path.isfile or os.path.islink:
             os.unlink(f)
 
-def main():
+def main(path):
     HOST = '127.0.0.1'
     PORT = 64999
 
@@ -68,14 +69,15 @@ def main():
                 (b'helo server\r\n'),
                 (b'.\r\n', b'250 OK\r\n\x00'),
                 (b'quit\r\n', b'221 OK\r\n\x00')]
-
-    server = subprocess.Popen(["./server.elf", "-Ltests/tmp/log.csv", "-ltests/tmp/server/", "-ctests/tmp/client/"], stderr=subprocess.DEVNULL)
-    time.sleep(0.01)
+    
+    server = subprocess.Popen(path, stderr=subprocess.DEVNULL, shell=False)
+    time.sleep(1)
     errors = False
     try:
         assert server.poll() is  None, "Сервер неожиданно завершился"
 
-        subprocess.run(["./create_client.sh", "tests/tmp/server", "aa"], capture_output=True)
+        create_client = subprocess.run(["./create_client.sh", "tests/tmp/server", "aa"], capture_output=True)
+        assert not create_client.returncode, "Не удалось создать папку пользователя %s" % create_client.stderr.decode("utf-8") 
 
         session("success_session", HOST,PORT, first_answer, success_session)
 
@@ -85,14 +87,21 @@ def main():
     except AssertionError as err:
         print("Тест провален:\n\t", err)
         errors = True
-    else:
-        print("Teсты пройдены успешно.")
     finally:
         server.send_signal(signal.SIGINT)
         server.wait()
 
+    if server.returncode:
+        print("Тест провален:\n\t%s завершилась с ошибками." % path)
+        errors = True
+
     if errors:
         exit(1)
+    else:
+        print("Teсты пройдены успешно.")
 
 if __name__ == "__main__":
-    main()
+    path = "./tests/run_server.sh"
+    if len(sys.argv) == 2:
+        path = sys.argv[1]
+    main(path)

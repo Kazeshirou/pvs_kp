@@ -1,16 +1,22 @@
 #!/usr/bin/bash
 
+SERVER=0
+FLAG=1
+
+trap 'kill -SIGINT $SERVER; FLAG=0' SIGINT
+
 valgrind --leak-check=full \
          --show-leak-kinds=all \
          --track-origins=yes \
          --verbose \
-         --log-file=valgrind-out.txt \
+         --log-file=tests/tmp/valgrind-out.txt \
          --error-exitcode=1 \
-         ./server.elf -l/tmp/mysmtp/ -c/tmp/mysmtp_client/ 2> /dev/null
+         ./server.elf -Ltests/tmp/log.csv -ltests/tmp/server/ -ctests/tmp/client/ 2> /dev/null &
 
-if [ $? -eq 0 ]
-then
-  exit 0
-else
-  exit 1
-fi
+SERVER=$!
+while [ $FLAG -ne 0 ]; do
+    sleep 1
+done
+wait $SERVER
+CODE=$?
+exit $CODE

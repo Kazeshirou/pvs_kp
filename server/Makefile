@@ -155,7 +155,7 @@ test_style:
 
 .PHONY: test_memory
 test_memory: $(PROG)
-	echo Сделайте сами на основе valgrind
+	./tests/system_test.py ./valgrind_check.sh
 
 .PHONY: test_system
 test_system: $(PROG)

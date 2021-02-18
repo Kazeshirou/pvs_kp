@@ -34,6 +34,16 @@
             "request": "launch",
             "program": "${workspaceFolder}/tests/system_test.py",
             "cwd": "${workspaceFolder}",
+        },
+        {
+            "name": "memory_system_test",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/tests/system_test.py",
+            "args": [
+                "./valgrind_check.sh"
+            ],
+            "cwd": "${workspaceFolder}",
         }
     ]
 }
