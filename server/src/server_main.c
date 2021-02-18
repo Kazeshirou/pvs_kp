@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
         cfg.backlog_queue_size = OPT_VALUE_BACKLOG_QUEUE_SIZE;
     }
     if (COUNT_OPT(THREAD_POOL_SIZE)) {
-        cfg.backlog_queue_size = OPT_VALUE_THREAD_POOL_SIZE;
+        cfg.thread_pool_size = OPT_VALUE_THREAD_POOL_SIZE;
     }
     if (COUNT_OPT(DOMAIN)) {
         cfg.domain = OPT_ARG(DOMAIN);
@@ -128,7 +128,8 @@ int main(int argc, char* argv[]) {
     smtp_server(cfg);
 
     // Освобождение ресурсов.
-    while_true = 0;
+    while_true      = 0;
+    logger.end_flag = 1;
     if (cfg.relay_count) {
         free(cfg.relay_networks);
     }

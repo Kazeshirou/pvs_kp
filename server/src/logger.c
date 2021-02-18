@@ -35,6 +35,7 @@ void log_info(const char* system, const char* msg) {
 
 
 error_code_t init_logger(const char* log_path) {
+    logger_->end_flag                          = 0;
     logger_->current_outputs                   = 0;
     logger_->outputs[logger_->current_outputs] = fopen(log_path, "w");
     if (!logger_->outputs[logger_->current_outputs]) {
@@ -67,24 +68,16 @@ int logger_thread(void* ptr) {
     (void)ptr;
     log_t        msg;
     error_code_t cerr;
-    WHILE_TRUE() {
-        cerr = queue_pop_front(&logger_->log_queue, msg, sizeof(msg));
+    while (!logger_->end_flag) {
+        cerr = queue_try_pop_front(&logger_->log_queue, msg, sizeof(msg));
         if (cerr != CE_SUCCESS) {
+            sleep(0.1);
             continue;
         }
 
         for (size_t i = 0; i < logger_->current_outputs; i++) {
             fprintf(logger_->outputs[i], "%s", msg);
             fflush(logger_->outputs[i]);
-        }
-    }
-    // Костыль, чтоб подождать все сообщения на выходе.
-    sleep(1);
-
-    while (queue_try_pop_front(&logger_->log_queue, msg, sizeof(msg)) ==
-           CE_SUCCESS) {
-        for (size_t i = 0; i < logger_->current_outputs; i++) {
-            fprintf(logger_->outputs[i], "%s", msg);
         }
     }
 

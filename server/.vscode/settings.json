@@ -22,7 +22,8 @@
         "grp.h": "c",
         "stat.h": "c",
         "exception": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "logger.h": "c"
     },
     "python.formatting.provider": "black"
 }

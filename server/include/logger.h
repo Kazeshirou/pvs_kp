@@ -1,5 +1,6 @@
 #pragma once
 
+#include <signal.h>
 #include <stdio.h>
 
 #include "custom_errors.h"
@@ -8,9 +9,10 @@
 #define MAX_LOGGER_OUTPUTS 10
 
 typedef struct {
-    FILE*   outputs[MAX_LOGGER_OUTPUTS];
-    size_t  current_outputs;
-    queue_t log_queue;
+    FILE*                 outputs[MAX_LOGGER_OUTPUTS];
+    size_t                current_outputs;
+    queue_t               log_queue;
+    volatile sig_atomic_t end_flag;
 } logger_t;
 
 extern logger_t* logger_;
