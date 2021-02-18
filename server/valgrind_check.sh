@@ -1,22 +1,16 @@
 #!/usr/bin/bash
 
-SERVER=0
-FLAG=1
-
-trap 'kill -SIGINT $SERVER; FLAG=0' SIGINT
+trap 'kill -SIGINT $SERVER;  wait $SERVER; CODE=$?; exit $CODE' SIGINT
 
 valgrind --leak-check=full \
+         --error-exitcode=1 \
          --show-leak-kinds=all \
          --track-origins=yes \
+         --exit-on-first-error=yes \
          --verbose \
          --log-file=tests/tmp/valgrind-out.txt \
-         --error-exitcode=1 \
-         ./server.elf -Ltests/tmp/log.csv -ltests/tmp/server/ -ctests/tmp/client/ 2> /dev/null &
-
+         ./server.elf -Ltests/tmp/log.csv -ltests/tmp/server/ -ctests/tmp/client/ &
 SERVER=$!
-while [ $FLAG -ne 0 ]; do
+while [ 1 ]; do
     sleep 1
 done
-wait $SERVER
-CODE=$?
-exit $CODE

@@ -128,7 +128,7 @@ int main(int argc, char* argv[]) {
     smtp_server(cfg);
 
     // Освобождение ресурсов.
-    end_program_handler(SIGINT);
+    while_true = 0;
     if (cfg.relay_count) {
         free(cfg.relay_networks);
     }
@@ -138,6 +138,5 @@ int main(int argc, char* argv[]) {
     int log_res;
     thrd_join(log, &log_res);
     destroy_logger();
-    thrd_exit(0);
     return 0;
 }
