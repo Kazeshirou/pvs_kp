@@ -155,7 +155,7 @@ test_style:
 
 .PHONY: test_memory
 test_memory: $(PROG)
-	./tests/system_test.py ./valgrind_check.sh
+	./tests/system_test.py ./tests/valgrind_check.sh
 
 .PHONY: test_system
 test_system: $(PROG)
