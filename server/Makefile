@@ -159,8 +159,7 @@ test_memory: $(PROG)
 
 .PHONY: test_system
 test_system: $(PROG)
-	echo Сделайте сами на основе тестирования через netcat и/или скриптов на python/perl/etc.
-	./$(PROG) -p 1025 -f tests/test01.cmds
+	./tests/system_test.py
 
 # Документация
 # .PHONY: report
@@ -177,6 +176,7 @@ clean:
 	rm -rf $(ODIR)/*.o $(CDIR)/*~ $(IDIR)/*~ $(TEXINCDIR)/* $(DOXDIR)/* $(DOTDIR)/*.dot; \
 	rm simplest.mk *~; \
 	rm *.elf *.pdf; \
+	rm -rf tests/tmp/*; \
 	rm -r `find $(TEXDIR)/ -type f ! -name "*.tex"` 
 
 

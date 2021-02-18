@@ -27,6 +27,13 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "system_test",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/tests/system_test.py",
+            "cwd": "${workspaceFolder}",
         }
     ]
 }

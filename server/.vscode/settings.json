@@ -21,6 +21,8 @@
         "unistd.h": "c",
         "grp.h": "c",
         "stat.h": "c",
-        "exception": "cpp"
-    }
+        "exception": "cpp",
+        "fstream": "cpp"
+    },
+    "python.formatting.provider": "black"
 }

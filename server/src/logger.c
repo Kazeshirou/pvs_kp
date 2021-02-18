@@ -35,6 +35,7 @@ void log_info(const char* system, const char* msg) {
 
 
 error_code_t init_logger(const char* log_path) {
+    logger_->current_outputs                   = 0;
     logger_->outputs[logger_->current_outputs] = fopen(log_path, "w");
     if (!logger_->outputs[logger_->current_outputs]) {
         return CE_COMMON;
@@ -74,6 +75,7 @@ int logger_thread(void* ptr) {
 
         for (size_t i = 0; i < logger_->current_outputs; i++) {
             fprintf(logger_->outputs[i], "%s", msg);
+            fflush(logger_->outputs[i]);
         }
     }
     // Костыль, чтоб подождать все сообщения на выходе.

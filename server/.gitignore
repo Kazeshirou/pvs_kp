@@ -13,3 +13,4 @@ simplest.mk
 *.out
 *.toc
 valgrind-out.txt
+tests/tmp/*
