@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [[ $# -ne 2 ]]; then
-    echo "Usage: $0 /tmp/mysmtp/ user1" 
+    echo "Usage: $0 /tmp/mysmtp user1" 
 fi
 
 FOLDER=$1

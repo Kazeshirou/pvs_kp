@@ -88,7 +88,8 @@ error_code_t write_mail(mail_writer_t* mw, receiver_t* to, size_t to_count,
         }
         create_link_to_file(mw, tmp_path, local_filename, to[i]);
         for (size_t j = i + 1; j < to_count; j++) {
-            if ((to[i].domain.size == to[j].domain.size) &&
+            if (!is_to_local(mw, to[i].domain.text) &&
+                (to[i].domain.size == to[j].domain.size) &&
                 (memcmp(to[i].domain.text, to[j].domain.text,
                         to[i].domain.size) == 0)) {
                 msg_clean(&to[j].domain);
