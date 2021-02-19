@@ -111,8 +111,9 @@ int connect_server_ipv6(const string_t* ip, int port) {
     inet_pton(server_addr.sin6_family, ip->data, &server_addr.sin6_addr);
     server_addr.sin6_port = htons(port);
 
-    if (connect(fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) != 0) {
-        sprintf(g_log_message, "connect(): %s", strerror(errno));
+    if (connect(fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) != 0) 
+    {
+        sprintf(g_log_message, "connect() to ip %s: %s", strerror(errno), ip->data);
         send_log();
         return -1;
     }
@@ -135,8 +136,9 @@ int connect_server_ipv4(const string_t* ip, int port) {
     inet_pton(server_addr.sin_family, ip->data, &server_addr.sin_addr);
     server_addr.sin_port = htons(port);
 
-    if (connect(fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) != 0) {
-        sprintf(g_log_message, "connect(): %s", strerror(errno));
+    if (connect(fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) != 0) 
+    {
+        sprintf(g_log_message, "connect() to ip %s: %s", strerror(errno), ip->data);
         send_log();
         return -1;
     }
@@ -168,15 +170,15 @@ int connect_server(const string_t* ip, int type) {
     return fd;
 }
 
-int can_reconnect_now(SMTP_connection_t* conn) {
-    // printf("%ld %ld\n", time(NULL) - conn->last_connection_time,
-    // conn->min_interval_between_connections);
-    return (time(NULL) - conn->last_connection_time) >
-           conn->min_interval_between_connections;
+int can_reconnect_now(SMTP_connection_t *conn)
+{
+    //printf("%ld %ld\n", time(NULL) - conn->last_connection_time, conn->min_interval_between_connect);
+    return (time(NULL) - conn->last_connection_time) > conn->min_interval_between_connect;
 }
 
-int has_more_connection_attempts(SMTP_connection_t* conn) {
-    return conn->max_connections_count > conn->current_connection_num;
+int has_more_connection_attempts(SMTP_connection_t *conn) 
+{
+    return conn->max_connect_count > conn->current_connection_num;
 }
 
 SMTP_connection_t* SMTP_connection_init(const char* addr, int type) {
@@ -203,9 +205,8 @@ SMTP_connection_t* SMTP_connection_init(const char* addr, int type) {
     conn->current_msg_line       = 0;
     conn->current_rcpt           = 0;
     conn->current_connection_num = 0;
-    conn->max_connections_count  = g_config.max_connections_count;
-    conn->min_interval_between_connections =
-        g_config.min_interval_between_connections;
+    conn->max_connect_count = g_config.max_connect_count;
+    conn->min_interval_between_connect = g_config.min_interval_between_connect;
 
     conn->messages =
         QUEUE_INIT(SMTP_message_t, SMTP_message_copy, SMTP_message_clear);
@@ -264,9 +265,8 @@ void* SMTP_connection_copy(const void* vother) {
     copy->current_msg_line       = other->current_msg_line;
     copy->current_rcpt           = other->current_rcpt;
     copy->current_connection_num = other->current_connection_num;
-    copy->max_connections_count  = other->max_connections_count;
-    copy->min_interval_between_connections =
-        other->min_interval_between_connections;
+    copy->max_connect_count = other->max_connect_count;
+    copy->min_interval_between_connect = other->min_interval_between_connect;
 
     copy->messages =
         QUEUE_INIT(SMTP_message_t, SMTP_message_copy, SMTP_message_clear);
@@ -342,9 +342,10 @@ te_client_fsm_event generate_event(SMTP_connection_t* conn) {
     if (conn->state == CLIENT_FSM_ST_CLOSED_CONNECTION)
         return event;
 
-    if (conn->peer->fd == -1) {
-        if (!has_more_connection_attempts(conn)) {
-            printf("clooose");
+    if (conn->peer->fd == -1)
+    {
+        if (!has_more_connection_attempts(conn))
+        {
             return CLIENT_FSM_EV_CLOSE_CONNECTION;
         }
         if (can_reconnect_now(conn)) {

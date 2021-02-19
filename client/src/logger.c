@@ -17,7 +17,7 @@ int process_logs(queue_t *logs, FILE *f, int worker_fd)
 
         fflush(f);
         fflush(stdout);
-        
+
         queue_pop_front(logs);
         log = (string_t*) queue_peek(logs);
     }
@@ -34,7 +34,7 @@ int logger_main(const logger_config_t config)
     }
 
     int i;
-    int workers_count = config.workers_count;
+    int workers_count = config.workers_count + 1; // + master
 
     select_fd_storage_t *storage = storage_init();
     if (!storage)

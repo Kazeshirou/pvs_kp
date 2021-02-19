@@ -26,8 +26,8 @@ typedef struct SMTP_connection__t
     int current_connection_num; ///< счетчик (пере)подключений при обрыве соединения
     time_t last_connection_time; ///< временная метка последного (пере)подключения
 
-    int max_connections_count; ///< максимальное количество (пере)подключений при обрыве соединений
-    time_t min_interval_between_connections; ///< минимальный интервал между (пере)подключениями
+    int max_connect_count; ///< максимальное количество (пере)подключений при обрыве соединений
+    time_t min_interval_between_connect; ///< минимальный интервал между (пере)подключениями
 
 } SMTP_connection_t;
 

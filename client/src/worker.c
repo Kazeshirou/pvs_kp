@@ -176,16 +176,6 @@ int worker_main(const worker_config_t config) {
         peers[peers_count]     = parent;
         peers[peers_count + 1] = g_logger;
 
-        for (i = 0; i < peers_count + ADDITIONAL_PEERS_CNT; i++) {
-            if (i == (peers_count + 1)) {
-                fill_buffer_in(peers[i]);
-            } else if (i != peers_count) {
-                event           = generate_event(conns[i]);
-                conns[i]->state = client_fsm_step(conns[i]->state, event);
-                fill_buffer_in(peers[i]);
-            }
-        }
-
         select_step(storage, peers, peers_count + ADDITIONAL_PEERS_CNT);
 
         for (i = 0; i < peers_count + ADDITIONAL_PEERS_CNT; i++) {

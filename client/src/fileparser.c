@@ -11,20 +11,23 @@
 
 #define MAX_LINE_LENGTH 1024
 
-queue_t* get_filenames(const char* path_to_dir) {
-    DIR*           dir       = NULL;
-    struct dirent* entry     = NULL;
-    queue_t*       filenames = QUEUE_INIT(string_t, string_copy, string_clear);
-    string_t*      filename;
-    int            ret = 0;
-
-    dir = opendir(path_to_dir);
-    if (dir == NULL) {
+queue_t* get_filenames(const char *path_to_dir)
+{
+    DIR *dir = opendir(path_to_dir);
+    if (dir == NULL) 
+    {
         sprintf(g_log_message, "Ошибка открытия директории %s\n", path_to_dir);
         send_log();
         return NULL;
     }
-    while ((entry = readdir(dir)) != NULL) {
+
+    struct dirent* entry = NULL;
+    string_t *filename;
+    int ret = 0;
+
+    queue_t *filenames = QUEUE_INIT(string_t, string_copy, string_clear);
+    while ((entry = readdir(dir)) != NULL)
+    {
         if (entry->d_type != DT_REG)
             continue;
         filename = string_init2(entry->d_name, strlen(entry->d_name));
