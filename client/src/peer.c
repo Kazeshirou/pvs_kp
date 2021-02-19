@@ -38,6 +38,13 @@ queue_t* parse_buffer(const char* buffer, size_t buffer_size,
             string_clear(message);
             *parsed       = i + 1;
             message_begin = i + 1;
+            j = 0;
+
+            if ((message_begin < buffer_size) && (buffer[message_begin] == '\0'))
+            {
+                message_begin++;
+                (*parsed)++;
+            }
         }
     }
     return messages;

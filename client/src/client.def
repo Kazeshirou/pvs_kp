@@ -40,11 +40,13 @@ transition =
 { tst  = sending_msg_text_or_end_msg; tev = end_data; next = end_data_sended; },
 
 { tst  = hello_sended; tev = response_2xx; next = sending_mail_or_quit; },
+{ tst  = hello_sended; tev = response_4xx; next = hello_sended; },
 { tst  = hello_sended; tev = response_502; next = sending_ehlo; },
 { tst  = hello_sended; tev = response_5xx; next = closed_connection; },
 { tst  = hello_sended; tev = none; next = hello_sended; },
 
 { tst  = ehlo_sended; tev = response_2xx; next = sending_mail_or_quit; },
+{ tst  = ehlo_sended; tev = response_4xx; next = ehlo_sended; },
 { tst  = ehlo_sended; tev = response_5xx; next = closed_connection; },
 { tst  = ehlo_sended; tev = none; next = ehlo_sended; },
 

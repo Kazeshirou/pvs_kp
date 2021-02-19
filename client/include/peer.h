@@ -34,6 +34,7 @@ void peer_clear(void *peer);
 void* peer_copy(const void *peer);
 
 int add_message(peer_t *peer, const string_t *message, const char *end_marker);
+void fill_buffer_in(peer_t *peer);
 
 int peer_send(peer_t *peer);
 int peer_receive(peer_t *peer);
