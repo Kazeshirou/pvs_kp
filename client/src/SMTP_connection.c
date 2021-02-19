@@ -353,6 +353,7 @@ te_client_fsm_event generate_event(SMTP_connection_t* conn) {
         }
     }
 
+    string_t*       endline = string_init2("\r\n", 2);
     switch (conn->state) {
         case CLIENT_FSM_ST_SENDING_HELLO:
             command = HELO_command();
@@ -412,7 +413,7 @@ te_client_fsm_event generate_event(SMTP_connection_t* conn) {
                 event   = CLIENT_FSM_EV_RSET;
             } else {
                 if (conn->current_msg_line < message->msg_lines) {
-                    command = string_copy(message->msg[conn->current_msg_line]);
+                    command = concat(message->msg[conn->current_msg_line], endline);
                     event   = CLIENT_FSM_EV_MSG_TEXT;
                     conn->current_msg_line++;
                 } else {
@@ -466,7 +467,7 @@ te_client_fsm_event generate_event(SMTP_connection_t* conn) {
         free(command);
     }
 
-
+    string_clear(endline);
     conn->last_event = event;
     return event;
 }

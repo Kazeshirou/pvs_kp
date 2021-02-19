@@ -103,16 +103,16 @@ int check_recipient(char* rcpt, const char* addr, int a_type) {
     if (a_type == 0) {
         if (rcpt[at_idx + 1] != '[')
             return 0;
-        if (strlen(addr) != (strlen(rcpt) - at_idx - 4))
-            return 0;
+        //if (strlen(addr) != (strlen(rcpt) - at_idx - 4))
+        //    return 0;
         if (memcmp(rcpt + at_idx + 2, addr, strlen(addr)) == 0)
             return 1;
     }
     if (a_type == 1) {
         if (rcpt[at_idx + 1] != '[')
             return 0;
-        if (strlen(addr) != (strlen(rcpt) - at_idx - 8))
-            return 0;
+        //if (strlen(addr) != (strlen(rcpt) - at_idx - 8))
+        //    return 0;
         if (memcmp(rcpt + at_idx + 6, addr, strlen(addr)) == 0)
             return 1;
     }
@@ -136,8 +136,6 @@ char** parse_recipients(const char* line, size_t* count, const char* addr,
         while (line[i] != TO_SEPARATOR && i < end)
             i++;
         rcpt_len = i - rcpt_start;
-        if (i == end)
-            rcpt_len--;
         rcpt = (char*)malloc(sizeof(char) * rcpt_len);
         memcpy(rcpt, line + rcpt_start, rcpt_len);
         rcpt[rcpt_len] = '\0';
@@ -156,7 +154,7 @@ char* parse_sender(const char* line) {
     char* header     = X_DOMAIN_FROM;
     int   start      = strlen(header);
     int   end        = strlen(line);
-    int   sender_len = end - start - 1;
+    int   sender_len = end - start;
     char* sender     = (char*)malloc(sizeof(char) * sender_len);
     if (!sender) {
         sprintf(g_log_message, "Ошибка выделения памяти: parse_sender()");
@@ -166,6 +164,13 @@ char* parse_sender(const char* line) {
     memcpy(sender, line + start, sender_len);
     sender[sender_len] = '\0';
     return sender;
+}
+
+char *trim (char *s) {
+    int i = strlen(s)-1;
+    if ((i > 0) && (s[i] == '\n' || s[i] == '\r'))
+        s[i] = '\0';
+    return s;
 }
 
 SMTP_message_t* parse_message(const char* queue_dir, const string_t* filename) {
@@ -193,6 +198,7 @@ SMTP_message_t* parse_message(const char* queue_dir, const string_t* filename) {
 
     if (f) {
         while (fgets(line, MAX_LINE_LENGTH, f)) {
+            trim(line);
             if (line_num == 0) {
                 message->recipients_addr = parse_recipients(
                     line, &(message->recipients_count), addr, a_type);

@@ -8,7 +8,7 @@ void test_get_filenames(void)
 {
     char cwd[256];
     getcwd(cwd, sizeof(cwd));
-    strcat(cwd, "/tests/queue");
+    strcat(cwd, "/tests/unit/queue");
 
     queue_t *filenames = get_filenames(cwd);
 
@@ -66,7 +66,7 @@ void test_parse_message_type0(void)
 {
     char cwd[256];
     getcwd(cwd, sizeof(cwd));
-    strcat(cwd, "/tests/queue");
+    strcat(cwd, "/tests/unit/queue");
     char *cfilename = "127.0.0.1.0.id1";
     string_t *filename = string_init2(cfilename, strlen(cfilename));
 
@@ -85,11 +85,12 @@ void test_parse_message_type1(void)
 {
     char cwd[256];
     getcwd(cwd, sizeof(cwd));
-    strcat(cwd, "/tests/queue");
+    strcat(cwd, "/tests/unit/queue");
     char *cfilename = "::.1.id2";
     string_t *filename = string_init2(cfilename, strlen(cfilename));
 
     SMTP_message_t *msg = parse_message(cwd, filename);
+
 
     CU_ASSERT_STRING_EQUAL(msg->from_addr, "<aa@yandex.ru>");
     CU_ASSERT_EQUAL(msg->recipients_count, 1);
@@ -104,7 +105,7 @@ void test_parse_message_type2(void)
 {
     char cwd[256];
     getcwd(cwd, sizeof(cwd));
-    strcat(cwd, "/tests/queue");
+    strcat(cwd, "/tests/unit/queue");
     char *cfilename = "yandex.ru.2.id2";
     string_t *filename = string_init2(cfilename, strlen(cfilename));
 

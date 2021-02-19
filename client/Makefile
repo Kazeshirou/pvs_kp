@@ -1,7 +1,7 @@
 # Каталоги
 IDIR = include
 CDIR = src
-TCDIR = tests
+TCDIR = tests/unit
 ODIR = bin
 TODIR = bin/test
 TEXDIR = tex
