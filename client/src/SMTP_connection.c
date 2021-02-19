@@ -194,7 +194,8 @@ int connect_server(const string_t *ip, int type)
 
 int can_reconnect_now(SMTP_connection_t *conn)
 {
-    return time(NULL) - conn->last_connection_time > conn->min_interval_between_connections;
+    //printf("%ld %ld\n", time(NULL) - conn->last_connection_time, conn->min_interval_between_connections);
+    return (time(NULL) - conn->last_connection_time) > conn->min_interval_between_connections;
 }
 
 int has_more_connection_attempts(SMTP_connection_t *conn) 
@@ -291,7 +292,7 @@ void* SMTP_connection_copy(const void *vother)
     copy->current_rcpt = other->current_rcpt;
     copy->current_connection_num = other->current_connection_num;
     copy->max_connections_count = other->max_connections_count;
-    copy->min_interval_between_connections = copy->min_interval_between_connections;
+    copy->min_interval_between_connections = other->min_interval_between_connections;
 
     copy->messages = QUEUE_INIT(SMTP_message_t, SMTP_message_copy, SMTP_message_clear);
     if (!copy->messages)
@@ -367,13 +368,17 @@ te_client_fsm_event generate_event(SMTP_connection_t *conn)
     string_t *command = NULL;
     string_t *response = NULL;
     SMTP_message_t *message = NULL;
-    te_client_fsm_event event = CLIENT_FSM_EV_NONE;
     int response_code;
+
+    te_client_fsm_event event = CLIENT_FSM_EV_NONE;
+    if (conn->state == CLIENT_FSM_ST_CLOSED_CONNECTION)
+        return event;
 
     if (conn->peer->fd == -1)
     {
         if (!has_more_connection_attempts(conn))
         {
+            printf("clooose");
             return CLIENT_FSM_EV_CLOSE_CONNECTION;
         }
         if (can_reconnect_now(conn))
@@ -412,8 +417,11 @@ te_client_fsm_event generate_event(SMTP_connection_t *conn)
                     return event;
                 }
             }
+            else
+            {
+                message->attempt_start_time = time(NULL);
+            }
             message->last_attempt_time = time(NULL);
-            message->attempt_start_time = 0;
             command = MAILFROM_command(message->from_addr);
             event = CLIENT_FSM_EV_MAIL;
             conn->current_rcpt = 0;

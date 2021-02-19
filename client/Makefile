@@ -1,12 +1,14 @@
 # Каталоги
 IDIR = include
 CDIR = src
+TCDIR = tests
 ODIR = bin
+TODIR = bin/test
 TEXDIR = tex
 TEXINCDIR = $(TEXDIR)/include
 DOXDIR = doxygen
 UDIR = utils
-DOTDIR = dot
+DTODIR = dot
 
 # Утилитки
 MAKE2DOT = $(UDIR)/makefile2dot
@@ -23,6 +25,9 @@ SRC2TEX=$(UDIR)/src2tex
 # Главная программа
 PROG = client.elf
 
+# Юнит тесты
+TPROG = client_test.elf
+
 # Отчёт
 REPORT = report.pdf
 
@@ -30,18 +35,20 @@ REPORT = report.pdf
 CC = gcc
 # Флаги компиляции
 CFLAGS = -I$(IDIR) -Wall -Werror -pedantic -std=gnu99 -g -fPIC
+TCFLAGS = -Wall -Werror -pedantic -std=gnu99 -g -fPIC
 # -Werror
 # Флаги сборки
 LDFLAGS += $(shell autoopts-config ldflags)
 LDFLAGS += -lpthread -lresolv
 
+test_ldflags += -lcunit
+
 # latex -> pdf
 PDFLATEX = pdflatex -interaction=nonstopmode
 
 # Файл с регулярными выражениями
-# RE_FILE = $(IDIR)/server-re.h
 # Файл с графом процесса сборки программы
-Makefile_1.dot = $(DOTDIR)/Makefile_1.dot
+Makefile_1.dot = $(DTODIR)/Makefile_1.dot
 
 # По-умолчанию и по make all собираем и отчёт и программу.
 # Отдельно отчёт собирается как make report
@@ -50,6 +57,9 @@ all: $(PROG)
 INCLUDES = $(wildcard $(IDIR)/*.h) $(IDIR)/checkoptn.h $(IDIR)/client-fsm.h
 CSRC = $(wildcard $(CDIR)/*.c)
 CSRC += $(CDIR)/checkoptn.c $(CDIR)/client-fsm.c
+
+TINCLUDES = $(wildcard $(TCDIR)/*.h)
+TCSRC = $(wildcard $(TCDIR)/*.c)
 
 # Объектные файлы. Обычно, наоборот, по заданному списку объектных получают
 # список исходных файлов. Но мне лень.
@@ -80,11 +90,11 @@ $(ODIR)/checkoptn.o: $(CDIR)/checkoptn.c
 $(ODIR)/client-fsm.o: $(CDIR)/client-fsm.c
 	$(CC) -c -I$(IDIR) -Wall -o $@ $<
 
-$(DOTDIR)/%_def.dot: $(CDIR)/%.def
+$(DTODIR)/%_def.dot: $(CDIR)/%.def
 	$(FSM2DOT) $< > $@
 
 # .dot -> _dot.tex
-$(TEXINCDIR)/%_dot.tex: $(DOTDIR)/%.dot
+$(TEXINCDIR)/%_dot.tex: $(DTODIR)/%.dot
 	utils/dot2tex -ftikz --autosize --crop  $< > $@
 
 # _dot.tex -> _dot.pdf
@@ -118,11 +128,11 @@ $(TEXINCDIR)/checkoptn.def.tex: $(CDIR)/checkoptn.def
 simplest.mk: Makefile
 	sed 's/$$(INCLUDES)//'  Makefile | $(MAKESIMPLE)  > simplest.mk
 
-$(DOTDIR)/cflow01.dot: $(addprefix $(CDIR)/, client_main.c echo_client.c)
+$(DTODIR)/cflow01.dot: $(addprefix $(CDIR)/, worker.c)
 	$(CFLOW) $^ | $(SIMPLECFLOW) | $(CFLOW2DOT) > $@
 
-#$(DOTDIR)/cflow02.dot: $(addprefix $(CDIR)/, server-cmd.c server-parse.c server-fsm.c)
-#	$(CFLOW) $^ | $(SIMPLECFLOW) | $(CFLOW2DOT) > $@
+$(DTODIR)/cflow02.dot: $(addprefix $(CDIR)/, SMTP_connection.c client-fsm.c)
+	$(CFLOW) $^ | $(SIMPLECFLOW) | $(CFLOW2DOT) > $@
 
 $(Makefile_1.dot): $(MAKE2DOT) simplest.mk
 	$(MAKE2DOT) $(PROG) < simplest.mk > $(Makefile_1.dot)
@@ -132,8 +142,21 @@ $(Makefile_1.dot): $(MAKE2DOT) simplest.mk
 tests: test_units test_memory test_style test_system
 
 .PHONY: test_units
-test_units:
-	echo Сделайте сами на основе check.sourceforge.net
+
+TOBJS = $(patsubst $(TCDIR)/%, $(TODIR)/%, $(patsubst %.c,%.o,$(TCSRC)))
+
+$(TODIR)/%.o: $(TCDIR)/%.c $(INCLUDES) $(TINCLUDES) 
+	$(CC) -c -Iinclude -I$(TCDIR)  $(TCFLAGS) -o $@ $<
+
+TOBJS += $(OBJS)
+FTOBJS = $(filter-out $(ODIR)/client_main.o $(ODIR)/logger.o $(ODIR)/worker.o $(ODIR)/master.o $(ODIR)/end_program_handler.o, $(TOBJS))
+
+$(TPROG): $(FTOBJS)
+	$(CC) $^ $(LDFLAGS) $(test_ldflags) -o $@
+
+test_units: $(TPROG)
+
+	
 
 .PHONY: test_style
 test_style:
@@ -147,7 +170,7 @@ test_memory: $(PROG)
 .PHONY: test_system
 test_system: $(PROG)
 	echo Сделайте сами на основе тестирования через netcat и/или скриптов на python/perl/etc.
-	./$(PROG) -p 1025 -f tests/test01.cmds
+	#./$(PROG) -p 1025 -f tests/test01.cmds
 
 # Документация
 # .PHONY: report
@@ -161,9 +184,13 @@ doxygen: doxygen.cfg $(CSRC) $(INCLUDES)
 .PHONY: clean
 clean:
 	rm -rf $(CDIR)/checkoptn.c $(IDIR)/checkoptn.h ;\
-	rm -rf $(ODIR)/*.o $(CDIR)/*~ $(IDIR)/*~ $(TEXINCDIR)/* $(DOXDIR)/* $(DOTDIR)/*.dot; \
+	rm -rf $(ODIR)/*.o $(CDIR)/*~ $(IDIR)/*~ $(TEXINCDIR)/* $(DOXDIR)/* $(DTODIR)/*.dot; \
 	rm simplest.mk *~; \
 	rm *.elf *.pdf; \
 	rm -r `find $(TEXDIR)/ -type f ! -name "*.tex"` 
+
+.PHONY: clean_tests
+clean_tests:
+	rm -rf $(TODIR)/*.o
 
 

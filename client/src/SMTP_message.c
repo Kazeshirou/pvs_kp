@@ -81,10 +81,10 @@ void SMTP_message_clear(void *vmsg)
 
 int is_attempts_time_expired(SMTP_message_t *message)
 {
-    return time(NULL) - message->attempt_start_time > message->max_attempts_time;
+    return (time(NULL) - message->attempt_start_time) > message->max_attempts_time;
 }
 
 int can_start_attempt_now(SMTP_message_t *message)
 {
-    return time(NULL) - message->last_attempt_time > message->min_interval_between_attempts;
+    return (time(NULL) - message->last_attempt_time) > message->min_interval_between_attempts;
 }

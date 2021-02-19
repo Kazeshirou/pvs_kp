@@ -100,7 +100,6 @@ peer_t* peer_init(int fd, char type)
     }
 
     peer->fd = fd;
-    peer->is_closed = 0;
     peer->type = type;
 
     peer->message_in_begin = 0;
@@ -135,7 +134,6 @@ void* peer_copy(const void *_other)
         return NULL;
     }
     peer->fd = other->fd;
-    peer->is_closed = other->is_closed;
     peer->type = other->type;
 
     peer->message_in_begin = other->message_in_begin;

@@ -12,9 +12,9 @@ typedef struct master_config__t
     time_t max_attempts_time;
     time_t min_interval_between_attempts;
 
-    time_t max_connections_count;
+    int max_connections_count;
     time_t min_interval_between_connections;
-    
+
 } master_config_t;
 
 typedef struct worker_config__t
@@ -26,7 +26,7 @@ typedef struct worker_config__t
     time_t max_attempts_time;
     time_t min_interval_between_attempts;
 
-    time_t max_connections_count;
+    int max_connections_count;
     time_t min_interval_between_connections;
     
 } worker_config_t;

@@ -28,6 +28,7 @@
         "smtp_constants.h": "c",
         "global.h": "c",
         "logger.h": "c",
-        "errors.h": "c"
+        "errors.h": "c",
+        "string.h": "c"
     }
 }

@@ -100,6 +100,10 @@ int check_recipient(char *rcpt, const char *addr, int a_type)
     int at_idx;
     for (at_idx = 0; at_idx < strlen(rcpt) && rcpt[at_idx] != '@'; at_idx++)
         ;
+
+    if (memcmp(rcpt + at_idx + 1, DOMAIN_NAME, strlen(DOMAIN_NAME)) == 0)
+        return 0;
+        
     if (a_type == 2)
     {
         if (memcmp(rcpt + at_idx + 1, addr, strlen(addr)) == 0)

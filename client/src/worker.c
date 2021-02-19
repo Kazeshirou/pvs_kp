@@ -197,11 +197,11 @@ int worker_main(const worker_config_t config)
 
         for (i = 0; i < peers_count+ADDITIONAL_PEERS_CNT; i++)
         {
-            if (peers[i]->fd == config.logger_fd)
+            if (i == (peers_count + 1))
             {
                 fill_buffer_in(peers[i]);
             }
-            else if (peers[i]->fd != config.parent_pipe_fd)
+            else if (i != peers_count)
             {
                 event = generate_event(conns[i]);
                 conns[i]->state = client_fsm_step(conns[i]->state, event);
@@ -213,18 +213,18 @@ int worker_main(const worker_config_t config)
 
         for (i = 0; i < peers_count+ADDITIONAL_PEERS_CNT; i++)
         {
-            if (peers[i]->fd == config.parent_pipe_fd)
+            if (i == peers_count)
             {
                 fill_messages_out(peers[i], PARENT_MESSAGE_END_MARKER);
                 process_parent_messages(host_vs_conn_map, peers[i]->messages_out, config.queue_dir);
             }
-            else if (peers[i]->fd != config.logger_fd)
+            else if (i != (peers_count + 1))
             {
                 fill_messages_out(peers[i], "\r\n");
                 event = generate_event(conns[i]);
                 conns[i]->state = client_fsm_step(conns[i]->state, event);
 
-                if (conns[i]->state == CLIENT_FSM_ST_DONE)
+                if (conns[i]->state == CLIENT_FSM_ST_CLOSED_CONNECTION)
                 {
                     sprintf(g_log_message, "Соединение закрыто: %s (%s)", conns[i]->addr, conns[i]->ip->data);
                     send_log();

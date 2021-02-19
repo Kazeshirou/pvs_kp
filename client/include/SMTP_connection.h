@@ -7,24 +7,27 @@
 
 #include <time.h>
 
+/**
+ * @brief Структура соединения на верхнем уровне. 
+**/
 typedef struct SMTP_connection__t 
 {
-    char *addr;
-    queue_t *messages;
-    te_client_fsm_state state;
-    te_client_fsm_event last_event;
-    peer_t *peer;
-    size_t current_rcpt;
-    size_t current_msg_line;
+    char *addr; ///< домен или IP получателя, полученные из названия файла
+    string_t *ip; ///< IP получателя 
+    int ip_type; ///< тип IP: v4 или v6
 
-    int current_connection_num;
-    time_t last_connection_time;
+    queue_t *messages; ///< еще не отправленные письма
+    te_client_fsm_state state; ///< состояние конечного автомата соединения
+    te_client_fsm_event last_event; ///< последнее событие
+    peer_t *peer; ///< соединение на низком уровне
+    size_t current_rcpt; ///< сколько команд RCPT уже было отправлено
+    size_t current_msg_line; ///< сколько строк письма уже было отправлено
 
-    time_t max_connections_count;
-    time_t min_interval_between_connections;
+    int current_connection_num; ///< счетчик (пере)подключений при обрыве соединения
+    time_t last_connection_time; ///< временная метка последного (пере)подключения
 
-    string_t *ip;
-    int ip_type;
+    int max_connections_count; ///< максимальное количество (пере)подключений при обрыве соединений
+    time_t min_interval_between_connections; ///< минимальный интервал между (пере)подключениями
 
 } SMTP_connection_t;
 

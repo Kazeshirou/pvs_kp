@@ -9,8 +9,6 @@
  fopen()
  fclose()
  feof()
-OPT_
-SERVER_
  regexec()
  regcomp()
  regfree()

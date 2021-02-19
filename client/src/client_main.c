@@ -28,9 +28,11 @@ int main(int argc, char* argv[]) {
     char *log_file = DEFAULT_LOG_FILE;
     config.queue_dir = queue_dir;
     config.log_file = log_file;
-    config.workers_count = 2;
+    config.workers_count = 1;
     config.min_interval_working_with_addr = 10000;
-    config.max_attempts_time = 0;
+    config.max_attempts_time = 10000;
+    config.max_connections_count = 5;
+    config.min_interval_between_connections = 3;
 
     /*if (COUNT_OPT(QUEUE_DIR)) {
         queue_dir = OPT_VALUE_QUEUE_DIR;
