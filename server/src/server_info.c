@@ -21,6 +21,7 @@ error_code_t server_info_init(server_info_t*           server,
     server->pid      = getpid();
     server->tid      = tid;
     server->id       = id;
+    server->timeout  = cfg->timeout;
     gethostname(server->hostname, sizeof(server->hostname));
 
     server->fds = (struct pollfd*)calloc(max_size, sizeof(struct pollfd));

@@ -517,7 +517,7 @@ client_do_CLIENT_INITED_quit(
 {
 /*  START == CLIENT INITED QUIT == DO NOT CHANGE THIS COMMENT  */
     client_t* client = (client_t*)client_ptr;
-    client_set_response(client, CLIENT_QUIT_SUCCESS_ANSWER, sizeof(CLIENT_QUIT_SUCCESS_ANSWER));
+    client_set_response(client, SMTP_QUIT_SUCCESS_ANSWER, sizeof(SMTP_QUIT_SUCCESS_ANSWER));
     return maybe_next;
     /*  END   == CLIENT INITED QUIT == DO NOT CHANGE THIS COMMENT  */
 }
@@ -584,7 +584,7 @@ client_do_DATA_RECEIVED_quit(
 {
 /*  START == DATA RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
     client_t* client = (client_t*)client_ptr;
-    client_set_response(client, CLIENT_QUIT_SUCCESS_ANSWER, sizeof(CLIENT_QUIT_SUCCESS_ANSWER));
+    client_set_response(client, SMTP_QUIT_SUCCESS_ANSWER, sizeof(SMTP_QUIT_SUCCESS_ANSWER));
     return maybe_next;
 /*  END   == DATA RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
 }
@@ -651,7 +651,7 @@ client_do_EHLO_RECEIVED_quit(
 {
 /*  START == EHLO RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
     client_t* client = (client_t*)client_ptr;
-    client_set_response(client, CLIENT_QUIT_SUCCESS_ANSWER, sizeof(CLIENT_QUIT_SUCCESS_ANSWER));
+    client_set_response(client, SMTP_QUIT_SUCCESS_ANSWER, sizeof(SMTP_QUIT_SUCCESS_ANSWER));
     return maybe_next;
     /*  END   == EHLO RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
 }
@@ -848,7 +848,7 @@ client_do_EXPECTED_RCPT_OR_DATA_quit(
 {
 /*  START == EXPECTED RCPT OR DATA QUIT == DO NOT CHANGE THIS COMMENT  */
     client_t* client = (client_t*)client_ptr;
-    client_set_response(client, CLIENT_QUIT_SUCCESS_ANSWER, sizeof(CLIENT_QUIT_SUCCESS_ANSWER));
+    client_set_response(client, SMTP_QUIT_SUCCESS_ANSWER, sizeof(SMTP_QUIT_SUCCESS_ANSWER));
     return maybe_next;
     /*  END   == EXPECTED RCPT OR DATA QUIT == DO NOT CHANGE THIS COMMENT  */
 }
@@ -1505,7 +1505,7 @@ client_do_client_inited_mail(
     if (smtp_cmd_get_substring(match_info, MI_MAIL_FROM_REVERSE_PATH_INDEX, buf, sizeof(buf)) == CE_SUCCESS) {
         client_add_mail_from(client, buf, strlen(buf));
     }
-    client_set_response(client, CLIENT_SUCCESS_ANSWER, sizeof(CLIENT_SUCCESS_ANSWER));
+    client_set_response(client, SMTP_SUCCESS_ANSWER, sizeof(SMTP_SUCCESS_ANSWER));
     return maybe_next;
     /*  END   == CLIENT INITED MAIL == DO NOT CHANGE THIS COMMENT  */
 }
@@ -1564,7 +1564,7 @@ client_do_expected_msg_text_or_end_msg_end_data(
         client_add_msg_txt(client, match_info->tested_line, match_info->sub_str[0]);
     }
     client_data_end_process(client);
-    client_set_response(client, CLIENT_SUCCESS_ANSWER, sizeof(CLIENT_SUCCESS_ANSWER));
+    client_set_response(client, SMTP_SUCCESS_ANSWER, sizeof(SMTP_SUCCESS_ANSWER));
     return maybe_next;
 /*  END   == EXPECTED MSG TEXT OR END MSG END DATA == DO NOT CHANGE THIS COMMENT  */
 }
@@ -1595,7 +1595,7 @@ client_do_expected_rcpt_or_data_data(
 {
 /*  START == EXPECTED RCPT OR DATA DATA == DO NOT CHANGE THIS COMMENT  */
     client_t* client = (client_t*)client_ptr;
-     client_set_response(client, CLIENT_DATA_ACCEPTED_ANSWER, sizeof(CLIENT_DATA_ACCEPTED_ANSWER));
+     client_set_response(client, SMTP_DATA_ACCEPTED_ANSWER, sizeof(SMTP_DATA_ACCEPTED_ANSWER));
     return maybe_next;
     /*  END   == EXPECTED RCPT OR DATA DATA == DO NOT CHANGE THIS COMMENT  */
 }
@@ -1612,7 +1612,7 @@ client_do_expected_rcpt_or_data_rcpt(
     client_t* client = (client_t*)client_ptr;
     match_info_t* match_info = (match_info_t*)match_info_ptr;
     client_add_rcpt_to(client, match_info);
-    client_set_response(client, CLIENT_SUCCESS_ANSWER, sizeof(CLIENT_SUCCESS_ANSWER));
+    client_set_response(client, SMTP_SUCCESS_ANSWER, sizeof(SMTP_SUCCESS_ANSWER));
     return maybe_next;
     /*  END   == EXPECTED RCPT OR DATA RCPT == DO NOT CHANGE THIS COMMENT  */
 }
@@ -1737,7 +1737,7 @@ client_do_wait_hello_or_ehlo_ehlo(
     if (smtp_cmd_get_substring(match_info, MI_EHLO_INFO_INDEX, buf, sizeof(buf)) == CE_SUCCESS) {
         client_add_greating_info(client, buf, strlen(buf));
     }
-    client_set_response(client, CLIENT_SUCCESS_ANSWER, sizeof(CLIENT_SUCCESS_ANSWER));
+    client_set_response(client, SMTP_SUCCESS_ANSWER, sizeof(SMTP_SUCCESS_ANSWER));
     return maybe_next;
     /*  END   == WAIT HELLO OR EHLO EHLO == DO NOT CHANGE THIS COMMENT  */
 }
@@ -1757,7 +1757,7 @@ client_do_wait_hello_or_ehlo_helo(
     if (smtp_cmd_get_substring(match_info, MI_HELO_INFO_INDEX, buf, sizeof(buf)) == CE_SUCCESS) {
         client_add_greating_info(client, buf, strlen(buf));
     }
-    client_set_response(client, CLIENT_SUCCESS_ANSWER, sizeof(CLIENT_SUCCESS_ANSWER));
+    client_set_response(client, SMTP_SUCCESS_ANSWER, sizeof(SMTP_SUCCESS_ANSWER));
     return maybe_next;
     /*  END   == WAIT HELLO OR EHLO HELO == DO NOT CHANGE THIS COMMENT  */
 }

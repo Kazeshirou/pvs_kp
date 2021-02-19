@@ -18,6 +18,7 @@
 #include "logger.h"
 #include "msg.h"
 #include "server_info.h"
+#include "smtp_definitions.h"
 #include "thread_pool.h"
 #include "while_true.h"
 
@@ -166,7 +167,7 @@ error_code_t process_poll(server_info_t* server_info) {
     char for_log_msg[1000];
     // Есть сокеты, готовые к чтению.
     msg_t msg;
-    if (msg_init(&msg, 50) != CE_SUCCESS) {
+    if (msg_init(&msg, SMTP_TEXT_LINE_MAX_SIZE) != CE_SUCCESS) {
         return CE_INIT_3RD;
     }
     int is_closed;
@@ -239,7 +240,8 @@ error_code_t process_poll(server_info_t* server_info) {
             continue;
         }
 
-        client_process_check_timeout(server_info->clients[i]);
+        client_process_check_timeout(server_info->clients[i],
+                                     server_info->timeout);
         if (server_info->clients[i]->closed) {
             close(server_info->fds[i].fd);
             snprintf(for_log_msg, sizeof(for_log_msg),

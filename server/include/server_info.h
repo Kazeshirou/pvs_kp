@@ -17,6 +17,7 @@ typedef struct {
     const char*  user;
     const char** relay_networks;
     size_t       relay_count;
+    size_t       timeout;
 } smtp_server_cfg_t;
 
 typedef struct {
@@ -30,6 +31,7 @@ typedef struct {
     size_t                   id;
     int                      N;
     char                     hostname[256];
+    size_t                   timeout;
 } server_info_t;
 
 error_code_t server_info_init(server_info_t*           server,

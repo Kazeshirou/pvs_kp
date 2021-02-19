@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "smtp_cmd.h"
 
@@ -34,8 +35,8 @@ error_code_t client_init(client_t* client, const mail_writer_t* mail_writer) {
         return CE_INIT_3RD;
     }
 
-    if (msg_add_text(&client->msg_for_sending, CLIENT_OPENING_MSG,
-                     sizeof(CLIENT_OPENING_MSG)) != CE_SUCCESS) {
+    if (msg_add_text(&client->msg_for_sending, SMTP_OPENING_MSG,
+                     sizeof(SMTP_OPENING_MSG)) != CE_SUCCESS) {
         msg_destroy(&client->greating_info);
         msg_destroy(&client->from);
         msg_destroy(&client->msg_for_sending);
@@ -59,6 +60,7 @@ error_code_t client_process_recv(client_t* client, msg_t* msg) {
                                      client, &mi);
         }
         client->current_state = next_state;
+        client_start_timeout(client);
         return CE_SUCCESS;
     }
 
@@ -91,6 +93,8 @@ error_code_t client_process_recv(client_t* client, msg_t* msg) {
             client_step(client->current_state, CLIENT_EV_UNKNOWN, client, &mi);
     }
     client->current_state = next_state;
+    client_start_timeout(client);
+
     return CE_SUCCESS;
 }
 
@@ -105,9 +109,23 @@ error_code_t client_process_send(client_t* client) {
     }
     return CE_SUCCESS;
 }
-error_code_t client_process_check_timeout(client_t* client) {
+error_code_t client_process_check_timeout(client_t* client, size_t timeout) {
+    time_t current_time = time(NULL);
+    if (current_time - client->timeout_start_time <= timeout) {
+        return CE_SUCCESS;
+    }
+    te_client_state next_state =
+        client_step(client->current_state, CLIENT_EV_TIMEOUT, client, NULL);
+    client->current_state = next_state;
     return CE_SUCCESS;
 }
+
+error_code_t client_start_timeout(client_t* client) {
+    time_t current_time        = time(NULL);
+    client->timeout_start_time = current_time;
+    return CE_SUCCESS;
+}
+
 
 error_code_t client_add_greating_info(client_t* client, const char* buf,
                                       size_t size) {
@@ -135,7 +153,7 @@ error_code_t client_add_mail_from(client_t* client, const char* buf,
 }
 
 error_code_t client_add_rcpt_to(client_t* client, match_info_t* mi) {
-    if (client->to_count == MAX_RCPT_TO_COUNT) {
+    if (client->to_count == SMTP_RCPT_MAX_SIZE) {
         return CE_MAX_SIZE;
     }
     if (msg_init(&client->to[client->to_count].local_part, 50) != CE_SUCCESS) {

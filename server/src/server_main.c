@@ -18,6 +18,7 @@
 #define DEFAULT_BACKLOG_QUEUE_SIZE 100
 #define DEFAULT_THREAD_POOL_SIZE   4
 #define DEFAULT_DOMAIN             "mysmtp.ru"
+#define DEFAULT_TIMEOUT            300  // 5 минут
 // для быстрого создания пользователей юзать скрипт
 // cheate_user.sh и туда передать первым аргументом эту же папочку, но без слеша
 // на конце.
@@ -48,11 +49,15 @@ int main(int argc, char* argv[]) {
                              .local_maildir      = DEFAULT_LOCAL_MAILDIR,
                              .user               = "",
                              .relay_networks     = NULL,
-                             .relay_count        = 0};
+                             .relay_count        = 0,
+                             .timeout            = DEFAULT_TIMEOUT};
 
 
     if (COUNT_OPT(PORT)) {
         cfg.port = OPT_VALUE_PORT;
+    }
+    if (COUNT_OPT(TIMEOUT)) {
+        cfg.timeout = OPT_VALUE_TIMEOUT;
     }
     if (COUNT_OPT(ADDRESS)) {
         cfg.address = OPT_ARG(ADDRESS);

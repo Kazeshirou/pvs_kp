@@ -5,7 +5,7 @@ long-opts;
 
 flag = {
     name      = port; /* Порт, который слушает сервер */
-    value     = p;              /* Краткий флаг (-p) */
+    value     = p;             
     arg-type  = number;
     arg-range = 110;
     arg-range = "1024->65000";
@@ -15,8 +15,18 @@ flag = {
 };
 
 flag = {
+    name      = timeout; /* Таймаут ожидания клиента в секундах*/
+    value     = m;             
+    arg-type  = number;
+    arg-range = "1->6000";
+    max       = 1;           /* Не более одного раза */
+    min       = 0;          /* Опциональный параметр */
+    descrip   = "Server timeout (s)";
+};
+
+flag = {
     name      = domain;           /* Домен сервера */
-    value     = d;             /* Краткий флаг (-d) */
+    value     = d;             
     arg-type  = string;
     max       = 1;          /* Не более одного раза */
     min       = 0;         /* Опциональный параметр */
