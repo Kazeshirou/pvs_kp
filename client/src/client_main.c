@@ -2,9 +2,11 @@
 
 #include "end_program_handler.h"
 
-#include "master.h"
 #include "config.h"
+#include "global.h"
+#include "master.h"
 
+<<<<<<< HEAD
 #define DEFAULT_QUEUE_DIR	"/home/olga/pvs_kp/client/queue_dir"
 #define DEFAULT_LOG_FILE    "/home/olga/pvs_kp/client/log.log"
 #define DEFAULT_WORKERS_COUNT 2
@@ -13,8 +15,17 @@
 #define DEFAULT_MIN_INTERVAL_BETWEEN_ATTEMPTS 5
 #define DEFAULT_MAX_CONNECT_COUNT 5
 #define DEFAULT_MIN_INTERVAL_BETWEEN_CONNECT 1
+=======
+#define DEFAULT_INTERVAL   10
+#define DEFAULT_TOTAL_TIME 60000
+#define DEFAULT_QUEUE_DIR  "/home/ntl/projects/pvs_kp/client/queue_dir"
+#define DEFAULT_LOG_FILE   "/home/ntl/projects/pvs_kp/client/log.log"
+>>>>>>> bebbb582ef5f4e753d5ccfddfb98ffeef370ec6d
 
-int while_true = 1;
+int             while_true = 1;
+char            g_log_message[MAX_g_log_message + 100];
+worker_config_t g_config;
+peer_t*         g_logger;
 
 int main(int argc, char* argv[]) {
 
@@ -26,6 +37,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+<<<<<<< HEAD
     master_config_t config = 
     {
         .queue_dir = DEFAULT_QUEUE_DIR,
@@ -37,6 +49,17 @@ int main(int argc, char* argv[]) {
         .max_connect_count = DEFAULT_MAX_CONNECT_COUNT,
         .min_interval_between_connect = DEFAULT_MIN_INTERVAL_BETWEEN_CONNECT
     };
+=======
+    char* queue_dir                         = DEFAULT_QUEUE_DIR;
+    char* log_file                          = DEFAULT_LOG_FILE;
+    config.queue_dir                        = queue_dir;
+    config.log_file                         = log_file;
+    config.workers_count                    = 1;
+    config.min_interval_working_with_addr   = 10000;
+    config.max_attempts_time                = 10000;
+    config.max_connections_count            = 5;
+    config.min_interval_between_connections = 3;
+>>>>>>> bebbb582ef5f4e753d5ccfddfb98ffeef370ec6d
 
     if (COUNT_OPT(QUEUE_DIR)) 
     {

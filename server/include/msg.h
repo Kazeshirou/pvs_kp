@@ -2,15 +2,19 @@
 
 #include <stddef.h>
 
-struct msg {
+#include "custom_errors.h"
+
+typedef struct {
     char*  text;
     size_t size;
     size_t max_size;
-};
+} msg_t;
 
-struct msg create_msg(const size_t max_size);
-int        recreate_msg(struct msg* msg, const size_t new_max_size);
-int        add_text_to_message(struct msg* msg, const char* buf, size_t size);
-void       free_msg(struct msg* msg);
-struct msg recv_one_message(int fd);
-char*      get_msg(struct msg* const msg);
+error_code_t msg_init(msg_t* msg, const size_t max_size);
+error_code_t msg_resize(msg_t* msg, const size_t new_max_size);
+error_code_t msg_add_text(msg_t* msg, const char* buf, size_t size);
+error_code_t msg_rm_text(msg_t* msg, size_t size);
+error_code_t msg_recv_one(msg_t* msg, int fd, int* is_closed);
+error_code_t msg_send_one(msg_t* msg, int fd);
+void         msg_clean(msg_t* msg);
+void         msg_destroy(msg_t* msg);

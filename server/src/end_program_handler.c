@@ -7,7 +7,6 @@
 
 void end_program_handler(int signum) {
     (void)signum;
-    printf(" Ending program by signal...\n");
     while_true = 0;
 
     return;
@@ -15,11 +14,11 @@ void end_program_handler(int signum) {
 
 int set_end_program_handler() {
     if (signal(SIGINT, end_program_handler) == SIG_ERR) {
-        perror("Can't register end program handler");
+        perror("Не удалось зарегистрировать хендлер для окончания программы.");
         return -1;
     }
     if (signal(SIGQUIT, end_program_handler) == SIG_ERR) {
-        perror("Can't register end program handler");
+        perror("Не удалось зарегистрировать хендлер для окончания программы.");
         return -1;
     }
 

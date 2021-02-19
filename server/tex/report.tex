@@ -44,19 +44,39 @@
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{include/server_def_dot.pdf}
+\includegraphics[width=\textwidth]{include/client_def_dot.pdf}
 \caption{Состояния сервера}
 \label{fig:fsm}
 \end{figure}
 
 \section{Синтаксис команд протокола}
 
+\subsection{Команды протокола}
 \begin{description}
-\item[Команда выхода из сеанса]
-\input{include/re_cmd_quit_re.tex}
-\item[Команда передачи имени пользователя]
-\input{include/re_cmd_user_re.tex}
+\item[Команда HELO]
+\input{include/re_helo_re.tex}
+\item[Команда EHLO]
+\input{include/re_ehlo_re.tex}
+\item[Команда MAIL]
+\input{include/re_mail_re.tex}
+\item[Команда RCPT]
+\input{include/re_rcpt_re.tex}
+\item[Команда DATA]
+\input{include/re_data_re.tex}
+\item[Команда VRFY]
+\input{include/re_vrfy_re.tex}
+\item[Команда RSET]
+\input{include/re_rset_re.tex}
+\item[Команда QUIT]
+\input{include/re_quit_re.tex}
 \end{description}
+
+\subsection{Вспомогательные выражения, используемые для описания команд протокола}
+\begin{description}
+\item[RE\_DOMAIN]
+\input{include/re_domain_re.tex}
+\end{description}
+
 
 Для грамматики можно использовать вставку из файла и оформление \textbackslash{}begin\{verbatim\} и \textbackslash{}end\{verbatim\} или пакет \textit{listings}\footnote{На дворе XXI век, но пакет \textit{listings} всё ещё не пашет с русскими комментариями без бубна, и лично я его пока не победил.}.
 
@@ -88,13 +108,13 @@
 Весь это раздел сгеренерировал doxygen из части комментированных исходников программы. В файле конфигурации \textbf{doxyggen.cfg} был отключён параметр \textbf{HAVE\_DOT}, поскольку для рисования графов вызовов используется \textit{cflow}.
 
 %\input{include/files}
-\input{include/annotated}
-\input{include/server-state_8h.tex}
-\input{include/server-re_8h.tex}
-\input{include/server-run_8h.tex}
-\input{include/server-run_8c.tex}
-\input{include/structmsg.tex}
-\input{include/structnode__t.tex}
+%\input{include/annotated}
+%\input{include/server-state_8h.tex}
+%\input{include/server-re_8h.tex}
+%\input{include/server-run_8h.tex}
+%\input{include/server-run_8c.tex}
+%\input{include/structmsg.tex}
+%\input{include/structnode__t.tex}
 
 \section{Графы вызова функций}
 
@@ -105,13 +125,6 @@
 \includegraphics[width=\textwidth]{include/cflow01_dot.pdf}
 \caption{Граф вызовов, основные функции}
 \label{fig:cflow01}
-\end{figure}
-
-\begin{figure}
-\centering
-\includegraphics[width=\textwidth]{include/cflow02_dot.pdf}
-\caption{Граф вызовов, функции обработки команд}
-\label{fig:cflow02}
 \end{figure}
 
 Графы созданы с помощью \textit{cflow}, \textit{cflow2dot}, \textit{dot}.

@@ -1,0 +1,41 @@
+autogen definitions fsm;
+
+method = callout;
+type   = reentrant;
+cookie = "void *client_ptr";
+cookie = "void *match_info_ptr";
+
+prefix = client;
+
+/* Состояния init и done уже есть */
+
+state  = wait_hello_or_ehlo, hello_received, ehlo_received, client_inited, mail_received, expected_rcpt_or_data, rcpt_received, data_received, expected_msg_text_or_end_msg, end_data_received, quit_received, rset_received, vrfy_received, timeout, shutdown;
+event = response, ehlo, helo, mail, rcpt, data, msg_text, end_data, rset, quit, vrfy, timeout, shutdown, unknown;
+
+transition =
+{ tst  = init;	tev = response; next = wait_hello_or_ehlo; },
+{ tst  = wait_hello_or_ehlo; tev = ehlo; next = ehlo_received; },
+{ tst  = ehlo_received; tev = response; next = client_inited; },
+{ tst  = wait_hello_or_ehlo; tev = helo; next = hello_received; },
+{ tst  = hello_received; tev = response; next = client_inited; },
+{ tst  = client_inited; tev = mail; next = mail_received; },
+{ tst  = mail_received; tev = response; next = expected_rcpt_or_data; },
+{ tst  = expected_rcpt_or_data; tev = rcpt; next = rcpt_received; },
+{ tst  = rcpt_received; tev = response; next = expected_rcpt_or_data; },
+{ tst  = expected_rcpt_or_data; tev = data; next = data_received; },
+{ tst  = data_received; tev = response; next = expected_msg_text_or_end_msg; },
+{ tst  = expected_msg_text_or_end_msg; tev = msg_text;  next = expected_msg_text_or_end_msg; },
+{ tst  = expected_msg_text_or_end_msg; tev = end_data;  next = end_data_received; },
+{ tst  = end_data_received; tev = response;  next = client_inited; },
+{ tst  = quit_received; tev = response;  next = done; },
+{ tst = client_inited; tev = vrfy; next = vrfy_received; },
+{ tst  = client_inited; tev = rset;  next = rset_received; },
+{ tst  = rset_received; tev = response;  next = client_inited; },
+{ tst  = vrfy_received; tev = response;  next = client_inited; },
+{ tst  = "*"; tev = quit;  next = quit_received; },
+{ tst  = "*"; tev = timeout;  next = timeout; },
+{ tst  = "*"; tev = shutdown;  next = timeout; },
+{ tst  = "*"; tev = unknown;  next = invalid; },
+{ tst  = quit_received; tev = response;  next = done; },
+{ tst  = shutdown; tev = response;  next = done; },
+{ tst  = timeout; tev = response;  next = done; };

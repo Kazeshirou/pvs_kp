@@ -3,15 +3,15 @@
 import re, sys, os, os.path
 
 
-to_replace = (('\\n','\\textbackslash{}n'), ('\\\\', '\\textbackslash{}'), ('$', '\$'), ('^', '\^{}'))
+to_replace = ( ('\\\\', '\\textbackslash{}'), ('_', '\\_'), ('$', '\\$'), ('^', '\\^{}'))
 
-to_delete = ('(', ')')
+to_delete = ('"')
 
 before = '\\texttt{'
 after = '}'
 
 tex_ext = '_re.tex'
-re_def = re.compile('\s*#define\s+(RE\w*)\s+"(.*?)"\s*')
+re_def = re.compile('^#define\s+(RE\w*)\s+(.*)$')
 
 def re_tex(re_c):
     re_tex = re_c

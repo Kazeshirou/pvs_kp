@@ -1,0 +1,49 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "unix",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/server.elf",
+            "preLaunchTask": "server",
+            "args": [
+                "-p 64999",
+                "-l/tmp/mysmtp/",
+                "-c/tmp/mysmtp_client/",
+                "-raaa",
+                "-rbbb"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "system_test",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/tests/system_test.py",
+            "cwd": "${workspaceFolder}",
+        },
+        {
+            "name": "memory_system_test",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/tests/system_test.py",
+            "args": [
+                "./valgrind_check.sh"
+            ],
+            "cwd": "${workspaceFolder}",
+        }
+    ]
+}

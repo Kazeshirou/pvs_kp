@@ -7,35 +7,30 @@
 #include "errors.h"
 #include "global.h"
 
-extern char g_log_message[MAX_g_log_message];
-
-queue_t* queue_init(size_t value_size, copy_constructor_t value_copy_constr, destructor_t destr) 
-{
-    queue_t *queue = (queue_t*) malloc(sizeof(queue_t));
-    if (!queue) 
-    {
+queue_t* queue_init(size_t value_size, copy_constructor_t value_copy_constr,
+                    destructor_t destr) {
+    queue_t* queue = (queue_t*)malloc(sizeof(queue_t));
+    if (!queue) {
         sprintf(g_log_message, "Ошибка выделения памяти: queue_init()");
         send_log();
         return NULL;
     }
 
-    queue->front = NULL;
-    queue->back = NULL;
-    queue->size = 0;
-    queue->max_size = QUEUE_DEFAULT_MAX_SIZE;
-    queue->value_size = value_size;
-    queue->destr = destr;
+    queue->front             = NULL;
+    queue->back              = NULL;
+    queue->size              = 0;
+    queue->max_size          = QUEUE_DEFAULT_MAX_SIZE;
+    queue->value_size        = value_size;
+    queue->destr             = destr;
     queue->value_copy_constr = value_copy_constr;
-    
+
     return queue;
 }
 
-void queue_clear(queue_t* queue) 
-{
+void queue_clear(queue_t* queue) {
     queue_node_t* front_node = queue->front;
     queue_node_t* next_node;
-    while (front_node) 
-    {
+    while (front_node) {
         next_node = front_node->next;
         destruct(front_node->value, queue->destr);
         free(front_node);
@@ -45,19 +40,15 @@ void queue_clear(queue_t* queue)
     assert(!queue->size);
 }
 
-int queue_push_back(queue_t* queue, const void* value) 
-{
-
-    if (queue->size == queue->max_size) 
-    {
+int queue_push_back(queue_t* queue, const void* value) {
+    if (queue->size == queue->max_size) {
         sprintf(g_log_message, "Очередь переполнена");
         send_log();
         return QUEUE_OVERFLOW;
     }
 
     queue_node_t* new_node = (queue_node_t*)malloc(sizeof(queue_node_t*));
-    if (!new_node)
-    {
+    if (!new_node) {
         sprintf(g_log_message, "Ошибка выделения памяти: queue_push_back()");
         send_log();
         return MEMORY_ERROR;
@@ -65,17 +56,16 @@ int queue_push_back(queue_t* queue, const void* value)
 
     new_node->value = copy(value, queue->value_size, queue->value_copy_constr);
 
-    if (!new_node->value)
-    {
+    if (!new_node->value) {
         free(new_node);
         return MEMORY_ERROR;
     }
 
     new_node->next = NULL;
 
-    if (queue->back) 
+    if (queue->back)
         queue->back->next = new_node;
-    else 
+    else
         queue->front = new_node;
 
     queue->back = new_node;
@@ -84,46 +74,40 @@ int queue_push_back(queue_t* queue, const void* value)
     return SUCCESS;
 }
 
-int queue_push_all(queue_t *queue_dst, queue_t *queue_src)
-{
-    int ret = 0;
-    queue_node_t *current = queue_src->front;
-    while (current != NULL && !ret)
-    {
-        ret = queue_push_back(queue_dst, current->value);
+int queue_push_all(queue_t* queue_dst, queue_t* queue_src) {
+    int           ret     = 0;
+    queue_node_t* current = queue_src->front;
+    while (current != NULL && !ret) {
+        ret     = queue_push_back(queue_dst, current->value);
         current = current->next;
     }
     return ret;
 }
 
-int queue_pop_front(queue_t* queue) 
-{
+int queue_pop_front(queue_t* queue) {
     assert(queue->size > 0);
 
     queue_node_t* front_node = queue->front;
     destruct(front_node->value, queue->destr);
 
-    if (--queue->size) 
+    if (--queue->size)
         queue->front = front_node->next;
-    else 
+    else
         queue->front = queue->back = NULL;
 
     free(front_node);
     return SUCCESS;
 }
 
-void* queue_peek(queue_t *queue)
-{
-    void *value = NULL;
-    if (queue && queue->size)
-    {
-        queue_node_t *front_node = queue->front;
-        value = front_node->value;
+void* queue_peek(queue_t* queue) {
+    void* value = NULL;
+    if (queue && queue->size) {
+        queue_node_t* front_node = queue->front;
+        value                    = front_node->value;
     }
     return value;
 }
 
-int queue_is_empty(queue_t *queue)
-{
+int queue_is_empty(queue_t* queue) {
     return !(queue && queue->size);
 }
