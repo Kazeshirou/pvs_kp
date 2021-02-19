@@ -59,6 +59,10 @@ error_code_t thread_pool_init(thread_pool_t* tp, size_t size,
         for (size_t j = 0; j < i; j++) {
             tp->workers[j].end_flag = 1;
         }
+        int res;
+        for (size_t j = 0; j < i; i++) {
+            thrd_join(tp->workers[i].td, &res);
+        }
         queue_destroy(&tp->job_queue, tp->job_destructor);
         while (tp->is_ended != i) {
             sleep(0.1);
