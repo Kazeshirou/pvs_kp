@@ -1,3 +1,15 @@
-X-mysmtp-to: <olg-199774.@[127.0.0.1]>
+X-mysmtp-to: <olg-199774.yakovleva@yandex.ru>
 X-mysmtp-from: <zhar97@yandex.ru>
-asdfsa
+To: ab@mysmtp.ru, olg-199774.yakovleva@yandex.ru, bb@[127.0.0.1], cc@[IPv6::]
+From: Nataliya Zharova <zhar97@yandex.ru>
+Subject: subject
+Message-ID: <0a541b3b-895e-8992-c85f-3fbcd45d7d37@yandex.ru>
+Date: Tue, 19 Feb 2021 20:48:46 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+Thunderbird/78.7.1
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
+Content-Language: en-US
+
+hello

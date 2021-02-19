@@ -3,40 +3,88 @@ prog-name     = client;
 prog-title    = "Client";
 long-opts;
 
+
+
+/* Минимальное время между попытками отправить письмо */
 flag = {
-    name      = interval;	/* Минимальное время между попытками отправить письмо (мс) */
-    value     = i;              /* Краткий флаг (-i) */
+    name      = min_interval_between_attempts;
+    value     = a;       
     arg-type  = number;
     arg-range = 1;
-    max       = 1;           	/* Не более одного раза */
-    min       = 0;           	/* Обязательный параметр */
-    descrip   = "Minimum time between attempts to send an email (mc)";
+    max       = 1;           
+    min       = 0;         
+    descrip   = "Минимальное время между попытками отправить письмо (с)";
 };
 
+/* Общее время на попытки отправить письмо */
 flag = {
-    name      = total_time;	/* Общее время на попытки отправить письмо */
-    value     = t;              /* Краткий флаг (-t) */
+    name      = max_attempts_time;	
+    value     = t;            
     arg-type  = number;
     arg-range = 1;
-    max       = 1;           	/* Не более одного раза */
-    min       = 0;           	/* Обязательный параметр */
-    descrip   = "Total time for attempts to send an email (mc)";
+    max       = 1;          
+    min       = 0;           
+    descrip   = "Общее время на попытки отправить письмо (с)";
 };
 
+/* Минимальное время между переподключениями в случае разрыва соединения */
 flag = {
-    name      = queue_dir;  	/* Корневой каталог очередей сообщений */
-    value     = q;             	/* Краткий флаг (-q) */
-    arg-type  = string;
-    max       = 1;          	/* Не более одного раза */
-    min       = 0;         	/* Обязательный параметр */
-    descrip   = "Message queue directory";
+    name      = min_interval_between_connect;
+    value     = r;       
+    arg-type  = number;
+    arg-range = 1;
+    max       = 1;           
+    min       = 0;         
+    descrip   = "Минимальное время между переподключениями в случае разрыва соединения (с)";
 };
 
+/* Максимальное количество (пере)подключений */
 flag = {
-    name      = log_name;     	/* Файл журнала */
-    value     = l;             	/* Краткий флаг (-l) */
+    name      = max_connect_count;	
+    value     = c;            
+    arg-type  = number;
+    arg-range = 1;
+    max       = 1;          
+    min       = 0;           
+    descrip   = "Максимальное общее количество вызова connect() для MX";
+};
+
+/* Максимальное количество рабочих процессов */
+flag = {
+    name      = workers_count;     	
+    value     = w;     
+    arg-type  = number;
+    max       = 1;          
+    min       = 0;      
+    descrip   = "Maximum workers_count";
+};
+
+/* Корневой каталог очередей сообщений */
+flag = {
+    name      = queue_dir;  	
+    value     = q;           
     arg-type  = string;
-    max       = 1;          	/* Не более одного раза */
-    min       = 0;         	/* Обязательный параметр */
-    descrip   = "Log file name";
+    max       = 1;          
+    min       = 0;      
+    descrip   = "Корневой каталог очередей сообщений";
+};
+
+/* Файл журнала */
+flag = {
+    name      = log_file;     	
+    value     = l;     
+    arg-type  = string;
+    max       = 1;          
+    min       = 0;      
+    descrip   = "Файл журнала";
+};
+
+/* Время жизни записи в карте почтовых доменов основого процесса */
+flag = {
+    name      = min_interval_working_with_addr;     	
+    value     = m;     
+    arg-type  = number;
+    max       = 1;          
+    min       = 0;      
+    descrip   = "Если последнее письмо с некоторым почтовым доменом получателя было отправлено в рабочий процесс не позже, чем min_interval_working_with_addr секунд назад, выбираем тот же рабочий процесс для нового письма с получателем с тем же почтовым доменом";
 };

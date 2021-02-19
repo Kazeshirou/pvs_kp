@@ -199,13 +199,13 @@ int worker_main(const worker_config_t config)
         {
             if (i == (peers_count + 1))
             {
-                fill_buffer_in(peers[i]);
+                //fill_buffer_in(peers[i]);
             }
             else if (i != peers_count)
             {
                 event = generate_event(conns[i]);
                 conns[i]->state = client_fsm_step(conns[i]->state, event);
-                fill_buffer_in(peers[i]);
+                //fill_buffer_in(peers[i]);
             }
         }
 

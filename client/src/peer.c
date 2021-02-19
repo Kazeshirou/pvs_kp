@@ -217,10 +217,23 @@ int add_message(peer_t *peer, const string_t *message, const char *end_marker)
     return ret;
 }
 
+void fill_buffer_in(peer_t *peer)
+{
+    const string_t *message = (string_t*)queue_peek(peer->messages_in);
+    while (BUFFER_IN_IS_NOT_FULL(peer) && message)
+    {
+        reduce_messages_in(peer, message);
+        message = (string_t*)queue_peek(peer->messages_in);
+    }
+}
+
 int peer_send(peer_t *peer) 
 {
     int ret = 0;
     ssize_t sended;
+
+    fill_buffer_in(peer);
+
     switch (peer->type)
     {
     case FDT_SOCKET:
@@ -280,16 +293,6 @@ int peer_receive(peer_t *peer)
     }
 
     return ret;
-}
-
-void fill_buffer_in(peer_t *peer)
-{
-    const string_t *message = (string_t*)queue_peek(peer->messages_in);
-    while (BUFFER_IN_IS_NOT_FULL(peer) && message)
-    {
-        reduce_messages_in(peer, message);
-        message = (string_t*)queue_peek(peer->messages_in);
-    }
 }
 
 int fill_messages_out(peer_t *peer, const char *end_marker)

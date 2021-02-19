@@ -14,8 +14,10 @@
 #include "select_fd_storage.h"
 #include "end_marker.h"
 #include "errors.h"
+#include "global.h"
 
-/* private */
+// logger peer
+#define ADDITIONAL_PEERS_CNT 1
 
 worker_t pick_worker_by_rr(state_t *state, const char *addr,
                            const worker_t *workers, size_t workers_count)
@@ -119,7 +121,7 @@ int init_logger(master_config_t *config, int **write_fds)
 {
     int pid;
     int i;
-    int workers_count = config->workers_count;
+    int workers_count = config->workers_count + ADDITIONAL_PEERS_CNT;
     logger_config_t logger_config;
     int *read_fds = (int*) calloc(workers_count, sizeof(int));
     if (!read_fds)
@@ -135,7 +137,7 @@ int init_logger(master_config_t *config, int **write_fds)
     }
     
     int exit_code;
-    int pipe_fds[config->workers_count][2];
+    int pipe_fds[workers_count][2];
     int fds_idx = 0;
     
     for (i = 0; i < workers_count; i++)
@@ -144,6 +146,7 @@ int init_logger(master_config_t *config, int **write_fds)
         {
             perror("pipe()");
             config->workers_count--;
+            workers_count--;
             continue;
         }
         read_fds[fds_idx] = pipe_fds[i][0];
@@ -168,7 +171,7 @@ int init_logger(master_config_t *config, int **write_fds)
 
         logger_config.log_file = config->log_file;
         logger_config.worker_pipe_fds = read_fds;
-        logger_config.workers_count = config->workers_count;
+        logger_config.workers_count = workers_count;
 
         exit_code = logger_main(logger_config);
 
@@ -230,11 +233,14 @@ worker_t* init_workers(master_config_t *master_config, int *logger_fds)
 
             worker_config.queue_dir = master_config->queue_dir;
             worker_config.parent_pipe_fd = pipe_fds[i][0];
-            worker_config.logger_fd = logger_fds[i];
+            if (logger_fds != NULL)
+                worker_config.logger_fd = logger_fds[i];
+            else
+                worker_config.logger_fd = -1;
             worker_config.max_attempts_time =master_config->max_attempts_time;
             worker_config.min_interval_between_attempts = master_config->min_interval_between_attempts;
-            worker_config.max_connections_count = master_config->max_connections_count;
-            worker_config.min_interval_between_connections = master_config->min_interval_between_connections;
+            worker_config.max_connect_count = master_config->max_connect_count;
+            worker_config.min_interval_between_connect = master_config->min_interval_between_connect;
 
             exit_code = worker_main(worker_config);
 
@@ -315,7 +321,7 @@ void add_filenames_to_workers(state_t *state, const queue_t *new_files,
 peer_t** get_peers_from_workers(worker_t *workers, size_t workers_count)
 {
     int i;
-    peer_t **peers = (peer_t**) malloc(sizeof(peer_t*) * workers_count);
+    peer_t **peers = (peer_t**) malloc(sizeof(peer_t*) * (workers_count + ADDITIONAL_PEERS_CNT));
     if (!peers)
     {
         return NULL;
@@ -328,17 +334,40 @@ peer_t** get_peers_from_workers(worker_t *workers, size_t workers_count)
 }
 
 
-void dispatch(worker_t *workers, master_config_t config)
+int dispatch(worker_t *workers, master_config_t config)
 {
-    int i;
-    state_t *state = state_init();
     queue_t *new_files = NULL;
+
+    g_logger = peer_init(config.logger_fd, FDT_PIPE);
+    if (!g_logger)
+    {
+        return MEMORY_ERROR;
+    }
+
+    state_t *state = state_init();
+    if (!state)
+    {
+        peer_clear(g_logger);
+        return MEMORY_ERROR;
+    }
+
     select_fd_storage_t *storage = storage_init();
+    if (!storage)
+    {
+        state_clear(state);
+        peer_clear(g_logger);
+        state_clear(state);
+        return MEMORY_ERROR;
+    }
+
     peer_t **peers = get_peers_from_workers(workers, config.workers_count);
     if (!peers)
     {
-        WHILE_TRUE() {}
+        storage_clear(storage);
+        peer_clear(g_logger);
+        return MEMORY_ERROR;
     }
+    peers[config.workers_count] = g_logger;
 
     WHILE_TRUE()
     {
@@ -349,22 +378,21 @@ void dispatch(worker_t *workers, master_config_t config)
             queue_clear(new_files);
         }
 
-        for (i = 0; i < config.workers_count; i++)
-        {
-            fill_buffer_in(workers[i].peer_write);
-        }
+        select_step(storage, peers, config.workers_count + ADDITIONAL_PEERS_CNT);
 
-        select_step(storage, peers, config.workers_count);
+        sleep(5);
     }
 
     state_clear(state);
     storage_clear(storage);
     free(peers);
+
+    return SUCCESS;
 }
 
 void master_main(master_config_t config)
 {
-    int *log_pipe_fd;
+    int *log_pipe_fd = NULL;
     int lpid = init_logger(&config, &log_pipe_fd);
     if (lpid < 0)
         return;
@@ -373,10 +401,13 @@ void master_main(master_config_t config)
     if (!workers)
         return;
 
+    config.logger_fd = log_pipe_fd[config.workers_count];
     dispatch(workers, config);
 
     clear_workers(workers, config.workers_count);
     clear_logger(lpid);
+
+    close(config.logger_fd);
 
     printf("bye parent!\n");
 }
