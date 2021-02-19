@@ -1548,10 +1548,6 @@ client_do_invalid(
     client_invalid_transition(initial, trans_evt);
     char msg[1000];
     switch (trans_evt) {
-        case CLIENT_EV_RESPONSE:
-            snprintf(msg, sizeof(msg), "В состоянии %s произошло событие %s: произошла неожиданная отправка данных", CLIENT_STATE_NAME(initial),CLIENT_EVT_NAME(trans_evt));
-            log_warning("client_fsm", msg);
-            break;
         case CLIENT_EV_UNKNOWN:
             snprintf(msg, sizeof(msg), "В состоянии %s произошло событие %s: пришла нераспознанная команда", CLIENT_STATE_NAME(initial),CLIENT_EVT_NAME(trans_evt));
             log_warning("client_fsm", msg);

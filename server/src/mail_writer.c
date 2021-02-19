@@ -73,12 +73,41 @@ error_code_t write_mail(mail_writer_t* mw, receiver_t* to, size_t to_count,
     fprintf(tmp_file, "X-mysmtp-to:");
     char x_to[200];
     for (size_t i = 0; i < to_count - 1; i++) {
-        snprintf(x_to, sizeof(x_to), " <%s@%s>,", to[i].local_part.text,
-                 to[i].domain.text);
+        switch (to[i].domain_type) {
+            case DOMAIN_TYPE_IPV4:
+                snprintf(x_to, sizeof(x_to), " <%s@[%s]>,",
+                         to[i].local_part.text, to[i].domain.text);
+                break;
+
+            case DOMAIN_TYPE_IPV6:
+                snprintf(x_to, sizeof(x_to), " <%s@[IPv6%s]>,",
+                         to[i].local_part.text, to[i].domain.text);
+                break;
+            default:
+                snprintf(x_to, sizeof(x_to), " <%s@%s>,", to[i].local_part.text,
+                         to[i].domain.text);
+                break;
+        }
         fprintf(tmp_file, "%s", x_to);
     }
-    snprintf(x_to, sizeof(x_to), " <%s@%s>\r\n",
-             to[to_count - 1].local_part.text, to[to_count - 1].domain.text);
+    switch (to[to_count - 1].domain_type) {
+        case DOMAIN_TYPE_IPV4:
+            snprintf(x_to, sizeof(x_to), " <%s@[%s]>\r\n",
+                     to[to_count - 1].local_part.text,
+                     to[to_count - 1].domain.text);
+            break;
+
+        case DOMAIN_TYPE_IPV6:
+            snprintf(x_to, sizeof(x_to), " <%s@[IPv6%s]>\r\n",
+                     to[to_count - 1].local_part.text,
+                     to[to_count - 1].domain.text);
+            break;
+        default:
+            snprintf(x_to, sizeof(x_to), " <%s@%s>\r\n",
+                     to[to_count - 1].local_part.text,
+                     to[to_count - 1].domain.text);
+            break;
+    }
     fprintf(tmp_file, "%s", x_to);
     fwrite(text->text, 1, text->size, tmp_file);
     fclose(tmp_file);

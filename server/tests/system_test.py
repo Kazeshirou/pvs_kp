@@ -61,7 +61,7 @@ def main(path):
     clean_dir("tests/tmp/*") 
 
     first_answer = b'220 Service ready\r\n\x00'
-    success_session =  [(b'helo ya.ru\r\n', b'250 OK\r\n\x00'),
+    success_session =  [(b'EHLO mysmtp\r\n', b'250 OK\r\n\x00'),
                 (b'mail from:<zhar97@yandex.ru>\r\n', b'250 OK\r\n\x00'),
                 (b'rcpt to:<aa@mysmtp.ru>\r\n', b'250 OK\r\n\x00'),
                 (b'rcpt to:<aa@ya.ru>\r\n', b'250 OK\r\n\x00'),
