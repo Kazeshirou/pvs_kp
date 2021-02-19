@@ -36,7 +36,7 @@ error_code_t client_init(client_t* client, const mail_writer_t* mail_writer) {
     }
 
     if (msg_add_text(&client->msg_for_sending, SMTP_OPENING_MSG,
-                     sizeof(SMTP_OPENING_MSG)) != CE_SUCCESS) {
+                     sizeof(SMTP_OPENING_MSG) - 1) != CE_SUCCESS) {
         msg_destroy(&client->greating_info);
         msg_destroy(&client->from);
         msg_destroy(&client->msg_for_sending);
@@ -85,14 +85,14 @@ error_code_t client_process_recv(client_t* client, msg_t* msg) {
     } else if (smtp_cmd_check(SMTP_CMD_VRFY, &mi) == CE_SUCCESS) {
         next_state = client->current_state;
         client_set_response(client, SMTP_NOT_IMPLEMENTED_ANSWER,
-                            sizeof(SMTP_NOT_IMPLEMENTED_ANSWER));
+                            strlen(SMTP_NOT_IMPLEMENTED_ANSWER));
     } else if (smtp_cmd_check(SMTP_CMD_DATA, &mi) == CE_SUCCESS) {
         next_state =
             client_step(client->current_state, CLIENT_EV_DATA, client, &mi);
     } else {
         next_state = client->current_state;
         client_set_response(client, SMTP_UNKNOWN_CMD_ANSWER,
-                            sizeof(SMTP_UNKNOWN_CMD_ANSWER));
+                            strlen(SMTP_UNKNOWN_CMD_ANSWER));
     }
     client->current_state = next_state;
     client_start_timeout(client);
@@ -176,7 +176,7 @@ error_code_t client_add_rcpt_to(client_t* client, match_info_t* mi) {
     if (smtp_cmd_get_substring(mi, MI_RCPT_TO_POSTMASTER_INDEX, buf,
                                sizeof(buf)) == CE_SUCCESS) {
         msg_add_text(&client->to[client->to_count].local_part, "Postmaster",
-                     sizeof("Postmaster"));
+                     strlen("Postmaster"));
         msg_add_text(&client->to[client->to_count].domain,
                      client->mail_writer.domain,
                      strlen(client->mail_writer.domain) + 1);
@@ -184,14 +184,13 @@ error_code_t client_add_rcpt_to(client_t* client, match_info_t* mi) {
                                       MI_RCPT_TO_POSTMASTER_FULL_DOMAIN_INDEX,
                                       buf, sizeof(buf)) == CE_SUCCESS) {
         msg_add_text(&client->to[client->to_count].local_part, "Postmaster",
-                     sizeof("Postmaster"));
-        msg_add_text(&client->to[client->to_count].domain, buf,
-                     strlen(buf) + 1);
+                     strlen("Postmaster"));
+        msg_add_text(&client->to[client->to_count].domain, buf, strlen(buf));
     } else {
         smtp_cmd_get_substring(mi, MI_RCPT_TO_FORWARD_PATH_LOCAL_PART_INDEX,
                                buf, sizeof(buf));
         msg_add_text(&client->to[client->to_count].local_part, buf,
-                     strlen(buf) + 1);
+                     strlen(buf));
         buf[0] = 0;
         if (smtp_cmd_get_substring(mi,
                                    MI_RCPT_TO_FORWARD_PATH_DOMAIN_IPV4_INDEX,
@@ -206,8 +205,7 @@ error_code_t client_add_rcpt_to(client_t* client, match_info_t* mi) {
                                    buf, sizeof(buf));
             client->to[client->to_count].domain_type = DOMAIN_TYPE_HOST;
         }
-        msg_add_text(&client->to[client->to_count].domain, buf,
-                     strlen(buf) + 1);
+        msg_add_text(&client->to[client->to_count].domain, buf, strlen(buf));
     }
     client->to_count++;
     return CE_SUCCESS;

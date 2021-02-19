@@ -60,15 +60,15 @@ def main(path):
 
     clean_dir("tests/tmp/*") 
 
-    first_answer = b'220 Service ready\r\n\x00'
-    success_session =  [(b'EHLO mysmtp\r\n', b'250 OK\r\n\x00'),
-                (b'mail from:<zhar97@yandex.ru>\r\n', b'250 OK\r\n\x00'),
-                (b'rcpt to:<aa@mysmtp.ru>\r\n', b'250 OK\r\n\x00'),
-                (b'rcpt to:<aa@ya.ru>\r\n', b'250 OK\r\n\x00'),
-                (b'data\r\n', b'354 Start mail input\r\n\x00'),
+    first_answer = b'220 Service ready\r\n'
+    success_session =  [(b'EHLO mysmtp\r\n', b'250 OK\r\n'),
+                (b'mail from:<zhar97@yandex.ru>\r\n', b'250 OK\r\n'),
+                (b'rcpt to:<aa@mysmtp.ru>\r\n', b'250 OK\r\n'),
+                (b'rcpt to:<aa@ya.ru>\r\n', b'250 OK\r\n'),
+                (b'data\r\n', b'354 Start mail input\r\n'),
                 (b'helo server\r\n'),
-                (b'.\r\n', b'250 OK\r\n\x00'),
-                (b'quit\r\n', b'221 Bye\r\n\x00')]
+                (b'.\r\n', b'250 OK\r\n'),
+                (b'quit\r\n', b'221 Bye\r\n')]
     
     server = subprocess.Popen(path, stderr=subprocess.DEVNULL, shell=False)
     time.sleep(1)
