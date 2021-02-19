@@ -92,7 +92,7 @@ error_code_t write_mail(mail_writer_t* mw, receiver_t* to, size_t to_count,
     }
     switch (to[to_count - 1].domain_type) {
         case DOMAIN_TYPE_IPV4:
-            snprintf(x_to, sizeof(x_to), " <%s@%s>\r\n",
+            snprintf(x_to, sizeof(x_to), " <%s@[%s]>\r\n",
                      to[to_count - 1].local_part.text,
                      to[to_count - 1].domain.text);
             break;
