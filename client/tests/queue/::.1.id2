@@ -1,3 +1,3 @@
-X-mysmtp-to: <olg-199774.@[127.0.0.1]>
-X-mysmtp-from: <zhar97@yandex.ru>
-asdfsa
+X-mysmtp-to: <bb@[IPv6::]>, <cc@mysmtp.ru>, <cc@[127.0.0.1]>
+X-mysmtp-from: <aa@yandex.ru>
+1234
