@@ -28,6 +28,7 @@ error_code_t client_init(client_t* client, const mail_writer_t* mail_writer);
 error_code_t client_process_recv(client_t* client, msg_t* msg);
 error_code_t client_process_send(client_t* client);
 error_code_t client_process_check_timeout(client_t* client, size_t timeout);
+error_code_t client_process_shutdown(client_t* client);
 error_code_t client_start_timeout(client_t* client);
 error_code_t client_add_greating_info(client_t* client, const char* buf,
                                       size_t size);

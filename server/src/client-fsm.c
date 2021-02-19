@@ -47,6 +47,7 @@
 #include <string.h>
 
 #include "client.h"
+#include "logger.h"
 #include "smtp_cmd.h"
 /* END   === USER HEADERS === DO NOT CHANGE THIS COMMENT */
 
@@ -67,81 +68,72 @@ typedef te_client_state (client_callback_t)(
 
 static client_callback_t
     client_do_CLIENT_INITED_quit,
-    client_do_CLIENT_INITED_rset,
     client_do_CLIENT_INITED_shutdown,
     client_do_CLIENT_INITED_timeout,
-    client_do_CLIENT_INITED_verify,
+    client_do_CLIENT_INITED_unknown,
     client_do_DATA_RECEIVED_quit,
-    client_do_DATA_RECEIVED_rset,
     client_do_DATA_RECEIVED_shutdown,
     client_do_DATA_RECEIVED_timeout,
-    client_do_DATA_RECEIVED_verify,
+    client_do_DATA_RECEIVED_unknown,
     client_do_EHLO_RECEIVED_quit,
-    client_do_EHLO_RECEIVED_rset,
     client_do_EHLO_RECEIVED_shutdown,
     client_do_EHLO_RECEIVED_timeout,
-    client_do_EHLO_RECEIVED_verify,
+    client_do_EHLO_RECEIVED_unknown,
     client_do_END_DATA_RECEIVED_quit,
-    client_do_END_DATA_RECEIVED_rset,
     client_do_END_DATA_RECEIVED_shutdown,
     client_do_END_DATA_RECEIVED_timeout,
-    client_do_END_DATA_RECEIVED_verify,
+    client_do_END_DATA_RECEIVED_unknown,
     client_do_EXPECTED_MSG_TEXT_OR_END_MSG_quit,
-    client_do_EXPECTED_MSG_TEXT_OR_END_MSG_rset,
     client_do_EXPECTED_MSG_TEXT_OR_END_MSG_shutdown,
     client_do_EXPECTED_MSG_TEXT_OR_END_MSG_timeout,
-    client_do_EXPECTED_MSG_TEXT_OR_END_MSG_verify,
+    client_do_EXPECTED_MSG_TEXT_OR_END_MSG_unknown,
     client_do_EXPECTED_RCPT_OR_DATA_quit,
-    client_do_EXPECTED_RCPT_OR_DATA_rset,
     client_do_EXPECTED_RCPT_OR_DATA_shutdown,
     client_do_EXPECTED_RCPT_OR_DATA_timeout,
-    client_do_EXPECTED_RCPT_OR_DATA_verify,
+    client_do_EXPECTED_RCPT_OR_DATA_unknown,
     client_do_HELLO_RECEIVED_quit,
-    client_do_HELLO_RECEIVED_rset,
     client_do_HELLO_RECEIVED_shutdown,
     client_do_HELLO_RECEIVED_timeout,
-    client_do_HELLO_RECEIVED_verify,
+    client_do_HELLO_RECEIVED_unknown,
     client_do_INIT_quit,
-    client_do_INIT_rset,
     client_do_INIT_shutdown,
     client_do_INIT_timeout,
-    client_do_INIT_verify,
+    client_do_INIT_unknown,
     client_do_MAIL_RECEIVED_quit,
-    client_do_MAIL_RECEIVED_rset,
     client_do_MAIL_RECEIVED_shutdown,
     client_do_MAIL_RECEIVED_timeout,
-    client_do_MAIL_RECEIVED_verify,
+    client_do_MAIL_RECEIVED_unknown,
     client_do_QUIT_RECEIVED_quit,
-    client_do_QUIT_RECEIVED_rset,
     client_do_QUIT_RECEIVED_shutdown,
     client_do_QUIT_RECEIVED_timeout,
-    client_do_QUIT_RECEIVED_verify,
+    client_do_QUIT_RECEIVED_unknown,
     client_do_RCPT_RECEIVED_quit,
-    client_do_RCPT_RECEIVED_rset,
     client_do_RCPT_RECEIVED_shutdown,
     client_do_RCPT_RECEIVED_timeout,
-    client_do_RCPT_RECEIVED_verify,
+    client_do_RCPT_RECEIVED_unknown,
     client_do_RSET_RECEIVED_quit,
-    client_do_RSET_RECEIVED_rset,
     client_do_RSET_RECEIVED_shutdown,
     client_do_RSET_RECEIVED_timeout,
-    client_do_RSET_RECEIVED_verify,
-    client_do_UNKNOWN_CMD_RECEIVED_quit,
-    client_do_UNKNOWN_CMD_RECEIVED_rset,
-    client_do_UNKNOWN_CMD_RECEIVED_shutdown,
-    client_do_UNKNOWN_CMD_RECEIVED_timeout,
-    client_do_UNKNOWN_CMD_RECEIVED_verify,
-    client_do_VERIFY_RECEIVED_quit,
-    client_do_VERIFY_RECEIVED_rset,
-    client_do_VERIFY_RECEIVED_shutdown,
-    client_do_VERIFY_RECEIVED_timeout,
-    client_do_VERIFY_RECEIVED_verify,
+    client_do_RSET_RECEIVED_unknown,
+    client_do_SHUTDOWN_quit,
+    client_do_SHUTDOWN_shutdown,
+    client_do_SHUTDOWN_timeout,
+    client_do_SHUTDOWN_unknown,
+    client_do_TIMEOUT_quit,
+    client_do_TIMEOUT_shutdown,
+    client_do_TIMEOUT_timeout,
+    client_do_TIMEOUT_unknown,
+    client_do_VRFY_RECEIVED_quit,
+    client_do_VRFY_RECEIVED_shutdown,
+    client_do_VRFY_RECEIVED_timeout,
+    client_do_VRFY_RECEIVED_unknown,
     client_do_WAIT_HELLO_OR_EHLO_quit,
-    client_do_WAIT_HELLO_OR_EHLO_rset,
     client_do_WAIT_HELLO_OR_EHLO_shutdown,
     client_do_WAIT_HELLO_OR_EHLO_timeout,
-    client_do_WAIT_HELLO_OR_EHLO_verify,
+    client_do_WAIT_HELLO_OR_EHLO_unknown,
     client_do_client_inited_mail,
+    client_do_client_inited_rset,
+    client_do_client_inited_vrfy,
     client_do_data_received_response,
     client_do_ehlo_received_response,
     client_do_end_data_received_response,
@@ -156,7 +148,9 @@ static client_callback_t
     client_do_quit_received_response,
     client_do_rcpt_received_response,
     client_do_rset_received_response,
-    client_do_verify_received_response,
+    client_do_shutdown_response,
+    client_do_timeout_response,
+    client_do_vrfy_received_response,
     client_do_wait_hello_or_ehlo_ehlo,
     client_do_wait_hello_or_ehlo_helo;
 
@@ -178,9 +172,7 @@ static const t_client_transition
 client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
 
   /* STATE 0:  CLIENT_ST_INIT */
-  { { CLIENT_ST_DONE, client_do_INIT_timeout },     /* EVT:  TIMEOUT */
-    { CLIENT_ST_DONE, client_do_INIT_shutdown },    /* EVT:  SHUTDOWN */
-    { CLIENT_ST_WAIT_HELLO_OR_EHLO, client_do_init_response }, /* EVT:  RESPONSE */
+  { { CLIENT_ST_WAIT_HELLO_OR_EHLO, client_do_init_response }, /* EVT:  RESPONSE */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
@@ -188,16 +180,16 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_RSET_RECEIVED, client_do_INIT_rset }, /* EVT:  RSET */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_INIT_quit }, /* EVT:  QUIT */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_INIT_verify }, /* EVT:  VERIFY */
-    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  VRFY */
+    { CLIENT_ST_TIMEOUT, client_do_INIT_timeout },  /* EVT:  TIMEOUT */
+    { CLIENT_ST_TIMEOUT, client_do_INIT_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_INVALID, client_do_INIT_unknown }   /* EVT:  UNKNOWN */
   },
 
   /* STATE 1:  CLIENT_ST_WAIT_HELLO_OR_EHLO */
-  { { CLIENT_ST_DONE, client_do_WAIT_HELLO_OR_EHLO_timeout }, /* EVT:  TIMEOUT */
-    { CLIENT_ST_DONE, client_do_WAIT_HELLO_OR_EHLO_shutdown }, /* EVT:  SHUTDOWN */
-    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RESPONSE */
+  { { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RESPONSE */
     { CLIENT_ST_EHLO_RECEIVED, client_do_wait_hello_or_ehlo_ehlo }, /* EVT:  EHLO */
     { CLIENT_ST_HELLO_RECEIVED, client_do_wait_hello_or_ehlo_helo }, /* EVT:  HELO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
@@ -205,16 +197,16 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_RSET_RECEIVED, client_do_WAIT_HELLO_OR_EHLO_rset }, /* EVT:  RSET */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_WAIT_HELLO_OR_EHLO_quit }, /* EVT:  QUIT */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_WAIT_HELLO_OR_EHLO_verify }, /* EVT:  VERIFY */
-    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  VRFY */
+    { CLIENT_ST_TIMEOUT, client_do_WAIT_HELLO_OR_EHLO_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_TIMEOUT, client_do_WAIT_HELLO_OR_EHLO_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_INVALID, client_do_WAIT_HELLO_OR_EHLO_unknown } /* EVT:  UNKNOWN */
   },
 
   /* STATE 2:  CLIENT_ST_HELLO_RECEIVED */
-  { { CLIENT_ST_DONE, client_do_HELLO_RECEIVED_timeout }, /* EVT:  TIMEOUT */
-    { CLIENT_ST_DONE, client_do_HELLO_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
-    { CLIENT_ST_CLIENT_INITED, client_do_hello_received_response }, /* EVT:  RESPONSE */
+  { { CLIENT_ST_CLIENT_INITED, client_do_hello_received_response }, /* EVT:  RESPONSE */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
@@ -222,16 +214,16 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_RSET_RECEIVED, client_do_HELLO_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_HELLO_RECEIVED_quit }, /* EVT:  QUIT */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_HELLO_RECEIVED_verify }, /* EVT:  VERIFY */
-    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  VRFY */
+    { CLIENT_ST_TIMEOUT, client_do_HELLO_RECEIVED_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_TIMEOUT, client_do_HELLO_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_INVALID, client_do_HELLO_RECEIVED_unknown } /* EVT:  UNKNOWN */
   },
 
   /* STATE 3:  CLIENT_ST_EHLO_RECEIVED */
-  { { CLIENT_ST_DONE, client_do_EHLO_RECEIVED_timeout }, /* EVT:  TIMEOUT */
-    { CLIENT_ST_DONE, client_do_EHLO_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
-    { CLIENT_ST_CLIENT_INITED, client_do_ehlo_received_response }, /* EVT:  RESPONSE */
+  { { CLIENT_ST_CLIENT_INITED, client_do_ehlo_received_response }, /* EVT:  RESPONSE */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
@@ -239,16 +231,16 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_RSET_RECEIVED, client_do_EHLO_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_EHLO_RECEIVED_quit }, /* EVT:  QUIT */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_EHLO_RECEIVED_verify }, /* EVT:  VERIFY */
-    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  VRFY */
+    { CLIENT_ST_TIMEOUT, client_do_EHLO_RECEIVED_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_TIMEOUT, client_do_EHLO_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_INVALID, client_do_EHLO_RECEIVED_unknown } /* EVT:  UNKNOWN */
   },
 
   /* STATE 4:  CLIENT_ST_CLIENT_INITED */
-  { { CLIENT_ST_DONE, client_do_CLIENT_INITED_timeout }, /* EVT:  TIMEOUT */
-    { CLIENT_ST_DONE, client_do_CLIENT_INITED_shutdown }, /* EVT:  SHUTDOWN */
-    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RESPONSE */
+  { { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RESPONSE */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
     { CLIENT_ST_MAIL_RECEIVED, client_do_client_inited_mail }, /* EVT:  MAIL */
@@ -256,16 +248,16 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_RSET_RECEIVED, client_do_CLIENT_INITED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_RSET_RECEIVED, client_do_client_inited_rset }, /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_CLIENT_INITED_quit }, /* EVT:  QUIT */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_CLIENT_INITED_verify }, /* EVT:  VERIFY */
-    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
+    { CLIENT_ST_VRFY_RECEIVED, client_do_client_inited_vrfy }, /* EVT:  VRFY */
+    { CLIENT_ST_TIMEOUT, client_do_CLIENT_INITED_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_TIMEOUT, client_do_CLIENT_INITED_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_INVALID, client_do_CLIENT_INITED_unknown } /* EVT:  UNKNOWN */
   },
 
   /* STATE 5:  CLIENT_ST_MAIL_RECEIVED */
-  { { CLIENT_ST_DONE, client_do_MAIL_RECEIVED_timeout }, /* EVT:  TIMEOUT */
-    { CLIENT_ST_DONE, client_do_MAIL_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
-    { CLIENT_ST_EXPECTED_RCPT_OR_DATA, client_do_mail_received_response }, /* EVT:  RESPONSE */
+  { { CLIENT_ST_EXPECTED_RCPT_OR_DATA, client_do_mail_received_response }, /* EVT:  RESPONSE */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
@@ -273,16 +265,16 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_RSET_RECEIVED, client_do_MAIL_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_MAIL_RECEIVED_quit }, /* EVT:  QUIT */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_MAIL_RECEIVED_verify }, /* EVT:  VERIFY */
-    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  VRFY */
+    { CLIENT_ST_TIMEOUT, client_do_MAIL_RECEIVED_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_TIMEOUT, client_do_MAIL_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_INVALID, client_do_MAIL_RECEIVED_unknown } /* EVT:  UNKNOWN */
   },
 
   /* STATE 6:  CLIENT_ST_EXPECTED_RCPT_OR_DATA */
-  { { CLIENT_ST_DONE, client_do_EXPECTED_RCPT_OR_DATA_timeout }, /* EVT:  TIMEOUT */
-    { CLIENT_ST_DONE, client_do_EXPECTED_RCPT_OR_DATA_shutdown }, /* EVT:  SHUTDOWN */
-    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RESPONSE */
+  { { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RESPONSE */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
@@ -290,16 +282,16 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_DATA_RECEIVED, client_do_expected_rcpt_or_data_data }, /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_RSET_RECEIVED, client_do_EXPECTED_RCPT_OR_DATA_rset }, /* EVT:  RSET */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_EXPECTED_RCPT_OR_DATA_quit }, /* EVT:  QUIT */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_EXPECTED_RCPT_OR_DATA_verify }, /* EVT:  VERIFY */
-    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  VRFY */
+    { CLIENT_ST_TIMEOUT, client_do_EXPECTED_RCPT_OR_DATA_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_TIMEOUT, client_do_EXPECTED_RCPT_OR_DATA_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_INVALID, client_do_EXPECTED_RCPT_OR_DATA_unknown } /* EVT:  UNKNOWN */
   },
 
   /* STATE 7:  CLIENT_ST_RCPT_RECEIVED */
-  { { CLIENT_ST_DONE, client_do_RCPT_RECEIVED_timeout }, /* EVT:  TIMEOUT */
-    { CLIENT_ST_DONE, client_do_RCPT_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
-    { CLIENT_ST_EXPECTED_RCPT_OR_DATA, client_do_rcpt_received_response }, /* EVT:  RESPONSE */
+  { { CLIENT_ST_EXPECTED_RCPT_OR_DATA, client_do_rcpt_received_response }, /* EVT:  RESPONSE */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
@@ -307,16 +299,16 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_RSET_RECEIVED, client_do_RCPT_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_RCPT_RECEIVED_quit }, /* EVT:  QUIT */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_RCPT_RECEIVED_verify }, /* EVT:  VERIFY */
-    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  VRFY */
+    { CLIENT_ST_TIMEOUT, client_do_RCPT_RECEIVED_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_TIMEOUT, client_do_RCPT_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_INVALID, client_do_RCPT_RECEIVED_unknown } /* EVT:  UNKNOWN */
   },
 
   /* STATE 8:  CLIENT_ST_DATA_RECEIVED */
-  { { CLIENT_ST_DONE, client_do_DATA_RECEIVED_timeout }, /* EVT:  TIMEOUT */
-    { CLIENT_ST_DONE, client_do_DATA_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
-    { CLIENT_ST_EXPECTED_MSG_TEXT_OR_END_MSG, client_do_data_received_response }, /* EVT:  RESPONSE */
+  { { CLIENT_ST_EXPECTED_MSG_TEXT_OR_END_MSG, client_do_data_received_response }, /* EVT:  RESPONSE */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
@@ -324,16 +316,16 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_RSET_RECEIVED, client_do_DATA_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_DATA_RECEIVED_quit }, /* EVT:  QUIT */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_DATA_RECEIVED_verify }, /* EVT:  VERIFY */
-    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  VRFY */
+    { CLIENT_ST_TIMEOUT, client_do_DATA_RECEIVED_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_TIMEOUT, client_do_DATA_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_INVALID, client_do_DATA_RECEIVED_unknown } /* EVT:  UNKNOWN */
   },
 
   /* STATE 9:  CLIENT_ST_EXPECTED_MSG_TEXT_OR_END_MSG */
-  { { CLIENT_ST_DONE, client_do_EXPECTED_MSG_TEXT_OR_END_MSG_timeout }, /* EVT:  TIMEOUT */
-    { CLIENT_ST_DONE, client_do_EXPECTED_MSG_TEXT_OR_END_MSG_shutdown }, /* EVT:  SHUTDOWN */
-    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RESPONSE */
+  { { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RESPONSE */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
@@ -341,16 +333,16 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_EXPECTED_MSG_TEXT_OR_END_MSG, client_do_expected_msg_text_or_end_msg_msg_text }, /* EVT:  MSG_TEXT */
     { CLIENT_ST_END_DATA_RECEIVED, client_do_expected_msg_text_or_end_msg_end_data }, /* EVT:  END_DATA */
-    { CLIENT_ST_RSET_RECEIVED, client_do_EXPECTED_MSG_TEXT_OR_END_MSG_rset }, /* EVT:  RSET */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_EXPECTED_MSG_TEXT_OR_END_MSG_quit }, /* EVT:  QUIT */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_EXPECTED_MSG_TEXT_OR_END_MSG_verify }, /* EVT:  VERIFY */
-    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  VRFY */
+    { CLIENT_ST_TIMEOUT, client_do_EXPECTED_MSG_TEXT_OR_END_MSG_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_TIMEOUT, client_do_EXPECTED_MSG_TEXT_OR_END_MSG_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_INVALID, client_do_EXPECTED_MSG_TEXT_OR_END_MSG_unknown } /* EVT:  UNKNOWN */
   },
 
   /* STATE 10:  CLIENT_ST_END_DATA_RECEIVED */
-  { { CLIENT_ST_DONE, client_do_END_DATA_RECEIVED_timeout }, /* EVT:  TIMEOUT */
-    { CLIENT_ST_DONE, client_do_END_DATA_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
-    { CLIENT_ST_CLIENT_INITED, client_do_end_data_received_response }, /* EVT:  RESPONSE */
+  { { CLIENT_ST_CLIENT_INITED, client_do_end_data_received_response }, /* EVT:  RESPONSE */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
@@ -358,16 +350,16 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_RSET_RECEIVED, client_do_END_DATA_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_END_DATA_RECEIVED_quit }, /* EVT:  QUIT */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_END_DATA_RECEIVED_verify }, /* EVT:  VERIFY */
-    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  VRFY */
+    { CLIENT_ST_TIMEOUT, client_do_END_DATA_RECEIVED_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_TIMEOUT, client_do_END_DATA_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_INVALID, client_do_END_DATA_RECEIVED_unknown } /* EVT:  UNKNOWN */
   },
 
-  /* STATE 11:  CLIENT_ST_VERIFY_RECEIVED */
-  { { CLIENT_ST_DONE, client_do_VERIFY_RECEIVED_timeout }, /* EVT:  TIMEOUT */
-    { CLIENT_ST_DONE, client_do_VERIFY_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
-    { CLIENT_ST_CLIENT_INITED, client_do_verify_received_response }, /* EVT:  RESPONSE */
+  /* STATE 11:  CLIENT_ST_QUIT_RECEIVED */
+  { { CLIENT_ST_DONE, client_do_quit_received_response }, /* EVT:  RESPONSE */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
@@ -375,33 +367,16 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_RSET_RECEIVED, client_do_VERIFY_RECEIVED_rset }, /* EVT:  RSET */
-    { CLIENT_ST_QUIT_RECEIVED, client_do_VERIFY_RECEIVED_quit }, /* EVT:  QUIT */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_VERIFY_RECEIVED_verify }, /* EVT:  VERIFY */
-    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
-  },
-
-  /* STATE 12:  CLIENT_ST_QUIT_RECEIVED */
-  { { CLIENT_ST_DONE, client_do_QUIT_RECEIVED_timeout }, /* EVT:  TIMEOUT */
-    { CLIENT_ST_DONE, client_do_QUIT_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
-    { CLIENT_ST_DONE, client_do_quit_received_response }, /* EVT:  RESPONSE */
-    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
-    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
-    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
-    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RCPT */
-    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
-    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
-    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_RSET_RECEIVED, client_do_QUIT_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_QUIT_RECEIVED_quit }, /* EVT:  QUIT */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_QUIT_RECEIVED_verify }, /* EVT:  VERIFY */
-    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  VRFY */
+    { CLIENT_ST_TIMEOUT, client_do_QUIT_RECEIVED_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_TIMEOUT, client_do_QUIT_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_INVALID, client_do_QUIT_RECEIVED_unknown } /* EVT:  UNKNOWN */
   },
 
-  /* STATE 13:  CLIENT_ST_RSET_RECEIVED */
-  { { CLIENT_ST_DONE, client_do_RSET_RECEIVED_timeout }, /* EVT:  TIMEOUT */
-    { CLIENT_ST_DONE, client_do_RSET_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
-    { CLIENT_ST_CLIENT_INITED, client_do_rset_received_response }, /* EVT:  RESPONSE */
+  /* STATE 12:  CLIENT_ST_RSET_RECEIVED */
+  { { CLIENT_ST_CLIENT_INITED, client_do_rset_received_response }, /* EVT:  RESPONSE */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
@@ -409,16 +384,16 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_RSET_RECEIVED, client_do_RSET_RECEIVED_rset }, /* EVT:  RSET */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RSET */
     { CLIENT_ST_QUIT_RECEIVED, client_do_RSET_RECEIVED_quit }, /* EVT:  QUIT */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_RSET_RECEIVED_verify }, /* EVT:  VERIFY */
-    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  VRFY */
+    { CLIENT_ST_TIMEOUT, client_do_RSET_RECEIVED_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_TIMEOUT, client_do_RSET_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_INVALID, client_do_RSET_RECEIVED_unknown } /* EVT:  UNKNOWN */
   },
 
-  /* STATE 14:  CLIENT_ST_UNKNOWN_CMD_RECEIVED */
-  { { CLIENT_ST_DONE, client_do_UNKNOWN_CMD_RECEIVED_timeout }, /* EVT:  TIMEOUT */
-    { CLIENT_ST_DONE, client_do_UNKNOWN_CMD_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
-    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RESPONSE */
+  /* STATE 13:  CLIENT_ST_VRFY_RECEIVED */
+  { { CLIENT_ST_CLIENT_INITED, client_do_vrfy_received_response }, /* EVT:  RESPONSE */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
@@ -426,10 +401,46 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
     { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
-    { CLIENT_ST_RSET_RECEIVED, client_do_UNKNOWN_CMD_RECEIVED_rset }, /* EVT:  RSET */
-    { CLIENT_ST_QUIT_RECEIVED, client_do_UNKNOWN_CMD_RECEIVED_quit }, /* EVT:  QUIT */
-    { CLIENT_ST_VERIFY_RECEIVED, client_do_UNKNOWN_CMD_RECEIVED_verify }, /* EVT:  VERIFY */
-    { CLIENT_ST_INVALID, client_do_invalid }        /* EVT:  UNKNOWN */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RSET */
+    { CLIENT_ST_QUIT_RECEIVED, client_do_VRFY_RECEIVED_quit }, /* EVT:  QUIT */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  VRFY */
+    { CLIENT_ST_TIMEOUT, client_do_VRFY_RECEIVED_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_TIMEOUT, client_do_VRFY_RECEIVED_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_INVALID, client_do_VRFY_RECEIVED_unknown } /* EVT:  UNKNOWN */
+  },
+
+  /* STATE 14:  CLIENT_ST_TIMEOUT */
+  { { CLIENT_ST_DONE, client_do_timeout_response }, /* EVT:  RESPONSE */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RCPT */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RSET */
+    { CLIENT_ST_QUIT_RECEIVED, client_do_TIMEOUT_quit }, /* EVT:  QUIT */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  VRFY */
+    { CLIENT_ST_TIMEOUT, client_do_TIMEOUT_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_TIMEOUT, client_do_TIMEOUT_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_INVALID, client_do_TIMEOUT_unknown } /* EVT:  UNKNOWN */
+  },
+
+  /* STATE 15:  CLIENT_ST_SHUTDOWN */
+  { { CLIENT_ST_DONE, client_do_shutdown_response }, /* EVT:  RESPONSE */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  EHLO */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  HELO */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MAIL */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RCPT */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  DATA */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  MSG_TEXT */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  END_DATA */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  RSET */
+    { CLIENT_ST_QUIT_RECEIVED, client_do_SHUTDOWN_quit }, /* EVT:  QUIT */
+    { CLIENT_ST_INVALID, client_do_invalid },       /* EVT:  VRFY */
+    { CLIENT_ST_TIMEOUT, client_do_SHUTDOWN_timeout }, /* EVT:  TIMEOUT */
+    { CLIENT_ST_TIMEOUT, client_do_SHUTDOWN_shutdown }, /* EVT:  SHUTDOWN */
+    { CLIENT_ST_INVALID, client_do_SHUTDOWN_unknown } /* EVT:  UNKNOWN */
   }
 };
 
@@ -439,7 +450,7 @@ client_trans_table[ CLIENT_STATE_CT ][ CLIENT_EVENT_CT ] = {
 #define ClientStInit_off     83
 
 
-static char const zClientStrings[420] =
+static char const zClientStrings[395] =
 /*     0 */ "** OUT-OF-RANGE **\0"
 /*    19 */ "FSM Error:  in state %d (%s), event %d (%s) is invalid\n\0"
 /*    75 */ "invalid\0"
@@ -454,36 +465,36 @@ static char const zClientStrings[420] =
 /*   200 */ "data_received\0"
 /*   214 */ "expected_msg_text_or_end_msg\0"
 /*   243 */ "end_data_received\0"
-/*   261 */ "verify_received\0"
-/*   277 */ "quit_received\0"
-/*   291 */ "rset_received\0"
-/*   305 */ "unknown_cmd_received\0"
-/*   326 */ "timeout\0"
-/*   334 */ "shutdown\0"
-/*   343 */ "response\0"
-/*   352 */ "ehlo\0"
-/*   357 */ "helo\0"
-/*   362 */ "mail\0"
-/*   367 */ "rcpt\0"
-/*   372 */ "data\0"
-/*   377 */ "msg_text\0"
-/*   386 */ "end_data\0"
-/*   395 */ "rset\0"
-/*   400 */ "quit\0"
-/*   405 */ "verify\0"
-/*   412 */ "unknown";
+/*   261 */ "quit_received\0"
+/*   275 */ "rset_received\0"
+/*   289 */ "vrfy_received\0"
+/*   303 */ "timeout\0"
+/*   311 */ "shutdown\0"
+/*   320 */ "response\0"
+/*   329 */ "ehlo\0"
+/*   334 */ "helo\0"
+/*   339 */ "mail\0"
+/*   344 */ "rcpt\0"
+/*   349 */ "data\0"
+/*   354 */ "msg_text\0"
+/*   363 */ "end_data\0"
+/*   372 */ "rset\0"
+/*   377 */ "quit\0"
+/*   382 */ "vrfy\0"
+/*   387 */ "unknown";
 
-static const size_t aszClientStates[15] = {
-    83,  88,  107, 122, 136, 150, 164, 186, 200, 214, 243, 261, 277, 291, 305 };
+static const size_t aszClientStates[16] = {
+    83,  88,  107, 122, 136, 150, 164, 186, 200, 214, 243, 261, 275, 289, 303,
+    311 };
 
 static const size_t aszClientEvents[15] = {
-    326, 334, 343, 352, 357, 362, 367, 372, 377, 386, 395, 400, 405, 412, 75 };
+    320, 329, 334, 339, 344, 349, 354, 363, 372, 377, 382, 303, 311, 387, 75 };
 
 
 #define CLIENT_EVT_NAME(t)   ( (((unsigned)(t)) >= 15) \
     ? zClientStrings : zClientStrings + aszClientEvents[t])
 
-#define CLIENT_STATE_NAME(s) ( (((unsigned)(s)) >= 15) \
+#define CLIENT_STATE_NAME(s) ( (((unsigned)(s)) >= 16) \
     ? zClientStrings : zClientStrings + aszClientStates[s])
 
 #ifndef EXIT_FAILURE
@@ -500,8 +511,6 @@ static int
 client_invalid_transition( te_client_state st, te_client_event evt )
 {
     /* START == INVALID TRANS MSG == DO NOT CHANGE THIS COMMENT */
-    char const* fmt = zClientStrings + ClientFsmErr_off;
-    fprintf(stderr, fmt, st, CLIENT_STATE_NAME(st), evt, CLIENT_EVT_NAME(evt));
     /* END   == INVALID TRANS MSG == DO NOT CHANGE THIS COMMENT */
 
     return EXIT_FAILURE;
@@ -523,19 +532,6 @@ client_do_CLIENT_INITED_quit(
 }
 
 static te_client_state
-client_do_CLIENT_INITED_rset(
-    void *client_ptr,
-    void *match_info_ptr,
-    te_client_state initial,
-    te_client_state maybe_next,
-    te_client_event trans_evt)
-{
-/*  START == CLIENT INITED RSET == DO NOT CHANGE THIS COMMENT  */
-    return maybe_next;
-    /*  END   == CLIENT INITED RSET == DO NOT CHANGE THIS COMMENT  */
-}
-
-static te_client_state
 client_do_CLIENT_INITED_shutdown(
     void *client_ptr,
     void *match_info_ptr,
@@ -545,7 +541,7 @@ client_do_CLIENT_INITED_shutdown(
 {
 /*  START == CLIENT INITED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == CLIENT INITED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+/*  END   == CLIENT INITED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -558,20 +554,20 @@ client_do_CLIENT_INITED_timeout(
 {
 /*  START == CLIENT INITED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == CLIENT INITED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+/*  END   == CLIENT INITED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_CLIENT_INITED_verify(
+client_do_CLIENT_INITED_unknown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == CLIENT INITED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  START == CLIENT INITED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == CLIENT INITED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  END   == CLIENT INITED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -587,19 +583,6 @@ client_do_DATA_RECEIVED_quit(
     client_set_response(client, SMTP_QUIT_SUCCESS_ANSWER, sizeof(SMTP_QUIT_SUCCESS_ANSWER));
     return maybe_next;
 /*  END   == DATA RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
-}
-
-static te_client_state
-client_do_DATA_RECEIVED_rset(
-    void *client_ptr,
-    void *match_info_ptr,
-    te_client_state initial,
-    te_client_state maybe_next,
-    te_client_event trans_evt)
-{
-/*  START == DATA RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
-    return maybe_next;
-/*  END   == DATA RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -629,16 +612,16 @@ client_do_DATA_RECEIVED_timeout(
 }
 
 static te_client_state
-client_do_DATA_RECEIVED_verify(
+client_do_DATA_RECEIVED_unknown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == DATA RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  START == DATA RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-/*  END   == DATA RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  END   == DATA RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -657,19 +640,6 @@ client_do_EHLO_RECEIVED_quit(
 }
 
 static te_client_state
-client_do_EHLO_RECEIVED_rset(
-    void *client_ptr,
-    void *match_info_ptr,
-    te_client_state initial,
-    te_client_state maybe_next,
-    te_client_event trans_evt)
-{
-/*  START == EHLO RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
-    return maybe_next;
-    /*  END   == EHLO RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
-}
-
-static te_client_state
 client_do_EHLO_RECEIVED_shutdown(
     void *client_ptr,
     void *match_info_ptr,
@@ -679,7 +649,7 @@ client_do_EHLO_RECEIVED_shutdown(
 {
 /*  START == EHLO RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == EHLO RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+/*  END   == EHLO RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -692,20 +662,20 @@ client_do_EHLO_RECEIVED_timeout(
 {
 /*  START == EHLO RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == EHLO RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+/*  END   == EHLO RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_EHLO_RECEIVED_verify(
+client_do_EHLO_RECEIVED_unknown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == EHLO RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  START == EHLO RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == EHLO RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  END   == EHLO RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -722,19 +692,6 @@ client_do_END_DATA_RECEIVED_quit(
 }
 
 static te_client_state
-client_do_END_DATA_RECEIVED_rset(
-    void *client_ptr,
-    void *match_info_ptr,
-    te_client_state initial,
-    te_client_state maybe_next,
-    te_client_event trans_evt)
-{
-/*  START == END DATA RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
-    return maybe_next;
-    /*  END   == END DATA RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
-}
-
-static te_client_state
 client_do_END_DATA_RECEIVED_shutdown(
     void *client_ptr,
     void *match_info_ptr,
@@ -744,7 +701,7 @@ client_do_END_DATA_RECEIVED_shutdown(
 {
 /*  START == END DATA RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == END DATA RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+/*  END   == END DATA RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -757,20 +714,20 @@ client_do_END_DATA_RECEIVED_timeout(
 {
 /*  START == END DATA RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == END DATA RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+/*  END   == END DATA RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_END_DATA_RECEIVED_verify(
+client_do_END_DATA_RECEIVED_unknown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == END DATA RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  START == END DATA RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == END DATA RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  END   == END DATA RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -784,19 +741,6 @@ client_do_EXPECTED_MSG_TEXT_OR_END_MSG_quit(
 /*  START == EXPECTED MSG TEXT OR END MSG QUIT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
 /*  END   == EXPECTED MSG TEXT OR END MSG QUIT == DO NOT CHANGE THIS COMMENT  */
-}
-
-static te_client_state
-client_do_EXPECTED_MSG_TEXT_OR_END_MSG_rset(
-    void *client_ptr,
-    void *match_info_ptr,
-    te_client_state initial,
-    te_client_state maybe_next,
-    te_client_event trans_evt)
-{
-/*  START == EXPECTED MSG TEXT OR END MSG RSET == DO NOT CHANGE THIS COMMENT  */
-    return maybe_next;
-/*  END   == EXPECTED MSG TEXT OR END MSG RSET == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -826,16 +770,16 @@ client_do_EXPECTED_MSG_TEXT_OR_END_MSG_timeout(
 }
 
 static te_client_state
-client_do_EXPECTED_MSG_TEXT_OR_END_MSG_verify(
+client_do_EXPECTED_MSG_TEXT_OR_END_MSG_unknown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == EXPECTED MSG TEXT OR END MSG VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  START == EXPECTED MSG TEXT OR END MSG UNKNOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-/*  END   == EXPECTED MSG TEXT OR END MSG VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  END   == EXPECTED MSG TEXT OR END MSG UNKNOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -851,19 +795,6 @@ client_do_EXPECTED_RCPT_OR_DATA_quit(
     client_set_response(client, SMTP_QUIT_SUCCESS_ANSWER, sizeof(SMTP_QUIT_SUCCESS_ANSWER));
     return maybe_next;
     /*  END   == EXPECTED RCPT OR DATA QUIT == DO NOT CHANGE THIS COMMENT  */
-}
-
-static te_client_state
-client_do_EXPECTED_RCPT_OR_DATA_rset(
-    void *client_ptr,
-    void *match_info_ptr,
-    te_client_state initial,
-    te_client_state maybe_next,
-    te_client_event trans_evt)
-{
-/*  START == EXPECTED RCPT OR DATA RSET == DO NOT CHANGE THIS COMMENT  */
-    return maybe_next;
-    /*  END   == EXPECTED RCPT OR DATA RSET == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -889,20 +820,20 @@ client_do_EXPECTED_RCPT_OR_DATA_timeout(
 {
 /*  START == EXPECTED RCPT OR DATA TIMEOUT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == EXPECTED RCPT OR DATA TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+/*  END   == EXPECTED RCPT OR DATA TIMEOUT == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_EXPECTED_RCPT_OR_DATA_verify(
+client_do_EXPECTED_RCPT_OR_DATA_unknown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == EXPECTED RCPT OR DATA VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  START == EXPECTED RCPT OR DATA UNKNOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == EXPECTED RCPT OR DATA VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  END   == EXPECTED RCPT OR DATA UNKNOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -919,19 +850,6 @@ client_do_HELLO_RECEIVED_quit(
 }
 
 static te_client_state
-client_do_HELLO_RECEIVED_rset(
-    void *client_ptr,
-    void *match_info_ptr,
-    te_client_state initial,
-    te_client_state maybe_next,
-    te_client_event trans_evt)
-{
-/*  START == HELLO RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
-    return maybe_next;
-    /*  END   == HELLO RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
-}
-
-static te_client_state
 client_do_HELLO_RECEIVED_shutdown(
     void *client_ptr,
     void *match_info_ptr,
@@ -941,7 +859,7 @@ client_do_HELLO_RECEIVED_shutdown(
 {
 /*  START == HELLO RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == HELLO RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+/*  END   == HELLO RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -954,20 +872,20 @@ client_do_HELLO_RECEIVED_timeout(
 {
 /*  START == HELLO RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == HELLO RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+/*  END   == HELLO RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_HELLO_RECEIVED_verify(
+client_do_HELLO_RECEIVED_unknown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == HELLO RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  START == HELLO RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == HELLO RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  END   == HELLO RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -984,19 +902,6 @@ client_do_INIT_quit(
 }
 
 static te_client_state
-client_do_INIT_rset(
-    void *client_ptr,
-    void *match_info_ptr,
-    te_client_state initial,
-    te_client_state maybe_next,
-    te_client_event trans_evt)
-{
-/*  START == INIT RSET == DO NOT CHANGE THIS COMMENT  */
-    return maybe_next;
-    /*  END   == INIT RSET == DO NOT CHANGE THIS COMMENT  */
-}
-
-static te_client_state
 client_do_INIT_shutdown(
     void *client_ptr,
     void *match_info_ptr,
@@ -1006,7 +911,7 @@ client_do_INIT_shutdown(
 {
 /*  START == INIT SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == INIT SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+/*  END   == INIT SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -1019,20 +924,20 @@ client_do_INIT_timeout(
 {
 /*  START == INIT TIMEOUT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == INIT TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+/*  END   == INIT TIMEOUT == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_INIT_verify(
+client_do_INIT_unknown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == INIT VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  START == INIT UNKNOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == INIT VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  END   == INIT UNKNOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -1049,19 +954,6 @@ client_do_MAIL_RECEIVED_quit(
 }
 
 static te_client_state
-client_do_MAIL_RECEIVED_rset(
-    void *client_ptr,
-    void *match_info_ptr,
-    te_client_state initial,
-    te_client_state maybe_next,
-    te_client_event trans_evt)
-{
-/*  START == MAIL RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
-    return maybe_next;
-    /*  END   == MAIL RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
-}
-
-static te_client_state
 client_do_MAIL_RECEIVED_shutdown(
     void *client_ptr,
     void *match_info_ptr,
@@ -1071,7 +963,7 @@ client_do_MAIL_RECEIVED_shutdown(
 {
 /*  START == MAIL RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == MAIL RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+/*  END   == MAIL RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -1084,20 +976,20 @@ client_do_MAIL_RECEIVED_timeout(
 {
 /*  START == MAIL RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == MAIL RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+/*  END   == MAIL RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_MAIL_RECEIVED_verify(
+client_do_MAIL_RECEIVED_unknown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == MAIL RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  START == MAIL RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == MAIL RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  END   == MAIL RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -1114,19 +1006,6 @@ client_do_QUIT_RECEIVED_quit(
 }
 
 static te_client_state
-client_do_QUIT_RECEIVED_rset(
-    void *client_ptr,
-    void *match_info_ptr,
-    te_client_state initial,
-    te_client_state maybe_next,
-    te_client_event trans_evt)
-{
-/*  START == QUIT RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
-    return maybe_next;
-    /*  END   == QUIT RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
-}
-
-static te_client_state
 client_do_QUIT_RECEIVED_shutdown(
     void *client_ptr,
     void *match_info_ptr,
@@ -1136,7 +1015,7 @@ client_do_QUIT_RECEIVED_shutdown(
 {
 /*  START == QUIT RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == QUIT RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+/*  END   == QUIT RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -1149,20 +1028,20 @@ client_do_QUIT_RECEIVED_timeout(
 {
 /*  START == QUIT RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == QUIT RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+/*  END   == QUIT RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_QUIT_RECEIVED_verify(
+client_do_QUIT_RECEIVED_unknown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == QUIT RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  START == QUIT RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == QUIT RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  END   == QUIT RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -1179,19 +1058,6 @@ client_do_RCPT_RECEIVED_quit(
 }
 
 static te_client_state
-client_do_RCPT_RECEIVED_rset(
-    void *client_ptr,
-    void *match_info_ptr,
-    te_client_state initial,
-    te_client_state maybe_next,
-    te_client_event trans_evt)
-{
-/*  START == RCPT RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
-    return maybe_next;
-    /*  END   == RCPT RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
-}
-
-static te_client_state
 client_do_RCPT_RECEIVED_shutdown(
     void *client_ptr,
     void *match_info_ptr,
@@ -1201,7 +1067,7 @@ client_do_RCPT_RECEIVED_shutdown(
 {
 /*  START == RCPT RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == RCPT RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+/*  END   == RCPT RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -1214,20 +1080,20 @@ client_do_RCPT_RECEIVED_timeout(
 {
 /*  START == RCPT RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == RCPT RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+/*  END   == RCPT RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_RCPT_RECEIVED_verify(
+client_do_RCPT_RECEIVED_unknown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == RCPT RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  START == RCPT RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == RCPT RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  END   == RCPT RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -1241,19 +1107,6 @@ client_do_RSET_RECEIVED_quit(
 /*  START == RSET RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
 /*  END   == RSET RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
-}
-
-static te_client_state
-client_do_RSET_RECEIVED_rset(
-    void *client_ptr,
-    void *match_info_ptr,
-    te_client_state initial,
-    te_client_state maybe_next,
-    te_client_event trans_evt)
-{
-/*  START == RSET RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
-    return maybe_next;
-/*  END   == RSET RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -1283,146 +1136,172 @@ client_do_RSET_RECEIVED_timeout(
 }
 
 static te_client_state
-client_do_RSET_RECEIVED_verify(
+client_do_RSET_RECEIVED_unknown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == RSET RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  START == RSET RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-/*  END   == RSET RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  END   == RSET RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_UNKNOWN_CMD_RECEIVED_quit(
+client_do_SHUTDOWN_quit(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == UNKNOWN CMD RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
+/*  START == SHUTDOWN QUIT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == UNKNOWN CMD RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
+/*  END   == SHUTDOWN QUIT == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_UNKNOWN_CMD_RECEIVED_rset(
+client_do_SHUTDOWN_shutdown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == UNKNOWN CMD RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
+/*  START == SHUTDOWN SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == UNKNOWN CMD RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
+/*  END   == SHUTDOWN SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_UNKNOWN_CMD_RECEIVED_shutdown(
+client_do_SHUTDOWN_timeout(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == UNKNOWN CMD RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+/*  START == SHUTDOWN TIMEOUT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == UNKNOWN CMD RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+/*  END   == SHUTDOWN TIMEOUT == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_UNKNOWN_CMD_RECEIVED_timeout(
+client_do_SHUTDOWN_unknown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == UNKNOWN CMD RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+/*  START == SHUTDOWN UNKNOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == UNKNOWN CMD RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+/*  END   == SHUTDOWN UNKNOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_UNKNOWN_CMD_RECEIVED_verify(
+client_do_TIMEOUT_quit(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == UNKNOWN CMD RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  START == TIMEOUT QUIT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == UNKNOWN CMD RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  END   == TIMEOUT QUIT == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_VERIFY_RECEIVED_quit(
+client_do_TIMEOUT_shutdown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == VERIFY RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
+/*  START == TIMEOUT SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == VERIFY RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
+/*  END   == TIMEOUT SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_VERIFY_RECEIVED_rset(
+client_do_TIMEOUT_timeout(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == VERIFY RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
+/*  START == TIMEOUT TIMEOUT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == VERIFY RECEIVED RSET == DO NOT CHANGE THIS COMMENT  */
+/*  END   == TIMEOUT TIMEOUT == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_VERIFY_RECEIVED_shutdown(
+client_do_TIMEOUT_unknown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == VERIFY RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+/*  START == TIMEOUT UNKNOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == VERIFY RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+/*  END   == TIMEOUT UNKNOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_VERIFY_RECEIVED_timeout(
+client_do_VRFY_RECEIVED_quit(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == VERIFY RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+/*  START == VRFY RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == VERIFY RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+/*  END   == VRFY RECEIVED QUIT == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_VERIFY_RECEIVED_verify(
+client_do_VRFY_RECEIVED_shutdown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == VERIFY RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  START == VRFY RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == VERIFY RECEIVED VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  END   == VRFY RECEIVED SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
+client_do_VRFY_RECEIVED_timeout(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == VRFY RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == VRFY RECEIVED TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
+client_do_VRFY_RECEIVED_unknown(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == VRFY RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == VRFY RECEIVED UNKNOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -1439,19 +1318,6 @@ client_do_WAIT_HELLO_OR_EHLO_quit(
 }
 
 static te_client_state
-client_do_WAIT_HELLO_OR_EHLO_rset(
-    void *client_ptr,
-    void *match_info_ptr,
-    te_client_state initial,
-    te_client_state maybe_next,
-    te_client_event trans_evt)
-{
-/*  START == WAIT HELLO OR EHLO RSET == DO NOT CHANGE THIS COMMENT  */
-    return maybe_next;
-    /*  END   == WAIT HELLO OR EHLO RSET == DO NOT CHANGE THIS COMMENT  */
-}
-
-static te_client_state
 client_do_WAIT_HELLO_OR_EHLO_shutdown(
     void *client_ptr,
     void *match_info_ptr,
@@ -1461,7 +1327,7 @@ client_do_WAIT_HELLO_OR_EHLO_shutdown(
 {
 /*  START == WAIT HELLO OR EHLO SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == WAIT HELLO OR EHLO SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
+/*  END   == WAIT HELLO OR EHLO SHUTDOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -1474,20 +1340,20 @@ client_do_WAIT_HELLO_OR_EHLO_timeout(
 {
 /*  START == WAIT HELLO OR EHLO TIMEOUT == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == WAIT HELLO OR EHLO TIMEOUT == DO NOT CHANGE THIS COMMENT  */
+/*  END   == WAIT HELLO OR EHLO TIMEOUT == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
-client_do_WAIT_HELLO_OR_EHLO_verify(
+client_do_WAIT_HELLO_OR_EHLO_unknown(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == WAIT HELLO OR EHLO VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  START == WAIT HELLO OR EHLO UNKNOWN == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-    /*  END   == WAIT HELLO OR EHLO VERIFY == DO NOT CHANGE THIS COMMENT  */
+/*  END   == WAIT HELLO OR EHLO UNKNOWN == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -1508,6 +1374,33 @@ client_do_client_inited_mail(
     client_set_response(client, SMTP_SUCCESS_ANSWER, sizeof(SMTP_SUCCESS_ANSWER));
     return maybe_next;
     /*  END   == CLIENT INITED MAIL == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
+client_do_client_inited_rset(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == CLIENT INITED RSET == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+    /*  END   == CLIENT INITED RSET == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
+client_do_client_inited_vrfy(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == CLIENT INITED VRFY == DO NOT CHANGE THIS COMMENT  */
+    client_set_response(client_ptr, SMTP_NOT_IMPLEMENTED_ANSWER, sizeof(SMTP_NOT_IMPLEMENTED_ANSWER));
+    return maybe_next;
+/*  END   == CLIENT INITED VRFY == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state
@@ -1653,7 +1546,24 @@ client_do_invalid(
 {
 /*  START == INVALID == DO NOT CHANGE THIS COMMENT  */
     client_invalid_transition(initial, trans_evt);
-    return maybe_next;
+    char msg[1000];
+    switch (trans_evt) {
+        case CLIENT_EV_RESPONSE:
+            snprintf(msg, sizeof(msg), "В состоянии %s произошло событие %s: произошла неожиданная отправка данных", CLIENT_STATE_NAME(initial),CLIENT_EVT_NAME(trans_evt));
+            log_warning("client_fsm", msg);
+            break;
+        case CLIENT_EV_UNKNOWN:
+            snprintf(msg, sizeof(msg), "В состоянии %s произошло событие %s: пришла нераспознанная команда", CLIENT_STATE_NAME(initial),CLIENT_EVT_NAME(trans_evt));
+            log_warning("client_fsm", msg);
+            client_set_response(client_ptr, SMTP_UNKNOWN_CMD_ANSWER, sizeof(SMTP_UNKNOWN_CMD_ANSWER));
+            break;
+        default:
+            snprintf(msg, sizeof(msg), "В состоянии %s произошло событие %s: неправильная последовательность команд", CLIENT_STATE_NAME(initial),CLIENT_EVT_NAME(trans_evt));
+            log_warning("client_fsm", msg);
+            client_set_response(client_ptr, SMTP_BAD_SEQUENCE_ANSWER, sizeof(SMTP_BAD_SEQUENCE_ANSWER));
+    }
+    
+    return initial;
     /*  END   == INVALID == DO NOT CHANGE THIS COMMENT  */
 }
 
@@ -1710,16 +1620,42 @@ client_do_rset_received_response(
 }
 
 static te_client_state
-client_do_verify_received_response(
+client_do_shutdown_response(
     void *client_ptr,
     void *match_info_ptr,
     te_client_state initial,
     te_client_state maybe_next,
     te_client_event trans_evt)
 {
-/*  START == VERIFY RECEIVED RESPONSE == DO NOT CHANGE THIS COMMENT  */
+/*  START == SHUTDOWN RESPONSE == DO NOT CHANGE THIS COMMENT  */
     return maybe_next;
-/*  END   == VERIFY RECEIVED RESPONSE == DO NOT CHANGE THIS COMMENT  */
+/*  END   == SHUTDOWN RESPONSE == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
+client_do_timeout_response(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == TIMEOUT RESPONSE == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == TIMEOUT RESPONSE == DO NOT CHANGE THIS COMMENT  */
+}
+
+static te_client_state
+client_do_vrfy_received_response(
+    void *client_ptr,
+    void *match_info_ptr,
+    te_client_state initial,
+    te_client_state maybe_next,
+    te_client_event trans_evt)
+{
+/*  START == VRFY RECEIVED RESPONSE == DO NOT CHANGE THIS COMMENT  */
+    return maybe_next;
+/*  END   == VRFY RECEIVED RESPONSE == DO NOT CHANGE THIS COMMENT  */
 }
 
 static te_client_state

@@ -83,14 +83,16 @@ error_code_t client_process_recv(client_t* client, msg_t* msg) {
         next_state =
             client_step(client->current_state, CLIENT_EV_RSET, client, &mi);
     } else if (smtp_cmd_check(SMTP_CMD_VRFY, &mi) == CE_SUCCESS) {
-        next_state =
-            client_step(client->current_state, CLIENT_EV_VERIFY, client, &mi);
+        next_state = client->current_state;
+        client_set_response(client, SMTP_NOT_IMPLEMENTED_ANSWER,
+                            sizeof(SMTP_NOT_IMPLEMENTED_ANSWER));
     } else if (smtp_cmd_check(SMTP_CMD_DATA, &mi) == CE_SUCCESS) {
         next_state =
             client_step(client->current_state, CLIENT_EV_DATA, client, &mi);
     } else {
-        next_state =
-            client_step(client->current_state, CLIENT_EV_UNKNOWN, client, &mi);
+        next_state = client->current_state;
+        client_set_response(client, SMTP_UNKNOWN_CMD_ANSWER,
+                            sizeof(SMTP_UNKNOWN_CMD_ANSWER));
     }
     client->current_state = next_state;
     client_start_timeout(client);
@@ -116,6 +118,13 @@ error_code_t client_process_check_timeout(client_t* client, size_t timeout) {
     }
     te_client_state next_state =
         client_step(client->current_state, CLIENT_EV_TIMEOUT, client, NULL);
+    client->current_state = next_state;
+    return CE_SUCCESS;
+}
+
+error_code_t client_process_shutdown(client_t* client) {
+    te_client_state next_state =
+        client_step(client->current_state, CLIENT_EV_SHUTDOWN, client, NULL);
     client->current_state = next_state;
     return CE_SUCCESS;
 }

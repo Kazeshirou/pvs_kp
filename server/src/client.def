@@ -9,8 +9,8 @@ prefix = client;
 
 /* Состояния init и done уже есть */
 
-state  = wait_hello_or_ehlo, hello_received, ehlo_received, client_inited, mail_received, expected_rcpt_or_data, rcpt_received, data_received, expected_msg_text_or_end_msg, end_data_received, verify_received, quit_received, rset_received,unknown_cmd_received;
-event = timeout, shutdown, response, ehlo, helo, mail, rcpt, data, msg_text, end_data, rset, quit, verify, unknown;
+state  = wait_hello_or_ehlo, hello_received, ehlo_received, client_inited, mail_received, expected_rcpt_or_data, rcpt_received, data_received, expected_msg_text_or_end_msg, end_data_received, quit_received, rset_received, vrfy_received, timeout, shutdown;
+event = response, ehlo, helo, mail, rcpt, data, msg_text, end_data, rset, quit, vrfy, timeout, shutdown, unknown;
 
 transition =
 { tst  = init;	tev = response; next = wait_hello_or_ehlo; },
@@ -24,16 +24,18 @@ transition =
 { tst  = rcpt_received; tev = response; next = expected_rcpt_or_data; },
 { tst  = expected_rcpt_or_data; tev = data; next = data_received; },
 { tst  = data_received; tev = response; next = expected_msg_text_or_end_msg; },
-{ tst  = "expected_msg_text_or_end_msg"; tev = msg_text;  next = expected_msg_text_or_end_msg; },
-{ tst  = "expected_msg_text_or_end_msg"; tev = end_data;  next = end_data_received; },
-{ tst  = "end_data_received"; tev = response;  next = client_inited; },
-{ tst  = "*"; tev = verify;  next = verify_received; },
-{ tst  = "*"; tev = quit;  next = quit_received; },
-{ tst  = "*"; tev = rset;  next = rset_received; },
+{ tst  = expected_msg_text_or_end_msg; tev = msg_text;  next = expected_msg_text_or_end_msg; },
+{ tst  = expected_msg_text_or_end_msg; tev = end_data;  next = end_data_received; },
+{ tst  = end_data_received; tev = response;  next = client_inited; },
 { tst  = quit_received; tev = response;  next = done; },
-{ tst  = verify_received; tev = response;  next = client_inited; },
+{ tst = client_inited; tev = vrfy; next = vrfy_received; },
+{ tst  = client_inited; tev = rset;  next = rset_received; },
 { tst  = rset_received; tev = response;  next = client_inited; },
-{ tst  = "*"; tev = timeout;  next = done; },
-{ tst  = "*"; tev = shutdown;  next = done; };
-
-
+{ tst  = vrfy_received; tev = response;  next = client_inited; },
+{ tst  = "*"; tev = quit;  next = quit_received; },
+{ tst  = "*"; tev = timeout;  next = timeout; },
+{ tst  = "*"; tev = shutdown;  next = timeout; },
+{ tst  = "*"; tev = unknown;  next = invalid; },
+{ tst  = quit_received; tev = response;  next = done; },
+{ tst  = shutdown; tev = response;  next = done; },
+{ tst  = timeout; tev = response;  next = done; };
