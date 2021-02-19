@@ -154,7 +154,7 @@ $(Makefile_1.dot): $(MAKE2DOT) simplest.mk
 
 # Тестирование
 .PHONY: tests
-tests: test_units test_memory test_style test_system
+tests: test_style test_units test_system test_memory
 
 .PHONY: test_units
 test_units: $(UNIT_TESTS)
@@ -165,8 +165,22 @@ test_style:
 	./tests/style_check.sh
 
 .PHONY: test_memory
-test_memory: $(PROG)
+test_memory:  test_memory_unit test_memory_system
+
+.PHONY: test_memory_system
+test_memory_system: $(PROG)
 	./tests/system_test.py ./tests/valgrind_check.sh
+
+.PHONY: test_memory_unit
+test_memory_unit: $(UNIT_TESTS)
+	valgrind --leak-check=full \
+		 --error-exitcode=1 \
+		 --show-leak-kinds=all \
+		 --track-origins=yes \
+		 --exit-on-first-error=yes \
+		 --verbose \
+		 --log-file=tests/tmp/valgrind-out-unit.txt \
+		 $(UNIT_TESTS); 
 
 .PHONY: test_system
 test_system: $(PROG)
