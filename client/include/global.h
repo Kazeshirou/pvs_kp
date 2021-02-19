@@ -10,8 +10,8 @@
 extern worker_config_t g_config;
 extern peer_t*         g_logger;
 
-#define MAX_g_log_message 1024
-extern char g_log_message[MAX_g_log_message + 100];
+#define MAX_G_LOG_MESSAGE 2048
+extern char g_log_message[MAX_G_LOG_MESSAGE];
 
 inline static void send_log() {
     string_t* slog = string_init2(g_log_message, strlen(g_log_message));

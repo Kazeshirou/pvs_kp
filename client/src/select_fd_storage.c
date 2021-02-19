@@ -45,15 +45,10 @@ void storage_clear(select_fd_storage_t* storage) {
     free(storage);
 }
 
-<<<<<<< HEAD
 void build_storage(peer_t *server, select_fd_storage_t *storage) 
 {
     if (server != NULL && server->fd > 0)
     {
-=======
-void build_storage(peer_t* server, select_fd_storage_t* storage) {
-    if (server->fd > 0) {
->>>>>>> bebbb582ef5f4e753d5ccfddfb98ffeef370ec6d
         FD_SET(server->fd, storage->read_fds);
 
         // there is smth to send, set up write_fd for server socket
