@@ -57,8 +57,8 @@
 
 #define RE_HELO "^helo " RE_DOMAIN RE_CRLF
 #define RE_EHLO "^ehlo (" RE_DOMAIN "|" RE_ADDRES_LITERAL ")" RE_CRLF
-#define RE_MAIL "^mail from:" RE_REVERSE_PATH "( " RE_MAIL_PARAMETERS ")?" RE_CRLF
-#define RE_RCPT "^rcpt to:((<Postmaster@" RE_DOMAIN ">)|(<Postmaster>)|" RE_FORWARD_PATH ")( " RE_RCPT_PARAMETERS ")?" RE_CRLF
+#define RE_MAIL "^mail from: ?" RE_REVERSE_PATH "( " RE_MAIL_PARAMETERS ")?" RE_CRLF
+#define RE_RCPT "^rcpt to: ?((<Postmaster@" RE_DOMAIN ">)|(<Postmaster>)|" RE_FORWARD_PATH ")( " RE_RCPT_PARAMETERS ")?" RE_CRLF
 #define RE_DATA "^data" RE_CRLF
 #define RE_RSET "^rset" RE_CRLF
 #define RE_QUIT "^quit" RE_CRLF
