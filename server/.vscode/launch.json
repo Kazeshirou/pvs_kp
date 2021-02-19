@@ -9,10 +9,11 @@
             "preLaunchTask": "server",
             "args": [
                 "-p 64999",
-                "-l/tmp/mysmtp/",
-                "-c/tmp/mysmtp_client/",
+                "-ltests/tmp/server/",
+                "-ctests/tmp/client/",
                 "-raaa",
-                "-rbbb"
+                "-rbbb",
+                "-t1"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
