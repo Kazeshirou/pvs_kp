@@ -1,6 +1,7 @@
 # Каталоги
 IDIR = include
 CDIR = src
+UNITDIR = tests/unit
 ODIR = bin
 TEXDIR = tex
 TEXINCDIR = $(TEXDIR)/include
@@ -22,6 +23,7 @@ SRC2TEX=$(UDIR)/src2tex
 
 # Главная программа
 PROG = server.elf
+UNIT_TESTS = unit_tests.elf
 
 # Отчёт
 REPORT = report.pdf
@@ -63,10 +65,14 @@ INCLUDES = $(wildcard $(IDIR)/*.h) $(IDIR)/checkoptn.h $(IDIR)/client-fsm.h
 # $(wildcard $(CDIR)/*.c)
 CSRC = $(wildcard $(CDIR)/*.c)
 CSRC += $(CDIR)/checkoptn.c $(CDIR)/client-fsm.c
+UNIT_TESTS_CSRV = $(wildcard $(UNITDIR)/*.c)
+UNIT_TESTS_CSRV += $(shell find $(CDIR) -name '*.c' -not -path '$(CDIR)/server_main.c')
+
 
 # Объектные файлы. Обычно, наоборот, по заданному списку объектных получают
 # список исходных файлов. ЕНо мне лень.
 OBJS = $(patsubst $(CDIR)/%, $(ODIR)/%, $(patsubst %.c,%.o,$(CSRC)))
+UNIT_TESTS_OBJS = $(patsubst $(UNITDIR)/%, $(ODIR)/%, $(patsubst $(CDIR)/%, $(ODIR)/%, $(patsubst %.c,%.o,$(UNIT_TESTS_CSRV))))
 
 # Файлы latex
 TEXS = $(wildcard $(TEXDIR)/*.tex)
@@ -107,11 +113,17 @@ $(TEXINCDIR)/%_dot.pdf: $(TEXINCDIR)/%_dot.tex
 $(TEXINCDIR)/%_re.tex: $(RE_FILE)
 	$(RE2TEX) $(RE_FILE) $(TEXINCDIR)
 
+$(ODIR)/%.o: $(UNITDIR)/%.c $(INCLUDES) # $(GENINCLUDES)
+	$(CC) -c $(CFLAGS) -o $@ $<
+
 $(ODIR)/%.o: $(CDIR)/%.c $(INCLUDES) # $(GENINCLUDES)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 $(PROG): $(OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
+
+$(UNIT_TESTS): $(UNIT_TESTS_OBJS)
+	$(CC) -o $@ $^ $(LDFLAGS) -lcunit
 
 # Отчёт. PDFLATEX вызывается дважды для нормального 
 # создания ссылок, это НЕ опечатка.
@@ -145,8 +157,8 @@ $(Makefile_1.dot): $(MAKE2DOT) simplest.mk
 tests: test_units test_memory test_style test_system
 
 .PHONY: test_units
-test_units:
-	echo Сделайте сами на основе check.sourceforge.net
+test_units: $(UNIT_TESTS)
+	./$(UNIT_TESTS)
 
 .PHONY: test_style
 test_style:

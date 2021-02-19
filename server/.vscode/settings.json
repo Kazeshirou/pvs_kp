@@ -23,7 +23,9 @@
         "stat.h": "c",
         "exception": "cpp",
         "fstream": "cpp",
-        "logger.h": "c"
+        "logger.h": "c",
+        "basic.h": "c",
+        "msg_tests.h": "c"
     },
     "python.formatting.provider": "black"
 }

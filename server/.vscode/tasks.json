@@ -20,6 +20,24 @@
             "problemMatcher": []
         },
         {
+            "label": "unit_tests",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "unit_tests.elf",
+                "OPT=off",
+                "DEBUG=on"
+            ],
+            "presentation": {
+                "clear": true
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "report",
             "type": "shell",
             "command": "make",
