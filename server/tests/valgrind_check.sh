@@ -11,6 +11,4 @@ valgrind --leak-check=full \
          --log-file=tests/tmp/valgrind-out.txt \
          ./server.elf -Ltests/tmp/log.csv -ltests/tmp/server/ -ctests/tmp/client/ &
 SERVER=$!
-while [ 1 ]; do
-    sleep 1
-done
+wait $SERVER;

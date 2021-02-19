@@ -150,8 +150,7 @@ test_units:
 
 .PHONY: test_style
 test_style:
-	echo Сделайте сами на основе astyle.sourceforge.net или checkpatch.pl
-	echo Для инженеров -- не обязательно
+	./tests/style_check.sh
 
 .PHONY: test_memory
 test_memory: $(PROG)
