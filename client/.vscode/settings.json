@@ -29,6 +29,7 @@
         "global.h": "c",
         "logger.h": "c",
         "errors.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "end_program_handler.h": "c"
     }
 }
