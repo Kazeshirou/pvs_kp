@@ -9,28 +9,27 @@ import os, shutil
 import sys
 
 def session(name, host, port, first_answer, session):
-    errors = None
+    errors = []
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        s.bind((host, port))
-        s.listen(10)
-        c, addr = s.accept()
-        c.sendall(first_answer)
-        for step in session:
+    s.bind((host, port))
+    s.listen(10)
+    c, addr = s.accept()
+    c.sendall(first_answer)
+    for step in session:
+        try:
+            print(len(step))
             if (len(step) == 2):
                 answer = c.recv(1024)
-                #assert answer == step[0], "Пришёл неожиданный запрос на %s: %s ( != %s)" % (step[1], answer, step[0])
                 c.sendall(step[1])
-            elif (len(step) == 1):
+                assert answer == step[0], "Пришёл неожиданный запрос на %s: %s ( != %s)" % (step[1], answer, step[0])
+            else:
                 answer = c.recv(1024)
-                assert answer == step[0], "Пришло неожиданное содержание письма: %s ( != %s)" % (answer, step[0])
-    except AssertionError as err:
-        errors = err
-    finally:
-        s.close()
-
-    if errors is not None:
-        assert False, errors
+                assert answer == step, "Пришло неожиданное содержание письма: %s ( != %s)" % (answer, step)
+        except AssertionError as err:
+            print("Тест провален:\n\t", err)
+            errors.append(err)
+    c.close()
+    s.close()
 
 def copy_newest_file(file1, file2):
     res = subprocess.run(["cp", file1, file2])

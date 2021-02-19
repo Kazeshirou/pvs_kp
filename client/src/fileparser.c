@@ -168,8 +168,11 @@ char* parse_sender(const char* line) {
 
 char *trim (char *s) {
     int i = strlen(s)-1;
-    if ((i > 0) && (s[i] == '\n' || s[i] == '\r'))
+    while ((i > 0) && (s[i] == '\n' || s[i] == '\r'))
+    {
         s[i] = '\0';
+        i--;
+    }
     return s;
 }
 
