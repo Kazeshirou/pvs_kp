@@ -17,11 +17,10 @@ def session(name, host, port, first_answer, session):
     c.sendall(first_answer)
     for step in session:
         try:
-            print(len(step))
             if (len(step) == 2):
                 answer = c.recv(1024)
                 c.sendall(step[1])
-                assert answer == step[0], "Пришёл неожиданный запрос на %s: %s ( != %s)" % (step[1], answer, step[0])
+                assert answer == step[0], "Пришёл неожиданный запрос: %s ( != %s)" % (answer, step[0])
             else:
                 answer = c.recv(1024)
                 assert answer == step, "Пришло неожиданное содержание письма: %s ( != %s)" % (answer, step)
@@ -30,6 +29,7 @@ def session(name, host, port, first_answer, session):
             errors.append(err)
     c.close()
     s.close()
+    return errors;
 
 def copy_newest_file(file1, file2):
     res = subprocess.run(["cp", file1, file2])
@@ -61,23 +61,20 @@ def main(path):
                 (b'QUIT\r\n', b'221 Bye\r\n\x00')]
     
     client = subprocess.Popen(path, stderr=subprocess.DEVNULL, shell=False)
-    errors = False
+    errors = []
     try:
         assert client.poll() is  None, "Клиент неожиданно завершился"
         copy_newest_file("./expected_mail.txt", "./tmp/server/127.0.0.1.0.id")
-        session("success_session", HOST, PORT, first_answer, success_session)
+        errors = session("success_session", HOST, PORT, first_answer, success_session)
     except AssertionError as err:
         print("Тест провален:\n\t", err)
-        errors = True
+        errors.append(err)
     finally:
         client.send_signal(signal.SIGINT)
         client.wait()
 
-    if client.returncode:
-        print("Тест провален:\n\t%s завершилась с ошибками." % path)
-        errors = True
-
-    if errors:
+    if len(errors) > 0:
+        print("Тест провален:\n\t%s завершилась с %d ошибками." % (path, len(errors)))
         exit(1)
     else:
         print("Teсты пройдены успешно.")

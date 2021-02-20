@@ -93,6 +93,9 @@ $(ODIR)/client-fsm.o: $(CDIR)/client-fsm.c
 $(DTODIR)/%_def.dot: $(CDIR)/%.def
 	$(FSM2DOT) $< > $@
 
+$(DTODIR)/processes.dot:
+	cp tex/dot/processes.dot $(DTODIR)/processes.dot
+
 # .dot -> _dot.tex
 $(TEXINCDIR)/%_dot.tex: $(DTODIR)/%.dot
 	utils/dot2tex -ftikz --autosize --crop  $< > $@
