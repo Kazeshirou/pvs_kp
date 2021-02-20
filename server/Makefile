@@ -137,7 +137,7 @@ $(REPORT): $(TEXS) doxygen $(addprefix $(TEXINCDIR)/, client_def_dot.pdf Makefil
 # Это сокращённый файл параметров программы дял отчёта, 
 # берутся строки, начиная с восьмой, строки с descrip -- удаляются.
 $(TEXINCDIR)/checkoptn.def.tex: $(CDIR)/checkoptn.def
-	$(SRC2TEX) $< 8 | grep -v descrip > $@
+	$(SRC2TEX) $< 5 | grep -v descrip > $@
 # Файл simplest.mk -- это упрощёный makefile, промежуточная стадия
 # для созданя графа сборки программы
 simplest.mk: Makefile
@@ -198,10 +198,9 @@ doxygen: doxygen.cfg $(CSRC) $(INCLUDES)
 .PHONY: clean
 clean:
 	rm -rf $(CDIR)/checkoptn.c $(IDIR)/checkoptn.h ;\
-	rm -rf $(ODIR)/*.o $(CDIR)/*~ $(IDIR)/*~ $(TEXINCDIR)/* $(DOXDIR)/* $(DOTDIR)/*.dot; \
-	rm simplest.mk *~; \
-	rm *.elf *.pdf; \
-	rm -rf tests/tmp/*; \
-	rm -r `find $(TEXDIR)/ -type f ! -name "*.tex"` 
+	rm -rf $(ODIR)/*.o $(TEXINCDIR)/* $(DOXDIR)/* $(DOTDIR)/*.dot; \
+	rm simplest.mk; \
+	rm *.elf report.pdf tex/report.pdf ; \
+	rm -rf tests/tmp/*
 
 
