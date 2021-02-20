@@ -1,0 +1,16 @@
+docs
+bin
+dot
+tex/include
+doxygen
+*.pdf
+*.elf
+checkoptn.h
+checkoptn.c
+simplest.mk
+*.aux
+*.log
+*.out
+*.toc
+valgrind-out.txt
+tests/tmp/*

@@ -1,0 +1,70 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "server",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "server.elf",
+                "OPT=off",
+                "DEBUG=on"
+            ],
+            "presentation": {
+                "clear": true
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "unit_tests",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "unit_tests.elf",
+                "OPT=off",
+                "DEBUG=on"
+            ],
+            "presentation": {
+                "clear": true
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "report",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "report"
+            ],
+            "presentation": {
+                "clear": true
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "clean",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "clean"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}
