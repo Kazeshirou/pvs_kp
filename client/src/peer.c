@@ -178,11 +178,12 @@ int add_message(peer_t* peer, const string_t* message, const char* end_marker) {
             message_with_end = concat(message, end_marker_str);
             if (message_with_end) {
                 ret = queue_push_back(peer->messages_in, message_with_end);
+                string_clear(message_with_end);
             } else {
                 string_clear(end_marker_str);
                 ret = MEMORY_ERROR;
             }
-            string_clear(message_with_end);
+            string_clear(end_marker_str);
         } else {
             ret = MEMORY_ERROR;
         }

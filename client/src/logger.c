@@ -76,10 +76,10 @@ int logger_main(const logger_config_t config)
         }
     } 
 
-    /*for (i = 0; i < workers_count; i++)
+    for (i = 0; i < workers_count; i++)
         peer_clear(workers[i]);
     free(workers);
-    storage_clear(storage);*/
+    storage_clear(storage);
    
     printf("Процесс логгирования завершен");
 

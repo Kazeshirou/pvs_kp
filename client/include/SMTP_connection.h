@@ -12,7 +12,7 @@
 **/
 typedef struct SMTP_connection__t 
 {
-    char *addr; ///< домен или IP получателя, полученные из названия файла
+    char *addr; ///< доменное имя или IP получателя, полученные из названия файла
     string_t *ip; ///< IP получателя 
     int ip_type; ///< тип IP: v4 или v6
 

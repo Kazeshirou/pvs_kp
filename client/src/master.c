@@ -1,3 +1,8 @@
+/**
+ * @file master.c
+ * @brief Основные функции основного (родительського) процесса
+ */
+
 #include "master.h"
 
 #include <stdlib.h>
@@ -19,6 +24,14 @@
 // logger peer
 #define ADDITIONAL_PEERS_CNT 1
 
+/**
+ * Выбор рабочего процесса по алгоритму Round-robin
+ * @param state карта хостов + уже отправленные файлы + текущий индекс Round robin
+ * @param addr почтовый хост
+ * @param workers список рабочих процессов
+ * @param workers_count количество рабочих процессов
+ * @return выбранный процесс (который будет обрабатывать письмо)
+ */
 worker_t pick_worker_by_rr(state_t *state, const char *addr,
                            const worker_t *workers, size_t workers_count)
 {
@@ -41,6 +54,13 @@ void update_last_time_working(worker_time_t *worker_time)
     worker_time->last_time_working = time(NULL);
 }
 
+/**
+ * Добавление записи в карту хостов
+ * @param addr_vs_worker_map карта хостов
+ * @param addr почтовый хост
+ * @param worker процесс, у которого предположительно есть активное соединение с этим хостом
+ * @return вкод ошибки
+ */
 int add_addr_vs_worker(tree_t *addr_vs_worker_map, const char *addr, worker_t worker)
 {
     worker_time_t worker_time;
@@ -52,6 +72,14 @@ int add_addr_vs_worker(tree_t *addr_vs_worker_map, const char *addr, worker_t wo
 #define DELETE_ADDR_VS_WORKER(addr_vs_worker, addr) \
     tree_delete(addr_vs_worker, addr)
 
+/**
+ * Выбор рабочего процесса (из карты хостов или по алгоритму Round-robin)
+ * @param state карта хостов + уже отправленные файлы + текущий индекс Round robin
+ * @param addr почтовый хост
+ * @param workers список рабочих процессов
+ * @param workers_count количество рабочих процессов
+ * @return выбранный процесс (который будет обрабатывать письмо)
+ */
 worker_t pick_worker(state_t *state, const worker_t *workers,
                      const char *addr, master_config_t config)
 {
@@ -117,6 +145,12 @@ void state_clear(state_t *state)
     free(state);
 }
 
+/**
+ * Запуск процесса журналирования
+ * @param config настроечные параметры (аргументы командной строки)
+ * @param write_fds возвращаемый параметр -- массив файловых дескрипторов, куда процессы будут писать логи
+ * @return код ошибки
+ */
 int init_logger(master_config_t *config, int **write_fds)
 {
     int pid;
@@ -194,6 +228,12 @@ int init_logger(master_config_t *config, int **write_fds)
 
 }
 
+/**
+ * Запуск рабочих процессов
+ * @param config настроечные параметры (аргументы командной строки)
+ * @param logger_fds массив файловых дескрипторов, куда процессы будут писать логи (каждому процессу передается по дескриптору)
+ * @return список рабочих процессов
+ */
 worker_t* init_workers(master_config_t *master_config, int *logger_fds)
 {
     int i;
@@ -290,6 +330,13 @@ void clear_logger(int lpid)
 #define ADD_FILENAME_TO_WORKER(worker, filename) \
     add_message(worker.peer_write, filename, PARENT_MESSAGE_END_MARKER)
 
+/**
+ * Рассылка списка названий файлов по процессам
+ * @param state карта хостов + уже отправленные файлы + текущий индекс Round robin
+ * @param new_files еще не разосланные на обработку файлы из директории
+ * @param workers список рабочих процессов
+ * @param config настроечные параметры (аргументы командной строки)
+ */
 void add_filenames_to_workers(state_t *state, const queue_t *new_files,
                               worker_t *workers, master_config_t config)
 
@@ -315,6 +362,7 @@ void add_filenames_to_workers(state_t *state, const queue_t *new_files,
         }
 
         current_file = current_file->next;
+        free_addr(addr);
     }
 }
 
@@ -333,7 +381,11 @@ peer_t** get_peers_from_workers(worker_t *workers, size_t workers_count)
     return peers;
 }
 
-
+/**
+ * Основная функция -- тут в бесконечном цикле сканирование директори с письмами, добавление названия файла в очередь сообщений рабочему процессу и select()
+ * @param config настрочные параметры (аргументы командной строки)
+ * @return код ошибки
+ */
 int dispatch(worker_t *workers, master_config_t config)
 {
     queue_t *new_files = NULL;
@@ -385,11 +437,16 @@ int dispatch(worker_t *workers, master_config_t config)
 
     state_clear(state);
     storage_clear(storage);
+    peer_clear(g_logger);
     free(peers);
 
     return SUCCESS;
 }
 
+/**
+ * Вызов функций запуска дочерних процессов и основной функции
+ * @param config настрочные параметры (аргументы командной строки)
+ */
 void master_main(master_config_t config)
 {
     int *log_pipe_fd = NULL;
@@ -406,6 +463,7 @@ void master_main(master_config_t config)
 
     clear_workers(workers, config.workers_count);
     clear_logger(lpid);
+    free(log_pipe_fd);
 
     close(config.logger_fd);
 

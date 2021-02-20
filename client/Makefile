@@ -92,9 +92,9 @@ $(ODIR)/client-fsm.o: $(CDIR)/client-fsm.c
 
 $(DTODIR)/%_def.dot: $(CDIR)/%.def
 	$(FSM2DOT) $< > $@
-
+	
 $(DTODIR)/processes.dot:
-	cp tex/dot/processes.dot $(DTODIR)/processes.dot
+	cp ./tex/dot/processes.dot $(DTODIR)/processes.dot
 
 # .dot -> _dot.tex
 $(TEXINCDIR)/%_dot.tex: $(DTODIR)/%.dot
@@ -115,7 +115,7 @@ $(PROG): $(OBJS)
 
 # Отчёт. PDFLATEX вызывается дважды для нормального 
 # создания ссылок, это НЕ опечатка.
-$(REPORT): $(TEXS) doxygen $(addprefix $(TEXINCDIR)/, client_def_dot.pdf Makefile_1_dot.pdf cflow01_dot.pdf checkoptn.def.tex)
+$(REPORT): $(TEXS) doxygen $(addprefix $(TEXINCDIR)/, client_def_dot.pdf Makefile_1_dot.pdf cflow01_dot.pdf cflow02_dot.pdf processes_dot.pdf checkoptn.def.tex)
 	cp $(DOXDIR)/latex/*.sty ~/texmf/tex/latex/
 	texhash ~/texmf 
 	cd $(TEXDIR) && echo `$(PDFLATEX) report.tex` 
@@ -131,10 +131,10 @@ $(TEXINCDIR)/checkoptn.def.tex: $(CDIR)/checkoptn.def
 simplest.mk: Makefile
 	sed 's/$$(INCLUDES)//'  Makefile | $(MAKESIMPLE)  > simplest.mk
 
-$(DTODIR)/cflow01.dot: $(addprefix $(CDIR)/, worker.c)
+$(DTODIR)/cflow01.dot: $(addprefix $(CDIR)/, worker.c fileparser.c)
 	$(CFLOW) $^ | $(SIMPLECFLOW) | $(CFLOW2DOT) > $@
 
-$(DTODIR)/cflow02.dot: $(addprefix $(CDIR)/, SMTP_connection.c client-fsm.c)
+$(DTODIR)/cflow02.dot: $(addprefix $(CDIR)/, SMTP_connection.c)
 	$(CFLOW) $^ | $(SIMPLECFLOW) | $(CFLOW2DOT) > $@
 
 $(Makefile_1.dot): $(MAKE2DOT) simplest.mk
@@ -157,9 +157,11 @@ FTOBJS = $(filter-out $(ODIR)/client_main.o $(ODIR)/logger.o $(ODIR)/worker.o $(
 $(TPROG): $(FTOBJS)
 	$(CC) $^ $(LDFLAGS) $(test_ldflags) -o $@
 
+#$(TPROG_EXEC): $(TPROG)
+#	./$(TPROG)
+
 test_units: $(TPROG)
 
-	
 
 .PHONY: test_style
 test_style:
@@ -168,12 +170,11 @@ test_style:
 
 .PHONY: test_memory
 test_memory: $(PROG)
-	echo Сделайте сами на основе valgrind
+	#echo run python3 ./tests/system/system_test.py ./tests/system/valgrind_check.sh
 
 .PHONY: test_system
 test_system: $(PROG)
-	echo Сделайте сами на основе тестирования через netcat и/или скриптов на python/perl/etc.
-	#./$(PROG) -p 1025 -f tests/test01.cmds
+	echo run sudo python3 ./tests/system/system_test.py
 
 # Документация
 # .PHONY: report
@@ -190,7 +191,7 @@ clean:
 	rm -rf $(ODIR)/*.o $(CDIR)/*~ $(IDIR)/*~ $(TEXINCDIR)/* $(DOXDIR)/* $(DTODIR)/*.dot; \
 	rm simplest.mk *~; \
 	rm *.elf *.pdf; \
-	rm -r `find $(TEXDIR)/ -type f ! -name "*.tex"` 
+	rm -r `find $(TEXDIR)/ -type f ! \( -name "*.tex" -o name "*.dot" -o name "*dia/*" \)`
 
 .PHONY: clean_tests
 clean_tests:
