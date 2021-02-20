@@ -143,7 +143,7 @@ $(TEXINCDIR)/checkoptn.def.tex: $(CDIR)/checkoptn.def
 simplest.mk: Makefile
 	sed 's/$$(INCLUDES)//'  Makefile | $(MAKESIMPLE)  > simplest.mk
 
-$(DOTDIR)/cflow01.dot: $(addprefix $(CDIR)/, server_main.c smtp_server.c msg.c server_info.c)
+$(DOTDIR)/cflow01.dot: $(addprefix $(CDIR)/, server_main.c smtp_server.c server_info.c)
 	$(CFLOW) $^ | $(SIMPLECFLOW) | $(CFLOW2DOT) > $@
 
 # $(DOTDIR)/cflow02.dot: $(addprefix $(CDIR)/, server-cmd.c server-parse.c server-fsm.c)

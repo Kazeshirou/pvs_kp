@@ -169,20 +169,14 @@ SMTP (англ. \textbf{S}imple \textbf{M}ail \textbf{T}ransfer \textbf{P}rotoco
 
 \section{Сборка программы}
 
-Сборка программы описана в файле \textit{Makefile} системы сборки \textit{make}. Рис.~\ref{fig:make} нагенерили самодельные \textit{makesimple} и \textit{makefile2dot}, а также \textit{dot2tex} и \textit{dot}.
+Сборка программы описана в файле \textit{Makefile}, упрощённая схема представлена на рис.~\ref{fig:make}.
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{include/Makefile_1_dot.pdf}
+\includegraphics[width=0.7\textwidth]{include/Makefile_1_dot.pdf}
 \caption{Сборка программы}
 \label{fig:make}
 \end{figure}
-
-Отмечу, что за исключения целей типа \textit{all}, \textit{install}, \textit{clean}, \textit{tests}, все имена целей в файле систем сборки \textit{make} обычно совпадают с именами файлов (такой вот низкоуровневый инструмент). То есть вместо цели \textit{lexer} следует использовать цель \textit{src/lexer.c}.
-
-\section{Основные функции программы}
-
-Весь это раздел сгеренерировал doxygen из части комментированных исходников программы. В файле конфигурации \textbf{doxyggen.cfg} был отключён параметр \textbf{HAVE\_DOT}, поскольку для рисования графов вызовов используется \textit{cflow}.
 
 %\input{include/files}
 %\input{include/annotated}
@@ -195,7 +189,7 @@ SMTP (англ. \textbf{S}imple \textbf{M}ail \textbf{T}ransfer \textbf{P}rotoco
 
 \section{Графы вызова функций}
 
-Поскольку функций много, графы вызовов разбиты на два рисунка. На рис.~\ref{fig:cflow01} показаны основные функции, на рис.~\ref{fig:cflow02}~-- функции обработки команд. Файл \textbf{cflow.ignore} содержит список функций (точнее, шабловнов поиска), использыемых программой \textit{grep} для удаления малоинтересных стандартных функций\footnote{Функции по работе с сокетами, ipc и привилегиями к малоинтересным ни в коем случае не относятся.}.
+На рис.~\ref{fig:cflow01} показан граф вызовов основных функции.
 
 \begin{figure}
 \centering
@@ -204,12 +198,47 @@ SMTP (англ. \textbf{S}imple \textbf{M}ail \textbf{T}ransfer \textbf{P}rotoco
 \label{fig:cflow01}
 \end{figure}
 
-Графы созданы с помощью \textit{cflow}, \textit{cflow2dot}, \textit{dot}.
+\section{Основные структуры программы}
+
+\input{include/structserver__info__t.tex}
+\input{include/structmsg__t.tex}
+\input{include/structclient__t.tex}
+
+\input{include/structmsg__t.tex}
+
+\section{Модульное тестирование}
+Для модульного тестирования функций сервера в работе используется библиотека CUnit.
+\begin{verbatim}
+
+Run Summary:    Type  Total    Ran Passed Failed Inactive
+              suites      1      1    n/a      0        0
+               tests      1      1      1      0        0
+             asserts     10     10     10      0      n/a
+
+Elapsed time =    0.000 seconds
+Exiting tests
+\end{verbatim}
+
+\section{Тестирование утечек памяти}
+
+Для тестирования утечек памяти использовалась утилита valgrind.
+\begin{verbatim}
+==9430== HEAP SUMMARY:
+==9430==     in use at exit: 0 bytes in 0 blocks
+==9430==   total heap usage: 95 allocs, 95 frees, 395,991 bytes allocated
+==9430== 
+==9430== All heap blocks were freed -- no leaks are possible
+==9430== 
+==9430== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
+\end{verbatim}
+
 
 \addcontentsline{toc}{chapter}{Выводы}
 \chapter*{Выводы}
 
-Что вы сделали и поняли.
+В процессе выполнения работы была написана программная реализация серверной части MTA SMTP. Был изучен протокол передачи электронной почты SMTP и способы мультиплексирования. Были закреплены и получены навыки в написании сетевых приложений на языке Си для Unix-подобных операционных систем. Было проведено тестирование и отладка разработанного приложения и в итоге по результатам проведенной работы была оформлена расчетно-пояснительная записка.
+
 
 
 \end{document}

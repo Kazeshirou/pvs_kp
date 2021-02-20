@@ -15,5 +15,8 @@ SERVER_
  regcomp()
  regfree()
  assert()
+ memmove()
+ memcpy()
  malloc()
+ calloc()
  free()
