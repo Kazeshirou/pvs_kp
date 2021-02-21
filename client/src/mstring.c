@@ -61,7 +61,9 @@ string_t* concat(const string_t *first, const string_t *second)
     }
     memcpy(concated, first->data, first->size); 
     memcpy(concated + first->size, second->data, second->size); 
-    return string_init2(concated, size);
+    string_t *res = string_init2(concated, size);
+    free(concated);
+    return res;
 }
 
 string_t* concat_with_sep(const string_t *first, const string_t *second, const char sep)

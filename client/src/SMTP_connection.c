@@ -1,5 +1,11 @@
 #include "SMTP_connection.h"
 
+/**
+ * @file SMTP_connection.c
+ * @brief SMTP-подключение
+ */
+
+
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <resolv.h>
@@ -19,6 +25,12 @@
 
 extern worker_config_t g_config;
 
+/**
+ * Получение DNS-записи для почтового хоста
+ * @param host почтовый хост, например yandex.ru
+ * @param type Тип DNS-записи
+ * @return Первая DNS-запись
+ */
 string_t* get_DNS_record(const char* host, int type) {
     string_t* row_string = NULL;
     int       space_idx  = 0;
@@ -66,7 +78,7 @@ string_t* get_DNS_record(const char* host, int type) {
 
 /**
  * Получение IP-адреса почтового сервера
- * @param host Хост
+ * @param host Почтовый хост
  * @return IP-адрес почтового сервера
  */
 string_t* get_IP(const char* host) {
@@ -94,6 +106,12 @@ string_t* get_IP(const char* host) {
     return ip;
 }
 
+/**
+ * Подключение к серверу
+ * @param ip IP адрес в формате IPv6
+ * @param port порт
+ * @return Файловый дескриптор сокета
+ */
 int connect_server_ipv6(const string_t* ip, int port) {
     int fd;
 
@@ -121,6 +139,12 @@ int connect_server_ipv6(const string_t* ip, int port) {
     return fd;
 }
 
+/**
+ * Подключение к серверу
+ * @param ip IP адрес в формате IPv4
+ * @param port порт
+ * @return Файловый дескриптор сокета
+ */
 int connect_server_ipv4(const string_t* ip, int port) {
     int                fd;
     struct sockaddr_in server_addr;
@@ -145,6 +169,12 @@ int connect_server_ipv4(const string_t* ip, int port) {
     return fd;
 }
 
+/**
+ * Подключение к серверу
+ * @param ip IP адрес
+ * @param type тип IP -- 0 если IPv4, 1 если IPv6
+ * @return Файловый дескриптор сокета
+ */
 int connect_server(const string_t* ip, int type) {
     if (ip == NULL)
         return -1;
@@ -181,6 +211,12 @@ int has_more_connection_attempts(SMTP_connection_t *conn)
     return conn->max_connect_count > conn->current_connection_num;
 }
 
+/**
+ * Инициализация нового соединения (конструктор)
+ * @param host Адрес
+ * @param type Тип адреса -- 0 если IPv4, 1 если IPv6 , 2 -- хост, например yandex.ru
+ * @return Новое SMTP-соединение
+ */
 SMTP_connection_t* SMTP_connection_init(const char* addr, int type) {
     SMTP_connection_t* conn =
         (SMTP_connection_t*)malloc(sizeof(SMTP_connection_t));
@@ -295,6 +331,10 @@ void* SMTP_connection_copy(const void* vother) {
     return copy;
 }
 
+/**
+ * Очистка соединения (деструктор)
+ * @param vconn Соединение
+ */
 void SMTP_connection_clear(void* vconn) {
     SMTP_connection_t* conn = (SMTP_connection_t*)vconn;
     queue_clear(conn->messages);
@@ -314,7 +354,11 @@ int SMTP_connection_reinit(SMTP_connection_t* conn) {
     return SUCCESS;
 }
 
-
+/**
+ * Парсинг кода ответа от сервера
+ * @param response ответ
+ * @return код ответа
+ */
 int parse_response_code(const string_t* response) {
     int  ans;
     char code[3];
@@ -331,7 +375,11 @@ int parse_response_code(const string_t* response) {
     return ans;
 }
 
-
+/**
+ * Генерация события для смены состояния конечного автомата
+ * @param conn соединение
+ * @return событие
+ */
 te_client_fsm_event generate_event(SMTP_connection_t* conn) {
     string_t*       command  = NULL;
     string_t*       response = NULL;
@@ -464,7 +512,7 @@ te_client_fsm_event generate_event(SMTP_connection_t* conn) {
         sprintf(g_log_message, "Отправлена команда: %s", command->data);
         send_log();
         add_message(conn->peer, command, NULL);
-        free(command);
+        string_clear(command);
     }
 
     string_clear(endline);

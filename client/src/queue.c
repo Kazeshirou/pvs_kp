@@ -38,6 +38,7 @@ void queue_clear(queue_t* queue) {
         queue->size--;
     }
     assert(!queue->size);
+    free(queue);
 }
 
 int queue_push_back(queue_t* queue, const void* value) {
