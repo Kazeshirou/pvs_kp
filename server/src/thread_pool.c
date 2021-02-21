@@ -64,10 +64,6 @@ error_code_t thread_pool_init(thread_pool_t* tp, size_t size,
             thrd_join(tp->workers[i].td, &res);
         }
         queue_destroy(&tp->job_queue, tp->job_destructor);
-        while (tp->is_ended != i) {
-            sleep(0.1);
-        }
-        sleep(0.1);
         free(tp->workers);
         return CE_INIT_3RD;
     }
