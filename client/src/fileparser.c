@@ -1,3 +1,8 @@
+/**
+ * @file fileparser.c
+ * @brief Функции работы с файлом
+ */
+
 #include "fileparser.h"
 
 #include <dirent.h>
@@ -11,6 +16,11 @@
 
 #define MAX_LINE_LENGTH 1024
 
+/**
+ * Получение списка названий всех файлов в директории
+ * @param path_to_dir путь к директории
+ * @return список названий обычных файлов
+ */
 queue_t* get_filenames(const char *path_to_dir)
 {
     DIR *dir = opendir(path_to_dir);
@@ -43,6 +53,12 @@ queue_t* get_filenames(const char *path_to_dir)
     return filenames;
 }
 
+/**
+ * Получение хоста получателей из названия файла письма
+ * @param filename название файла письма
+ * @param type возвращаемый параметр -- тип адреса (0 -- IPv4, 1 -- IPv6, 2 -- доменное имя)
+ * @return хост получателей
+ */
 char* get_addr(const string_t* filename, int* type) {
     int meta_start;
     int filename_len = filename->size;
@@ -79,6 +95,11 @@ void free_addr(char* addr) {
     free(addr);
 }
 
+/**
+ * Получение количества получателей
+ * @param line строка файла письма, где указаны получатели
+ * @return общее количество
+ */
 size_t get_recipients_count(const char* line) {
     size_t count = 0;
     int    i;
@@ -88,6 +109,13 @@ size_t get_recipients_count(const char* line) {
     return count + 1;
 }
 
+/**
+ * Проверка, нужно ли отправлять получателю письмо (или это сделано будет по другому соединению)
+ * @param rcpt почта получателя
+ * @param addr хост из названия файла
+ * @param a_type тип адреса (0 -- IPv4, 1 -- IPv6, 2 -- доменное имя)
+ * @return 1 -- нужно, 0 -- нет
+ */
 int check_recipient(char* rcpt, const char* addr, int a_type) {
     int at_idx;
     for (at_idx = 0; at_idx < strlen(rcpt) && rcpt[at_idx] != '@'; at_idx++)
@@ -119,6 +147,14 @@ int check_recipient(char* rcpt, const char* addr, int a_type) {
     return 0;
 }
 
+/**
+ * Парсинг списка почт получателей
+ * @param line строка из файла письма, где указаны получатели
+ * @param count возвращаемый параметр -- количество получателей
+ * @param addr хост из названия файла
+ * @param a_type тип адреса (0 -- IPv4, 1 -- IPv6, 2 -- доменное имя)
+ * @return список почт, куда надо отправить письмо
+ */
 char** parse_recipients(const char* line, size_t* count, const char* addr,
                         int a_type) {
     char* header            = X_DOMAIN_TO;
@@ -150,6 +186,11 @@ char** parse_recipients(const char* line, size_t* count, const char* addr,
     return recipients;
 }
 
+/**
+ * Парсинг почты отправителя
+ * @param line строка из файла письма, где указаны получатели
+ * @return почта отправителя
+ */
 char* parse_sender(const char* line) {
     char* header     = X_DOMAIN_FROM;
     int   start      = strlen(header);
@@ -176,6 +217,12 @@ char *trim (char *s) {
     return s;
 }
 
+/**
+ * Основная функция парсинга письма
+ * @param queue_dir путь к директории с файлом письма
+ * @param filename название файла письма
+ * @return письмо
+ */
 SMTP_message_t* parse_message(const char* queue_dir, const string_t* filename) {
     int   a_type;
     char* addr = get_addr(filename, &a_type);

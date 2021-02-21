@@ -1,3 +1,8 @@
+/**
+ * @file worker.c
+ * @brief Основные функции рабочего процесса
+ */
+
 #include "worker.h"
 
 #include <errno.h>
@@ -62,6 +67,12 @@ peer_t** get_peers(SMTP_connection_t** conns, size_t size) {
     return peers;
 }
 
+/**
+ * Выбор соединения для отправки нового письма или инициализация нового
+ * @param host_vs_conn_map карта хостов (ключ -- хост, значение -- соединение)
+ * @param filename_value название файла с письмом (по нему определяется хост)
+ * @return собединение
+ */
 SMTP_connection_t* get_conn_for_sending(tree_t*         host_vs_conn_map,
                                         const string_t* filename_value) {
     SMTP_connection_t* peer_for_sending = NULL;
@@ -87,6 +98,12 @@ SMTP_connection_t* get_conn_for_sending(tree_t*         host_vs_conn_map,
     return peer_for_sending;
 }
 
+/**
+ * Удаление файла письма из директории после загрузки в память
+ * @param queue_dir путь к директории с письмами
+ * @param filename название файла с письмом
+ * @return код ошибки
+ */
 int remove_file(const char* queue_dir, const string_t* filename) {
     int       ret;
     string_t* queue_dir_str = string_init2(queue_dir, strlen(queue_dir));
@@ -98,6 +115,13 @@ int remove_file(const char* queue_dir, const string_t* filename) {
     return ret;
 }
 
+/**
+ * Обработка сообщения от родителя: присланный файл парсится, выбирается соединение и письмо добавляется в очередь на отправку
+ * @param host_vs_conn_map карта хостов
+ * @param filenames список названий файлов, которые прислал родитель
+ * @param queue_dir путь к директории с письмами
+ * @return код ошибки
+ */
 int process_parent_messages(tree_t* host_vs_conn_map, queue_t* filenames,
                             const char* queue_dir) {
     string_t*          current_filename = (string_t*)queue_peek(filenames);
@@ -127,6 +151,11 @@ int process_parent_messages(tree_t* host_vs_conn_map, queue_t* filenames,
     return SUCCESS;
 }
 
+/**
+ * Основная функция -- тут в бесконечном цикле select() и вызов обработчиков
+ * @param config настрочные параметры (путь к директории с письмами, таймауты и тд)
+ * @return код ошибки
+ */
 int worker_main(const worker_config_t config) {
     g_config = config;
 
